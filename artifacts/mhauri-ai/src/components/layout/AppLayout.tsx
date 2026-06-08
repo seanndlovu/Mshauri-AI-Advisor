@@ -8,7 +8,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, MessageSquare, Trash2, Menu, Sprout } from "lucide-react";
+import { Plus, MessageSquare, Trash2, Menu, Sprout, BookOpen } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { 
   AlertDialog,
@@ -85,20 +85,39 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <Sprout className="w-6 h-6" />
           <span className="text-lg">Mhauri AI</span>
         </div>
-        <Button 
-          className="w-full justify-start gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-lg h-11"
-          onClick={() => {
-            setLocation("/");
-            if (onNavigate) onNavigate();
-          }}
-          data-testid="button-new-chat"
-        >
-          <Plus className="w-4 h-4" />
-          New Conversation
-        </Button>
+        <div className="flex flex-col gap-2">
+          <Button 
+            className="w-full justify-start gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-lg h-11"
+            onClick={() => {
+              setLocation("/");
+              if (onNavigate) onNavigate();
+            }}
+            data-testid="button-new-chat"
+          >
+            <Plus className="w-4 h-4" />
+            New Conversation
+          </Button>
+          
+          <Button
+            variant={location.startsWith("/knowledge-base") ? "secondary" : "ghost"}
+            className={`w-full justify-start gap-2 font-medium rounded-lg h-11 ${
+              location.startsWith("/knowledge-base") 
+                ? "bg-secondary text-secondary-foreground" 
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            onClick={() => {
+              setLocation("/knowledge-base");
+              if (onNavigate) onNavigate();
+            }}
+            data-testid="button-knowledge-base"
+          >
+            <BookOpen className="w-4 h-4" />
+            Knowledge Base
+          </Button>
+        </div>
       </div>
 
-      <div className="px-4 pb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+      <div className="px-4 pb-2 pt-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
         Past Conversations
       </div>
 

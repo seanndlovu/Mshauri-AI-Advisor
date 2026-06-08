@@ -40,3 +40,73 @@ export interface Message {
   createdAt: string;
 }
 
+export type ArticleLanguage = typeof ArticleLanguage[keyof typeof ArticleLanguage];
+
+
+export const ArticleLanguage = {
+  en: 'en',
+  sn: 'sn',
+  nd: 'nd',
+  all: 'all',
+} as const;
+
+export interface Article {
+  id: number;
+  title: string;
+  content: string;
+  category: string;
+  tags: string[];
+  language: ArticleLanguage;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ArticleInputLanguage = typeof ArticleInputLanguage[keyof typeof ArticleInputLanguage];
+
+
+export const ArticleInputLanguage = {
+  en: 'en',
+  sn: 'sn',
+  nd: 'nd',
+  all: 'all',
+} as const;
+
+export interface ArticleInput {
+  /** @minLength 1 */
+  title: string;
+  /** @minLength 1 */
+  content: string;
+  /** @minLength 1 */
+  category: string;
+  tags?: string[];
+  language?: ArticleInputLanguage;
+  isActive?: boolean;
+}
+
+export type ArticleUpdateLanguage = typeof ArticleUpdateLanguage[keyof typeof ArticleUpdateLanguage];
+
+
+export const ArticleUpdateLanguage = {
+  en: 'en',
+  sn: 'sn',
+  nd: 'nd',
+  all: 'all',
+} as const;
+
+export interface ArticleUpdate {
+  /** @minLength 1 */
+  title?: string;
+  content?: string;
+  category?: string;
+  tags?: string[];
+  language?: ArticleUpdateLanguage;
+  isActive?: boolean;
+}
+
+export type ListArticlesParams = {
+category?: string;
+language?: string;
+search?: string;
+};
+

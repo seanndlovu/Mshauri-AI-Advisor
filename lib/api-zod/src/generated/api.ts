@@ -9,7 +9,6 @@ import * as zod from 'zod';
 
 
 /**
- * Returns server health status
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
@@ -65,5 +64,113 @@ export const GetConversationMessagesResponseItem = zod.object({
   "createdAt": zod.string()
 })
 export const GetConversationMessagesResponse = zod.array(GetConversationMessagesResponseItem)
+
+
+/**
+ * @summary List all knowledge base articles
+ */
+export const ListArticlesQueryParams = zod.object({
+  "category": zod.coerce.string().optional(),
+  "language": zod.coerce.string().optional(),
+  "search": zod.coerce.string().optional()
+})
+
+export const ListArticlesResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "content": zod.string(),
+  "category": zod.string(),
+  "tags": zod.array(zod.string()),
+  "language": zod.enum(['en', 'sn', 'nd', 'all']),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListArticlesResponse = zod.array(ListArticlesResponseItem)
+
+
+/**
+ * @summary Create a knowledge base article
+ */
+
+
+
+
+
+export const CreateArticleBody = zod.object({
+  "title": zod.string().min(1),
+  "content": zod.string().min(1),
+  "category": zod.string().min(1),
+  "tags": zod.array(zod.string()).optional(),
+  "language": zod.enum(['en', 'sn', 'nd', 'all']).optional(),
+  "isActive": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Get a single article
+ */
+export const GetArticleParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetArticleResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "content": zod.string(),
+  "category": zod.string(),
+  "tags": zod.array(zod.string()),
+  "language": zod.enum(['en', 'sn', 'nd', 'all']),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Update an article
+ */
+export const UpdateArticleParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const UpdateArticleBody = zod.object({
+  "title": zod.string().min(1).optional(),
+  "content": zod.string().optional(),
+  "category": zod.string().optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "language": zod.enum(['en', 'sn', 'nd', 'all']).optional(),
+  "isActive": zod.boolean().optional()
+})
+
+export const UpdateArticleResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "content": zod.string(),
+  "category": zod.string(),
+  "tags": zod.array(zod.string()),
+  "language": zod.enum(['en', 'sn', 'nd', 'all']),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete an article
+ */
+export const DeleteArticleParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary List all distinct categories
+ */
+export const ListCategoriesResponseItem = zod.string()
+export const ListCategoriesResponse = zod.array(ListCategoriesResponseItem)
 
 

@@ -6,8 +6,15 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './article';
+export * from './articleInput';
+export * from './articleInputLanguage';
+export * from './articleLanguage';
+export * from './articleUpdate';
+export * from './articleUpdateLanguage';
 export * from './conversation';
 export * from './conversationInput';
 export * from './healthStatus';
+export * from './listArticlesParams';
 export * from './message';
 export * from './messageRole';

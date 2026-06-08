@@ -6,6 +6,7 @@ import NotFound from "@/pages/not-found";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Home from "@/pages/Home";
 import Conversation from "@/pages/Conversation";
+import KnowledgeBase from "@/pages/KnowledgeBase";
 
 const queryClient = new QueryClient();
 
@@ -15,6 +16,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/conversations/:id" component={Conversation} />
+        <Route path="/knowledge-base" component={KnowledgeBase} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>

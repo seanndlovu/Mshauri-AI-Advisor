@@ -10,6 +10,7 @@ import {
 } from "@workspace/api-zod";
 import OpenAI from "openai";
 import { logger } from "../lib/logger";
+import { findRelevantArticles } from "../lib/knowledge-search";
 
 const router: IRouter = Router();
 
@@ -159,8 +160,11 @@ router.post("/chat/conversations/:id/stream", async (req: Request, res: Response
     .where(eq(messagesTable.conversationId, conversationId))
     .orderBy(messagesTable.createdAt);
 
+  const knowledgeContext = await findRelevantArticles(message);
+  const systemContent = MHAURI_SYSTEM_PROMPT + knowledgeContext;
+
   const chatMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-    { role: "system", content: MHAURI_SYSTEM_PROMPT },
+    { role: "system", content: systemContent },
     ...historyRows.map((m): OpenAI.Chat.ChatCompletionMessageParam => ({
       role: m.role as "user" | "assistant",
       content: m.content,

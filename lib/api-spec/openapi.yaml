@@ -11,13 +11,14 @@ tags:
     description: Health operations
   - name: chat
     description: Chat and conversation operations
+  - name: knowledge
+    description: Knowledge base article operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -94,15 +95,134 @@ paths:
                 items:
                   $ref: "#/components/schemas/Message"
 
+  /knowledge/articles:
+    get:
+      operationId: listArticles
+      tags: [knowledge]
+      summary: List all knowledge base articles
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: language
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of articles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Article"
+    post:
+      operationId: createArticle
+      tags: [knowledge]
+      summary: Create a knowledge base article
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArticleInput"
+      responses:
+        "201":
+          description: Created article
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Article"
+
+  /knowledge/articles/{id}:
+    get:
+      operationId: getArticle
+      tags: [knowledge]
+      summary: Get a single article
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Article
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Article"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateArticle
+      tags: [knowledge]
+      summary: Update an article
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArticleUpdate"
+      responses:
+        "200":
+          description: Updated article
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Article"
+    delete:
+      operationId: deleteArticle
+      tags: [knowledge]
+      summary: Delete an article
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /knowledge/categories:
+    get:
+      operationId: listCategories
+      tags: [knowledge]
+      summary: List all distinct categories
+      responses:
+        "200":
+          description: List of category strings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
     Conversation:
       type: object
@@ -144,3 +264,72 @@ components:
           type: ["string", "null"]
         createdAt:
           type: string
+
+    Article:
+      type: object
+      required: [id, title, content, category, tags, language, isActive, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        category:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        language:
+          type: string
+          enum: [en, sn, nd, all]
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    ArticleInput:
+      type: object
+      required: [title, content, category]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        content:
+          type: string
+          minLength: 1
+        category:
+          type: string
+          minLength: 1
+        tags:
+          type: array
+          items:
+            type: string
+        language:
+          type: string
+          enum: [en, sn, nd, all]
+        isActive:
+          type: boolean
+
+    ArticleUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        content:
+          type: string
+        category:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        language:
+          type: string
+          enum: [en, sn, nd, all]
+        isActive:
+          type: boolean

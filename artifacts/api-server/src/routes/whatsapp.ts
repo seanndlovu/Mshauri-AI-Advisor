@@ -3,6 +3,7 @@ import { eq, desc } from "drizzle-orm";
 import { db, conversationsTable, messagesTable } from "@workspace/db";
 import OpenAI from "openai";
 import { logger } from "../lib/logger";
+import { findRelevantArticles } from "../lib/knowledge-search";
 
 const router: IRouter = Router();
 
@@ -115,8 +116,11 @@ async function handleIncomingMessage(phone: string, userText: string, imageDataU
   const historyRows = await getRecentHistory(conversationId);
   const history = historyRows.reverse();
 
+  const knowledgeContext = await findRelevantArticles(userText);
+  const systemContent = MHAURI_SYSTEM_PROMPT + knowledgeContext;
+
   const chatMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-    { role: "system", content: MHAURI_SYSTEM_PROMPT },
+    { role: "system", content: systemContent },
     ...history.map((m): OpenAI.Chat.ChatCompletionMessageParam => ({
       role: m.role as "user" | "assistant",
       content: m.content,
