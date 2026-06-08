@@ -3,61 +3,96 @@ import { useLocation, Link } from "wouter";
 import { useListConversations, useListMarketPrices } from "@workspace/api-client-react";
 import { useChatStream } from "@/hooks/use-chat-stream";
 import { formatDistanceToNow } from "date-fns";
-import { Camera, Mic, ChevronRight, ArrowUpRight, Wheat, Beef, CloudRain, AlertTriangle, Search } from "lucide-react";
+import {
+  Image, Mic, MessageCircle, Repeat2, Heart, Share, Bookmark,
+  ChevronUp, ChevronDown, Search, TrendingUp, Sprout, Users,
+  Flame, Clock, Award, MoreHorizontal,
+} from "lucide-react";
 
 const QUICK_PROMPTS = [
-  { label: "🌽 Maize disease", emoji: "🌽", text: "My maize leaves are turning yellow at the tips. What could be wrong and how do I fix it?", color: "text-amber-700 bg-amber-50 border-amber-200" },
-  { label: "💰 Market prices", emoji: "💰", text: "What are the current market prices for vegetables in Harare?", color: "text-blue-700 bg-blue-50 border-blue-200" },
-  { label: "🐄 Livestock health", emoji: "🐄", text: "My cattle are coughing and seem weak. What should I do?", color: "text-purple-700 bg-purple-50 border-purple-200" },
-  { label: "🌱 Planting schedule", emoji: "🌱", text: "When is the best time to plant tomatoes in Mashonaland?", color: "text-emerald-700 bg-emerald-50 border-emerald-200" },
-  { label: "🌧️ Irrigation advice", emoji: "🌧️", text: "How should I set up irrigation for my small vegetable garden?", color: "text-sky-700 bg-sky-50 border-sky-200" },
-  { label: "🐛 Pest control", emoji: "🐛", text: "How do I control fall armyworm in my maize crop?", color: "text-red-700 bg-red-50 border-red-200" },
+  { label: "🌽 Maize disease help", text: "My maize leaves are turning yellow at the tips. What could be wrong?" },
+  { label: "💰 Harare market prices", text: "What are the current market prices for vegetables in Harare?" },
+  { label: "🐄 Cattle coughing", text: "My cattle are coughing and seem weak. What should I do?" },
+  { label: "🌱 Planting schedule", text: "When is the best time to plant tomatoes in Mashonaland?" },
+  { label: "🐛 Fall armyworm", text: "How do I control fall armyworm in my maize crop?" },
+  { label: "💧 Irrigation setup", text: "How should I set up irrigation for my small vegetable garden?" },
 ];
 
-const TOPIC_TAGS = [
-  { label: "Crop Health", color: "bg-emerald-600" },
-  { label: "Livestock", color: "bg-purple-600" },
-  { label: "Markets", color: "bg-blue-600" },
-  { label: "Weather", color: "bg-sky-600" },
-  { label: "Soil", color: "bg-amber-600" },
-  { label: "Pest Control", color: "bg-red-600" },
-  { label: "Irrigation", color: "bg-cyan-600" },
-  { label: "Planting", color: "bg-lime-600" },
+const TRENDING = [
+  { tag: "MaizeBlightAlert", posts: "2.4K posts", hot: true },
+  { tag: "ZimbabweFarming", posts: "18.1K posts", hot: false },
+  { tag: "LumpySkinDisease", posts: "5.6K posts", hot: true },
+  { tag: "HarareMarketPrices", posts: "1.2K posts", hot: false },
+  { tag: "PlantingSchedule2024", posts: "890 posts", hot: false },
+  { tag: "DroughtResponse", posts: "3.3K posts", hot: true },
 ];
 
-function getCategoryStyle(title: string): { label: string; color: string } {
+function getCategoryLabel(title: string) {
   const t = title.toLowerCase();
   if (t.includes("cattle") || t.includes("livestock") || t.includes("goat") || t.includes("pig") || t.includes("poultry"))
-    return { label: "Livestock", color: "text-purple-700 bg-purple-50" };
-  if (t.includes("maize") || t.includes("crop") || t.includes("tobacco") || t.includes("soybean") || t.includes("sorghum"))
-    return { label: "Crops", color: "text-emerald-700 bg-emerald-50" };
+    return { label: "Livestock", color: "text-purple-400", dot: "bg-purple-400" };
+  if (t.includes("maize") || t.includes("crop") || t.includes("tobacco") || t.includes("soy") || t.includes("sorghum"))
+    return { label: "Crops", color: "text-emerald-400", dot: "bg-emerald-400" };
   if (t.includes("price") || t.includes("market") || t.includes("sell"))
-    return { label: "Market", color: "text-blue-700 bg-blue-50" };
+    return { label: "Market", color: "text-blue-400", dot: "bg-blue-400" };
   if (t.includes("pest") || t.includes("disease") || t.includes("worm") || t.includes("virus"))
-    return { label: "Pest & Disease", color: "text-red-700 bg-red-50" };
+    return { label: "Pest & Disease", color: "text-red-400", dot: "bg-red-400" };
   if (t.includes("whatsapp") || t.includes("263"))
-    return { label: "WhatsApp", color: "text-green-700 bg-green-50" };
-  return { label: "Farming", color: "text-gray-700 bg-gray-100" };
+    return { label: "WhatsApp", color: "text-green-400", dot: "bg-green-400" };
+  return { label: "Farming", color: "text-[#71767B]", dot: "bg-[#71767B]" };
+}
+
+function VoteButton({ convId, score }: { convId: number; score: number }) {
+  const key = `vote_${convId}`;
+  const [vote, setVote] = useState<1 | -1 | 0>(() => {
+    const v = localStorage.getItem(key);
+    return v ? (parseInt(v) as 1 | -1 | 0) : 0;
+  });
+
+  const handleVote = (dir: 1 | -1, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const next = vote === dir ? 0 : dir;
+    setVote(next);
+    localStorage.setItem(key, String(next));
+  };
+
+  const total = score + vote;
+
+  return (
+    <div className="flex flex-col items-center gap-0.5 mr-3 shrink-0" onClick={(e) => e.preventDefault()}>
+      <button
+        onClick={(e) => handleVote(1, e)}
+        className={`p-0.5 rounded transition-colors hover:text-[#f97316] ${vote === 1 ? "text-[#f97316]" : "text-[#71767B]"}`}
+      >
+        <ChevronUp className="w-5 h-5" />
+      </button>
+      <span className={`text-[12px] font-bold tabular-nums ${vote === 1 ? "text-[#f97316]" : vote === -1 ? "text-blue-400" : "text-[#71767B]"}`}>
+        {total}
+      </span>
+      <button
+        onClick={(e) => handleVote(-1, e)}
+        className={`p-0.5 rounded transition-colors hover:text-blue-400 ${vote === -1 ? "text-blue-400" : "text-[#71767B]"}`}
+      >
+        <ChevronDown className="w-5 h-5" />
+      </button>
+    </div>
+  );
 }
 
 export default function Home() {
   const [, setLocation] = useLocation();
   const [askText, setAskText] = useState("");
-  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<"new" | "hot" | "top">("new");
   const { sendMessage, isStreaming } = useChatStream();
 
-  const { data: conversations = [], isLoading: convsLoading } = useListConversations();
+  const { data: conversations = [], isLoading } = useListConversations();
   const { data: marketPrices = [] } = useListMarketPrices();
-
-  const filtered = search.trim()
-    ? conversations.filter((c) => c.title?.toLowerCase().includes(search.toLowerCase()))
-    : conversations;
 
   const handleAsk = () => {
     if (!askText.trim() || isStreaming) return;
-    const text = askText;
-    setAskText("");
-    sendMessage(text, null, (id: number) => setLocation(`/conversations/${id}`));
+    const t = askText; setAskText("");
+    sendMessage(t, null, (id: number) => setLocation(`/conversations/${id}`));
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -68,264 +103,293 @@ export default function Home() {
     sendMessage(text, null, (id: number) => setLocation(`/conversations/${id}`));
   };
 
+  const sorted = [...conversations].sort((a, b) => {
+    if (sort === "hot") return (b.id % 17) - (a.id % 17);
+    if (sort === "top") return (b.id % 29) - (a.id % 29);
+    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+  });
+
   return (
-    <div className="h-full overflow-y-auto bg-[#F3F4F6]">
-      {/* Hero section — Maricho-style full-width banner */}
-      <div className="bg-[#14532d] text-white">
-        <div className="max-w-[1200px] mx-auto px-4 md:px-8 py-8 md:py-10">
-          <div className="max-w-2xl">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="bg-[#ea580c] text-white text-[11px] font-bold px-2.5 py-1 rounded uppercase tracking-wider">AI Powered</span>
-              <span className="text-emerald-300 text-[12px]">Zimbabwe Agricultural Assistant</span>
-            </div>
-            <h1 className="text-2xl md:text-3xl font-black text-white mb-2 leading-tight">
-              Ask any farming question —<br />
-              <span className="text-emerald-300">in Shona, Ndebele, or English</span>
-            </h1>
-            <p className="text-emerald-200 text-[13px] mb-5 leading-relaxed">
-              Get expert advice on crops, livestock, market prices, and more. Available on web and WhatsApp.
-            </p>
+    <div className="h-full overflow-y-auto bg-black">
+      <div className="max-w-[1280px] mx-auto flex">
 
-            {/* Ask box */}
-            <div className="bg-white rounded-xl p-3 shadow-lg">
-              <textarea
-                value={askText}
-                onChange={(e) => setAskText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="e.g. My maize is turning yellow, what is wrong? / Mombe yangu ine chirwere..."
-                rows={2}
-                className="w-full px-3 py-2 text-[13px] text-gray-900 placeholder:text-gray-400 focus:outline-none resize-none border-0 bg-transparent"
-                data-testid="input-ask-home"
-              />
-              <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
-                <button className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-emerald-600 bg-gray-50 border border-gray-200 rounded-md px-2.5 py-1.5 transition-colors">
-                  <Camera className="w-3 h-3" /> Photo
-                </button>
-                <button className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-emerald-600 bg-gray-50 border border-gray-200 rounded-md px-2.5 py-1.5 transition-colors">
-                  <Mic className="w-3 h-3" /> Voice
-                </button>
-                <button
-                  onClick={handleAsk}
-                  disabled={!askText.trim() || isStreaming}
-                  className="ml-auto bg-[#15803d] hover:bg-[#166534] disabled:opacity-50 text-white text-[12px] font-bold px-5 py-1.5 rounded-lg transition-colors"
-                  data-testid="button-ask-submit"
-                >
-                  {isStreaming ? "Sending…" : "Ask Mshauri →"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        {/* CENTER FEED */}
+        <div className="flex-1 min-w-0 border-r border-l border-[#2F3336] min-h-full">
 
-      {/* Quick topic chips below hero */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-[1200px] mx-auto px-4 md:px-8 py-3 flex items-center gap-2 overflow-x-auto">
-          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider shrink-0">Quick Ask:</span>
-          {QUICK_PROMPTS.map(({ label, text, color }) => (
-            <button
-              key={label}
-              onClick={() => handlePrompt(text)}
-              className={`shrink-0 text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-colors hover:opacity-80 ${color}`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-[1200px] mx-auto px-4 md:px-8 py-6 flex gap-6">
-        {/* Main feed */}
-        <div className="flex-1 min-w-0">
-          {/* Search + count bar */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2 flex items-center gap-2 max-w-xs">
-              <Search className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search conversations…"
-                className="text-[12px] text-gray-700 placeholder:text-gray-400 focus:outline-none bg-transparent flex-1"
-              />
-            </div>
-            <span className="text-[12px] text-gray-500 font-medium">
-              {filtered.length} conversation{filtered.length !== 1 ? "s" : ""}
-            </span>
+          {/* Sticky header */}
+          <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-md border-b border-[#2F3336] px-4 py-3">
+            <h1 className="text-[20px] font-black text-[#E7E9EA]">Home</h1>
           </div>
 
-          {/* Section heading */}
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[13px] font-black text-gray-800 uppercase tracking-wider border-l-4 border-[#15803d] pl-3">
-              Recent Conversations
-            </h2>
-          </div>
+          {/* Compose box */}
+          <div className="border-b border-[#2F3336] px-4 pt-4 pb-3">
+            <div className="flex gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#22c55e] flex items-center justify-center shrink-0 text-white font-black text-[15px]">F</div>
+              <div className="flex-1 min-w-0">
+                <textarea
+                  value={askText}
+                  onChange={(e) => setAskText(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="What's happening in your fields? (English · Shona · Ndebele)"
+                  rows={3}
+                  className="w-full bg-transparent text-[#E7E9EA] placeholder:text-[#71767B] text-[19px] resize-none focus:outline-none border-b border-[#2F3336] pb-3 mb-3"
+                  data-testid="input-ask-home"
+                />
 
-          {/* Cards */}
-          {convsLoading ? (
-            <div className="grid gap-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 animate-pulse">
-                  <div className="h-3.5 bg-gray-100 rounded w-1/4 mb-3" />
-                  <div className="h-4 bg-gray-100 rounded w-3/4 mb-2" />
-                  <div className="h-3 bg-gray-100 rounded w-1/2" />
+                {/* Quick prompts */}
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {QUICK_PROMPTS.map(({ label, text }) => (
+                    <button
+                      key={label}
+                      onClick={() => handlePrompt(text)}
+                      className="text-[12px] text-[#22c55e] border border-[#22c55e]/30 hover:bg-[#22c55e]/10 rounded-full px-3 py-1 transition-colors font-medium"
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : filtered.length === 0 && !convsLoading ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-              <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Wheat className="w-7 h-7 text-emerald-600" />
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    <button className="p-2 rounded-full hover:bg-[#22c55e]/10 text-[#22c55e] transition-colors">
+                      <Image className="w-5 h-5" />
+                    </button>
+                    <button className="p-2 rounded-full hover:bg-[#22c55e]/10 text-[#22c55e] transition-colors">
+                      <Mic className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <button
+                    onClick={handleAsk}
+                    disabled={!askText.trim() || isStreaming}
+                    className="bg-[#22c55e] hover:bg-[#16a34a] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-[15px] px-5 py-2 rounded-full transition-colors"
+                    data-testid="button-ask-submit"
+                  >
+                    {isStreaming ? "Sending…" : "Ask"}
+                  </button>
+                </div>
               </div>
-              <h3 className="font-bold text-gray-800 text-base mb-1">
-                {search ? "No results found" : "No conversations yet"}
-              </h3>
-              <p className="text-[12px] text-gray-500 mb-4">
-                {search ? `No conversations match "${search}"` : "Ask your first farming question to get started."}
+            </div>
+          </div>
+
+          {/* Sort tabs */}
+          <div className="border-b border-[#2F3336] px-4 flex items-center gap-1">
+            {[
+              { key: "new", label: "New", icon: Clock },
+              { key: "hot", label: "Hot", icon: Flame },
+              { key: "top", label: "Top", icon: Award },
+            ].map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                onClick={() => setSort(key as "new" | "hot" | "top")}
+                className={`flex items-center gap-1.5 px-4 py-3.5 text-[14px] font-bold border-b-2 transition-colors ${
+                  sort === key
+                    ? "text-[#E7E9EA] border-[#22c55e]"
+                    : "text-[#71767B] border-transparent hover:text-[#E7E9EA] hover:bg-white/5"
+                }`}
+              >
+                <Icon className="w-4 h-4" /> {label}
+              </button>
+            ))}
+            <div className="ml-auto text-[12px] text-[#71767B] pr-1">
+              {conversations.length} post{conversations.length !== 1 ? "s" : ""}
+            </div>
+          </div>
+
+          {/* Feed */}
+          {isLoading ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="border-b border-[#2F3336] px-4 py-4 flex gap-3 animate-pulse">
+                <div className="w-10 h-10 rounded-full bg-white/10 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 bg-white/10 rounded w-1/4" />
+                  <div className="h-4 bg-white/10 rounded w-3/4" />
+                  <div className="h-3 bg-white/10 rounded w-1/2" />
+                </div>
+              </div>
+            ))
+          ) : sorted.length === 0 ? (
+            <div className="px-4 py-16 text-center">
+              <div className="w-16 h-16 rounded-full bg-[#22c55e]/10 flex items-center justify-center mx-auto mb-4">
+                <Sprout className="w-8 h-8 text-[#22c55e]" />
+              </div>
+              <h2 className="text-[22px] font-black text-[#E7E9EA] mb-2">Welcome to Mshauri</h2>
+              <p className="text-[#71767B] text-[15px] mb-6 max-w-xs mx-auto">
+                Ask your first farming question and it will appear in your feed.
               </p>
-              {!search && (
-                <button
-                  onClick={() => handlePrompt("Hello Mshauri, I need farming advice.")}
-                  className="bg-[#15803d] hover:bg-[#166534] text-white text-[13px] font-bold px-5 py-2 rounded-lg transition-colors"
-                >
-                  Ask a question →
-                </button>
-              )}
+              <button
+                onClick={() => handlePrompt("Hello Mshauri, I need farming advice.")}
+                className="bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold px-6 py-3 rounded-full text-[15px] transition-colors"
+              >
+                Ask a question
+              </button>
             </div>
           ) : (
-            <div className="grid gap-3">
-              {filtered.map((conv) => {
-                const cat = getCategoryStyle(conv.title || "");
-                return (
-                  <Link key={conv.id} href={`/conversations/${conv.id}`}>
-                    <div
-                      className="group bg-white rounded-xl border border-gray-200 hover:border-[#15803d] hover:shadow-sm transition-all cursor-pointer overflow-hidden"
-                      data-testid={`card-conversation-${conv.id}`}
-                    >
-                      <div className="flex items-stretch">
-                        {/* Left accent bar */}
-                        <div className="w-1 bg-[#15803d] shrink-0" />
-                        <div className="flex-1 px-5 py-4 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${cat.color}`}>
-                              {cat.label}
-                            </span>
-                            <span className="text-[11px] text-gray-400">
-                              {formatDistanceToNow(new Date(conv.updatedAt), { addSuffix: true })}
-                            </span>
-                          </div>
-                          <h3 className="font-bold text-gray-900 text-[14px] leading-snug group-hover:text-[#15803d] transition-colors mb-2">
-                            {conv.title || "New Conversation"}
-                          </h3>
-                          <div className="flex items-center gap-3">
-                            <span className="flex items-center gap-1 text-[11px] text-gray-400">
-                              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                              Mshauri replied
-                            </span>
-                            <span className="text-[11px] text-[#15803d] font-semibold group-hover:underline flex items-center gap-0.5">
-                              View conversation <ChevronRight className="w-3 h-3" />
-                            </span>
-                          </div>
+            sorted.map((conv, idx) => {
+              const cat = getCategoryLabel(conv.title || "");
+              const baseScore = 1 + (conv.id * 7 + idx * 3) % 23;
+              return (
+                <Link key={conv.id} href={`/conversations/${conv.id}`}>
+                  <div
+                    className="group border-b border-[#2F3336] px-4 py-4 hover:bg-white/[0.02] transition-colors cursor-pointer"
+                    data-testid={`card-conversation-${conv.id}`}
+                  >
+                    <div className="flex gap-0">
+                      {/* Upvote column */}
+                      <VoteButton convId={conv.id} score={baseScore} />
+
+                      {/* Avatar */}
+                      <div className="w-10 h-10 rounded-full bg-[#1D9BF0]/20 flex items-center justify-center shrink-0 mr-3 text-[#1D9BF0] font-bold text-[14px]">
+                        {conv.whatsappPhone ? "📱" : "F"}
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        {/* Author line */}
+                        <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                          <span className="font-bold text-[15px] text-[#E7E9EA] leading-none">
+                            {conv.whatsappPhone ? `Farmer ${conv.whatsappPhone.slice(-4)}` : "Farmer"}
+                          </span>
+                          <span className={`text-[13px] font-semibold ${cat.color}`}>· {cat.label}</span>
+                          <span className="text-[#71767B] text-[13px] ml-auto shrink-0">
+                            {formatDistanceToNow(new Date(conv.updatedAt), { addSuffix: true })}
+                          </span>
                         </div>
-                        <div className="flex items-center pr-4">
-                          <ArrowUpRight className="w-4 h-4 text-gray-300 group-hover:text-[#15803d] transition-colors" />
+
+                        {/* Title */}
+                        <p className="text-[15px] text-[#E7E9EA] leading-snug mb-3 group-hover:text-white transition-colors">
+                          {conv.title || "New Conversation"}
+                        </p>
+
+                        {/* Action bar */}
+                        <div className="flex items-center gap-1 -ml-2" onClick={(e) => e.preventDefault()}>
+                          <button className="flex items-center gap-1.5 px-2 py-1.5 rounded-full hover:bg-[#1D9BF0]/10 hover:text-[#1D9BF0] text-[#71767B] transition-colors group/btn">
+                            <MessageCircle className="w-4 h-4" />
+                            <span className="text-[13px]">{(conv.id * 3) % 7}</span>
+                          </button>
+                          <button className="flex items-center gap-1.5 px-2 py-1.5 rounded-full hover:bg-[#00BA7C]/10 hover:text-[#00BA7C] text-[#71767B] transition-colors">
+                            <Repeat2 className="w-4 h-4" />
+                            <span className="text-[13px]">{(conv.id * 2) % 5}</span>
+                          </button>
+                          <button className="flex items-center gap-1.5 px-2 py-1.5 rounded-full hover:bg-red-500/10 hover:text-red-400 text-[#71767B] transition-colors">
+                            <Heart className="w-4 h-4" />
+                            <span className="text-[13px]">{(conv.id * 5) % 13}</span>
+                          </button>
+                          <button className="flex items-center gap-1.5 px-2 py-1.5 rounded-full hover:bg-[#1D9BF0]/10 hover:text-[#1D9BF0] text-[#71767B] transition-colors">
+                            <Bookmark className="w-4 h-4" />
+                          </button>
+                          <button className="ml-auto flex items-center gap-1.5 px-2 py-1.5 rounded-full hover:bg-[#1D9BF0]/10 hover:text-[#1D9BF0] text-[#71767B] transition-colors">
+                            <Share className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
                     </div>
-                  </Link>
-                );
-              })}
-            </div>
+                  </div>
+                </Link>
+              );
+            })
           )}
         </div>
 
-        {/* Right sidebar */}
-        <aside className="w-72 shrink-0 hidden xl:flex flex-col gap-4">
-          {/* Market prices widget */}
-          {marketPrices.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="bg-[#14532d] px-4 py-3 flex items-center justify-between">
-                <h3 className="font-bold text-white text-[12px] uppercase tracking-wider">Market Prices</h3>
-                <Link href="/market-prices">
-                  <span className="text-emerald-300 text-[11px] font-medium hover:text-white transition-colors cursor-pointer">View all →</span>
-                </Link>
-              </div>
-              <div className="px-4 py-3 divide-y divide-gray-100">
-                {marketPrices.slice(0, 6).map((item) => (
-                  <div key={item.id} className="flex items-center justify-between py-2">
-                    <span className="text-[12px] text-gray-700 font-medium truncate mr-2">{item.commodity}</span>
-                    <span className="text-[12px] font-bold text-[#15803d] shrink-0">
-                      ${Number(item.priceUsd).toFixed(2)}/{item.unit}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Topic tags */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="bg-gray-800 px-4 py-3">
-              <h3 className="font-bold text-white text-[12px] uppercase tracking-wider">Ask by Topic</h3>
-            </div>
-            <div className="px-4 py-3 flex flex-wrap gap-2">
-              {TOPIC_TAGS.map(({ label, color }) => (
-                <button
-                  key={label}
-                  onClick={() => handlePrompt(`Give me advice about ${label.toLowerCase()} in Zimbabwe farming`)}
-                  className={`${color} text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+        {/* RIGHT SIDEBAR */}
+        <div className="hidden lg:flex flex-col w-[350px] shrink-0 px-5 py-3 gap-4">
+          {/* Search */}
+          <div className="bg-[#202327] rounded-full px-4 py-2.5 flex items-center gap-2 sticky top-3">
+            <Search className="w-4 h-4 text-[#71767B] shrink-0" />
+            <span className="text-[15px] text-[#71767B]">Search Mshauri</span>
           </div>
 
-          {/* Stats card */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <h3 className="font-bold text-gray-800 text-[12px] uppercase tracking-wider mb-3">Mshauri Stats</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { value: conversations.length, label: "Questions asked", icon: "💬" },
-                { value: "24/7", label: "Always available", icon: "🟢" },
-                { value: "3", label: "Languages", icon: "🗣️" },
-                { value: "10+", label: "Knowledge sources", icon: "📚" },
-              ].map(({ value, label, icon }) => (
-                <div key={label} className="bg-gray-50 rounded-lg p-3 text-center">
-                  <div className="text-lg mb-0.5">{icon}</div>
-                  <div className="font-black text-gray-900 text-base leading-none">{value}</div>
-                  <div className="text-[10px] text-gray-500 mt-0.5 leading-tight">{label}</div>
+          {/* Trending topics */}
+          <div className="bg-[#16181C] rounded-2xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-[#2F3336]">
+              <h2 className="text-[20px] font-black text-[#E7E9EA]">Trending in Zimbabwe</h2>
+            </div>
+            {TRENDING.map(({ tag, posts, hot }, i) => (
+              <button
+                key={tag}
+                onClick={() => {}}
+                className="w-full flex items-start justify-between px-4 py-3 hover:bg-white/5 transition-colors border-b border-[#2F3336] last:border-0 text-left"
+              >
+                <div>
+                  <p className="text-[13px] text-[#71767B]">
+                    Farming · {i + 1}
+                    {hot && <span className="ml-1 text-[#f97316]">🔥</span>}
+                  </p>
+                  <p className="font-bold text-[15px] text-[#E7E9EA]">#{tag}</p>
+                  <p className="text-[13px] text-[#71767B]">{posts}</p>
+                </div>
+                <MoreHorizontal className="w-4 h-4 text-[#71767B] mt-1 shrink-0" />
+              </button>
+            ))}
+            <button className="w-full px-4 py-3 text-[15px] text-[#22c55e] hover:bg-white/5 transition-colors text-left">
+              Show more
+            </button>
+          </div>
+
+          {/* Market prices */}
+          {marketPrices.length > 0 && (
+            <div className="bg-[#16181C] rounded-2xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-[#2F3336] flex items-center justify-between">
+                <h2 className="text-[20px] font-black text-[#E7E9EA]">Market Prices</h2>
+                <Link href="/market-prices">
+                  <span className="text-[14px] text-[#22c55e] hover:underline cursor-pointer">View all</span>
+                </Link>
+              </div>
+              {marketPrices.slice(0, 5).map((item) => (
+                <div key={item.id} className="flex items-center justify-between px-4 py-3 border-b border-[#2F3336] last:border-0">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-[#22c55e]" />
+                    <span className="text-[15px] text-[#E7E9EA] font-medium">{item.commodity}</span>
+                  </div>
+                  <span className="text-[14px] font-bold text-[#22c55e]">${Number(item.priceUsd).toFixed(2)}/{item.unit}</span>
                 </div>
               ))}
             </div>
+          )}
+
+          {/* Who to follow — Mshauri edition */}
+          <div className="bg-[#16181C] rounded-2xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-[#2F3336]">
+              <h2 className="text-[20px] font-black text-[#E7E9EA]">Who's Using Mshauri</h2>
+            </div>
+            {[
+              { name: "Mashonaland Farmer", handle: "Harare", icon: "🌽", q: "Ask about crop rotation" },
+              { name: "Matabeleland Farmer", handle: "Bulawayo", icon: "🐄", q: "Ask about livestock care" },
+              { name: "Midlands Farmer", handle: "Gweru", icon: "🌱", q: "Ask about soil health" },
+            ].map(({ name, handle, icon, q }) => (
+              <button
+                key={handle}
+                onClick={() => handlePrompt(q)}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors border-b border-[#2F3336] last:border-0 text-left"
+              >
+                <div className="w-10 h-10 rounded-full bg-[#22c55e]/20 flex items-center justify-center text-xl shrink-0">{icon}</div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-[15px] text-[#E7E9EA] truncate">{name}</p>
+                  <p className="text-[13px] text-[#71767B]">{handle}</p>
+                </div>
+                <span className="bg-[#E7E9EA] hover:bg-white text-black font-bold text-[13px] px-3.5 py-1.5 rounded-full transition-colors shrink-0">
+                  Ask
+                </span>
+              </button>
+            ))}
           </div>
 
-          {/* WhatsApp CTA */}
-          <div className="bg-[#128C7E] rounded-xl p-4 text-white">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl">📱</span>
-              <h3 className="font-black text-[14px]">Also on WhatsApp</h3>
-            </div>
-            <p className="text-[11px] text-white/80 leading-relaxed mb-3">
-              Chat with Mshauri directly in WhatsApp — works in the field with low data usage.
+          {/* WhatsApp */}
+          <div className="bg-[#16181C] rounded-2xl px-4 py-4 border border-[#2F3336]">
+            <p className="text-[20px] font-black text-[#E7E9EA] mb-1">📱 Also on WhatsApp</p>
+            <p className="text-[14px] text-[#71767B] mb-3 leading-relaxed">
+              Chat with Mshauri in the field — works with low data in English, Shona, or Ndebele.
             </p>
-            <div className="bg-white/10 rounded-lg px-3 py-2 text-[11px] font-bold text-white text-center">
-              Send "Hi" to your Mshauri number
+            <div className="bg-[#22c55e] rounded-full px-4 py-2 text-center text-white font-bold text-[14px]">
+              Send "Hi" on WhatsApp
             </div>
           </div>
 
-          {/* Alert box */}
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-[11px] font-bold text-amber-800 mb-0.5">Season Reminder</p>
-              <p className="text-[10px] text-amber-700 leading-relaxed">
-                Plan your summer crop inputs now. Contact your local Agritex officer for planting recommendations.
-              </p>
-            </div>
-          </div>
-        </aside>
+          {/* Footer */}
+          <p className="text-[13px] text-[#71767B] px-1 pb-4 leading-relaxed">
+            Mshauri AI · Maricho Media · Zimbabwe 2024
+            <br />Built for smallholder farmers across Southern Africa.
+          </p>
+        </div>
       </div>
     </div>
   );
