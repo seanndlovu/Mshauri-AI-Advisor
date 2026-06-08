@@ -4,7 +4,7 @@ import { useListConversations } from "@workspace/api-client-react";
 import { useChatStream } from "@/hooks/use-chat-stream";
 import { formatDistanceToNow } from "date-fns";
 import {
-  Image, Mic, MessageCircle, Repeat2, Heart, Share, Bookmark,
+  Image, Mic, MessageCircle, ThumbsUp, ThumbsDown, Share, Bookmark,
   ChevronUp, ChevronDown, Search, Sprout,
   Flame, Clock, Award, MoreHorizontal, Pin, PinOff,
   Send, X, Check, Copy, Link2,
@@ -140,29 +140,28 @@ function PostCard({ conv, baseScore, isPinned, onPin, onToast }: PostCardProps) 
   const cat = getCategoryLabel(conv.title || "");
   const authorName = conv.whatsappPhone ? `Farmer ${conv.whatsappPhone.slice(-4)}` : "Farmer";
 
-  // ── Like
-  const [liked, setLiked] = useState(() => ls(`liked_${conv.id}`, false));
-  const [likeCount, setLikeCount] = useState(() => ls(`likeCount_${conv.id}`, (conv.id * 5) % 13));
-  const [likeAnim, setLikeAnim] = useState(false);
-  const handleLike = (e: React.MouseEvent) => {
+  // ── Upvote
+  const [upvoted, setUpvoted] = useState(() => ls(`upvoted_${conv.id}`, false));
+  const [upvoteCount, setUpvoteCount] = useState(() => ls(`upvoteCount_${conv.id}`, (conv.id * 5) % 13));
+  const [upvoteAnim, setUpvoteAnim] = useState(false);
+  const handleUpvote = (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
-    const next = !liked;
-    const nextCount = next ? likeCount + 1 : Math.max(0, likeCount - 1);
-    setLiked(next); setLikeCount(nextCount);
-    lsSet(`liked_${conv.id}`, next); lsSet(`likeCount_${conv.id}`, nextCount);
-    if (next) { setLikeAnim(true); setTimeout(() => setLikeAnim(false), 600); }
+    const next = !upvoted;
+    const nextCount = next ? upvoteCount + 1 : Math.max(0, upvoteCount - 1);
+    setUpvoted(next); setUpvoteCount(nextCount);
+    lsSet(`upvoted_${conv.id}`, next); lsSet(`upvoteCount_${conv.id}`, nextCount);
+    if (next) { setUpvoteAnim(true); setTimeout(() => setUpvoteAnim(false), 600); }
   };
 
-  // ── Reshare
-  const [reshared, setReshared] = useState(() => ls(`reshared_${conv.id}`, false));
-  const [reshareCount, setReshareCount] = useState(() => ls(`reshareCount_${conv.id}`, (conv.id * 2) % 5));
-  const handleReshare = (e: React.MouseEvent) => {
+  // ── Downvote
+  const [downvoted, setDownvoted] = useState(() => ls(`downvoted_${conv.id}`, false));
+  const [downvoteCount, setDownvoteCount] = useState(() => ls(`downvoteCount_${conv.id}`, (conv.id * 2) % 5));
+  const handleDownvote = (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
-    const next = !reshared;
-    const nextCount = next ? reshareCount + 1 : Math.max(0, reshareCount - 1);
-    setReshared(next); setReshareCount(nextCount);
-    lsSet(`reshared_${conv.id}`, next); lsSet(`reshareCount_${conv.id}`, nextCount);
-    onToast(next ? "Reshared to your followers" : "Reshare removed");
+    const next = !downvoted;
+    const nextCount = next ? downvoteCount + 1 : Math.max(0, downvoteCount - 1);
+    setDownvoted(next); setDownvoteCount(nextCount);
+    lsSet(`downvoted_${conv.id}`, next); lsSet(`downvoteCount_${conv.id}`, nextCount);
   };
 
   // ── Bookmark
@@ -246,13 +245,6 @@ function PostCard({ conv, baseScore, isPinned, onPin, onToast }: PostCardProps) 
                 {conv.title || "New Conversation"}
               </p>
 
-              {/* Reshare banner */}
-              {reshared && (
-                <div className="flex items-center gap-1.5 mb-2 text-[#00BA7C] text-[12px] font-semibold">
-                  <Repeat2 className="w-3.5 h-3.5" /> You reshared this
-                </div>
-              )}
-
               {/* Action bar */}
               <div className="flex items-center justify-between" onClick={(e) => e.preventDefault()}>
                 {/* Reply */}
@@ -264,22 +256,22 @@ function PostCard({ conv, baseScore, isPinned, onPin, onToast }: PostCardProps) 
                   <span className="text-[13px]">{replyCount}</span>
                 </button>
 
-                {/* Reshare */}
+                {/* Downvote */}
                 <button
-                  onClick={handleReshare}
-                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-full transition-all hover:bg-[#00BA7C]/10 active:scale-110 ${reshared ? "text-[#00BA7C]" : "text-[#71767B] hover:text-[#00BA7C]"}`}
+                  onClick={handleDownvote}
+                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-full transition-all hover:bg-blue-400/10 active:scale-110 ${downvoted ? "text-blue-400" : "text-[#71767B] hover:text-blue-400"}`}
                 >
-                  <Repeat2 className={`w-4 h-4 ${reshared ? "drop-shadow-[0_0_4px_#00BA7C]" : ""}`} />
-                  <span className="text-[13px]">{reshareCount}</span>
+                  <ThumbsDown className={`w-4 h-4 ${downvoted ? "fill-blue-400 drop-shadow-[0_0_4px_#60a5fa]" : ""}`} />
+                  <span className="text-[13px]">{downvoteCount}</span>
                 </button>
 
-                {/* Like */}
+                {/* Upvote */}
                 <button
-                  onClick={handleLike}
-                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-full transition-all hover:bg-red-500/10 active:scale-110 ${liked ? "text-red-400" : "text-[#71767B] hover:text-red-400"}`}
+                  onClick={handleUpvote}
+                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-full transition-all hover:bg-[#22c55e]/10 active:scale-110 ${upvoted ? "text-[#22c55e]" : "text-[#71767B] hover:text-[#22c55e]"}`}
                 >
-                  <Heart className={`w-4 h-4 transition-all duration-300 ${liked ? "fill-red-400 drop-shadow-[0_0_6px_#f87171]" : ""} ${likeAnim ? "scale-125" : "scale-100"}`} />
-                  <span className="text-[13px]">{likeCount}</span>
+                  <ThumbsUp className={`w-4 h-4 transition-all duration-300 ${upvoted ? "fill-[#22c55e] drop-shadow-[0_0_6px_#22c55e]" : ""} ${upvoteAnim ? "scale-125" : "scale-100"}`} />
+                  <span className="text-[13px]">{upvoteCount}</span>
                 </button>
 
                 {/* Bookmark */}
@@ -578,7 +570,7 @@ export default function Home() {
             <p className="text-[20px] font-black text-[#E7E9EA] mb-1">📱 Also on WhatsApp</p>
             <p className="text-[14px] text-[#71767B] mb-3 leading-relaxed">Chat with Mshauri in the field — works with low data in English, Shona, or Ndebele.</p>
             <a
-              href="https://wa.me/263714280244?text=Hi"
+              href="https://wa.me/263714280244?text=Mshauri"
               target="_blank"
               rel="noopener noreferrer"
               className="block bg-[#22c55e] hover:bg-[#16a34a] rounded-full px-4 py-2.5 text-center text-white font-bold text-[14px] transition-colors"
