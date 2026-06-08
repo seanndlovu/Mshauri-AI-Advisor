@@ -20,12 +20,17 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AddEmailContact409,
+  AddEmailContactInput,
+  AddWhatsappContact409,
+  AddWhatsappContactInput,
   AnalyticsSummary,
   Article,
   ArticleInput,
   ArticleUpdate,
   Broadcast,
   BroadcastInput,
+  Contact,
   Conversation,
   ConversationInput,
   Farmer,
@@ -1706,4 +1711,223 @@ export function useGetAnalyticsSummary<TData = Awaited<ReturnType<typeof getAnal
 
 
 
+
+export const getListContactsUrl = () => {
+
+
+
+
+  return `/api/contacts`
+}
+
+/**
+ * @summary List all contacts (anonymised)
+ */
+export const listContacts = async ( options?: RequestInit): Promise<Contact[]> => {
+
+  return customFetch<Contact[]>(getListContactsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListContactsQueryKey = () => {
+    return [
+    `/api/contacts`
+    ] as const;
+    }
+
+
+export const getListContactsQueryOptions = <TData = Awaited<ReturnType<typeof listContacts>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listContacts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListContactsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listContacts>>> = ({ signal }) => listContacts({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listContacts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListContactsQueryResult = NonNullable<Awaited<ReturnType<typeof listContacts>>>
+export type ListContactsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all contacts (anonymised)
+ */
+
+export function useListContacts<TData = Awaited<ReturnType<typeof listContacts>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listContacts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListContactsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getAddEmailContactUrl = () => {
+
+
+
+
+  return `/api/contacts/email`
+}
+
+/**
+ * @summary Register an email contact
+ */
+export const addEmailContact = async (addEmailContactInput: AddEmailContactInput, options?: RequestInit): Promise<Contact> => {
+
+  return customFetch<Contact>(getAddEmailContactUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      addEmailContactInput,)
+  }
+);}
+
+
+
+
+export const getAddEmailContactMutationOptions = <TError = ErrorType<AddEmailContact409>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addEmailContact>>, TError,{data: BodyType<AddEmailContactInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addEmailContact>>, TError,{data: BodyType<AddEmailContactInput>}, TContext> => {
+
+const mutationKey = ['addEmailContact'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addEmailContact>>, {data: BodyType<AddEmailContactInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  addEmailContact(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddEmailContactMutationResult = NonNullable<Awaited<ReturnType<typeof addEmailContact>>>
+    export type AddEmailContactMutationBody = BodyType<AddEmailContactInput>
+    export type AddEmailContactMutationError = ErrorType<AddEmailContact409>
+
+    /**
+ * @summary Register an email contact
+ */
+export const useAddEmailContact = <TError = ErrorType<AddEmailContact409>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addEmailContact>>, TError,{data: BodyType<AddEmailContactInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addEmailContact>>,
+        TError,
+        {data: BodyType<AddEmailContactInput>},
+        TContext
+      > => {
+      return useMutation(getAddEmailContactMutationOptions(options));
+    }
+
+export const getAddWhatsappContactUrl = () => {
+
+
+
+
+  return `/api/contacts/whatsapp`
+}
+
+/**
+ * @summary Register a WhatsApp phone contact
+ */
+export const addWhatsappContact = async (addWhatsappContactInput: AddWhatsappContactInput, options?: RequestInit): Promise<Contact> => {
+
+  return customFetch<Contact>(getAddWhatsappContactUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      addWhatsappContactInput,)
+  }
+);}
+
+
+
+
+export const getAddWhatsappContactMutationOptions = <TError = ErrorType<AddWhatsappContact409>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addWhatsappContact>>, TError,{data: BodyType<AddWhatsappContactInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addWhatsappContact>>, TError,{data: BodyType<AddWhatsappContactInput>}, TContext> => {
+
+const mutationKey = ['addWhatsappContact'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addWhatsappContact>>, {data: BodyType<AddWhatsappContactInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  addWhatsappContact(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddWhatsappContactMutationResult = NonNullable<Awaited<ReturnType<typeof addWhatsappContact>>>
+    export type AddWhatsappContactMutationBody = BodyType<AddWhatsappContactInput>
+    export type AddWhatsappContactMutationError = ErrorType<AddWhatsappContact409>
+
+    /**
+ * @summary Register a WhatsApp phone contact
+ */
+export const useAddWhatsappContact = <TError = ErrorType<AddWhatsappContact409>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addWhatsappContact>>, TError,{data: BodyType<AddWhatsappContactInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addWhatsappContact>>,
+        TError,
+        {data: BodyType<AddWhatsappContactInput>},
+        TContext
+      > => {
+      return useMutation(getAddWhatsappContactMutationOptions(options));
+    }
 

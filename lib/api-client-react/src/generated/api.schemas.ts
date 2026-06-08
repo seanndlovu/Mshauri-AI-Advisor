@@ -214,6 +214,34 @@ export interface AnalyticsSummary {
   topEventTypes: AnalyticsSummaryTopEventTypesItem[];
 }
 
+export type ContactType = typeof ContactType[keyof typeof ContactType];
+
+
+export const ContactType = {
+  whatsapp: 'whatsapp',
+  email: 'email',
+} as const;
+
+export interface Contact {
+  id?: number;
+  type: ContactType;
+  /** Anonymised display value */
+  display: string;
+  label?: string;
+  source?: string;
+  createdAt: string;
+}
+
+export interface AddEmailContactInput {
+  email: string;
+  label?: string;
+}
+
+export interface AddWhatsappContactInput {
+  phone: string;
+  label?: string;
+}
+
 export type ListArticlesParams = {
 category?: string;
 language?: string;
@@ -232,5 +260,13 @@ market?: string;
 
 export type GetAnalyticsSummaryParams = {
 days?: number;
+};
+
+export type AddEmailContact409 = {
+  error?: string;
+};
+
+export type AddWhatsappContact409 = {
+  error?: string;
 };
 

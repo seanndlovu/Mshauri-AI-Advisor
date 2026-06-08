@@ -383,3 +383,35 @@ export const GetAnalyticsSummaryResponse = zod.object({
 })
 
 
+/**
+ * @summary List all contacts (anonymised)
+ */
+export const ListContactsResponseItem = zod.object({
+  "id": zod.number().optional(),
+  "type": zod.enum(['whatsapp', 'email']),
+  "display": zod.string().describe('Anonymised display value'),
+  "label": zod.string().optional(),
+  "source": zod.string().optional(),
+  "createdAt": zod.coerce.date()
+})
+export const ListContactsResponse = zod.array(ListContactsResponseItem)
+
+
+/**
+ * @summary Register an email contact
+ */
+export const AddEmailContactBody = zod.object({
+  "email": zod.string().email(),
+  "label": zod.string().optional()
+})
+
+
+/**
+ * @summary Register a WhatsApp phone contact
+ */
+export const AddWhatsappContactBody = zod.object({
+  "phone": zod.string(),
+  "label": zod.string().optional()
+})
+
+

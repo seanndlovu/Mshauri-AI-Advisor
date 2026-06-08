@@ -6,6 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './addEmailContact409';
+export * from './addEmailContactInput';
+export * from './addWhatsappContact409';
+export * from './addWhatsappContactInput';
 export * from './analyticsSummary';
 export * from './analyticsSummaryLanguageBreakdown';
 export * from './analyticsSummaryMessagesPerDayItem';
@@ -19,6 +23,8 @@ export * from './articleUpdateLanguage';
 export * from './broadcast';
 export * from './broadcastInput';
 export * from './broadcastStatus';
+export * from './contact';
+export * from './contactType';
 export * from './conversation';
 export * from './conversationInput';
 export * from './farmer';

@@ -4,3 +4,4 @@ export * from "./farmers";
 export * from "./market-prices";
 export * from "./broadcasts";
 export * from "./analytics";
+export * from "./contacts";

@@ -21,6 +21,8 @@ tags:
     description: WhatsApp broadcast messages
   - name: analytics
     description: Usage analytics
+  - name: contacts
+    description: Contact management (emails & WhatsApp)
 paths:
   /healthz:
     get:
@@ -441,6 +443,78 @@ paths:
               schema:
                 $ref: "#/components/schemas/AnalyticsSummary"
 
+
+  /contacts:
+    get:
+      operationId: listContacts
+      tags: [contacts]
+      summary: List all contacts (anonymised)
+      responses:
+        "200":
+          description: List of contacts with anonymised values
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Contact"
+
+  /contacts/email:
+    post:
+      operationId: addEmailContact
+      tags: [contacts]
+      summary: Register an email contact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddEmailContactInput"
+      responses:
+        "201":
+          description: Contact created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contact"
+        "409":
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+  /contacts/whatsapp:
+    post:
+      operationId: addWhatsappContact
+      tags: [contacts]
+      summary: Register a WhatsApp phone contact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddWhatsappContactInput"
+      responses:
+        "201":
+          description: Contact created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contact"
+        "409":
+          description: Phone already registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
 components:
   schemas:
     HealthStatus:
@@ -710,3 +784,41 @@ components:
                 type: string
               count:
                 type: integer
+    Contact:
+      type: object
+      required: [type, display, createdAt]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [whatsapp, email]
+        display:
+          type: string
+          description: Anonymised display value
+        label:
+          type: string
+        source:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    AddEmailContactInput:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+        label:
+          type: string
+
+    AddWhatsappContactInput:
+      type: object
+      required: [phone]
+      properties:
+        phone:
+          type: string
+        label:
+          type: string

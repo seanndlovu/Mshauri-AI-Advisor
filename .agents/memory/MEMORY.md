@@ -1,0 +1,1 @@
+- [OpenAPI YAML duplicate-key gotcha](openapi-yaml-dupe-key.md) — orval says "Failed to resolve input" when YAML has duplicate mapping keys (e.g. two `description:` lines at same indent level in the `tags:` block).

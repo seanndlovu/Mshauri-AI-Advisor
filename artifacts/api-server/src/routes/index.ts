@@ -7,6 +7,7 @@ import { farmersRouter } from "./farmers";
 import { marketPricesRouter } from "./market-prices";
 import { broadcastsRouter } from "./broadcasts";
 import { analyticsRouter } from "./analytics";
+import { contactsRouter } from "./contacts";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(farmersRouter);
 router.use(marketPricesRouter);
 router.use(broadcastsRouter);
 router.use(analyticsRouter);
+router.use(contactsRouter);
 
 export default router;
