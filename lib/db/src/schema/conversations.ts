@@ -5,6 +5,7 @@ import { z } from "zod/v4";
 export const conversationsTable = pgTable("conversations", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
+  whatsappPhone: text("whatsapp_phone"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
