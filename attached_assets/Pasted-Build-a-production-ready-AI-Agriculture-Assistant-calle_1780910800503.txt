@@ -1,0 +1,282 @@
+Build a production-ready AI Agriculture Assistant called "Mhauri AI" for Maricho Media.
+
+IMPORTANT:
+
+This is NOT a demo project.
+
+This must be production-ready, secure, scalable, and deployable.
+
+The goal of Phase 1 is to create a working WhatsApp agricultural assistant for Zimbabwean farmers.
+
+Do NOT build unnecessary complexity.
+
+Ignore the following for now:
+
+* Qdrant
+* Vector Databases
+* RAG
+* Farmer Profiles
+* Subscription Billing
+* Paynow
+* Admin Dashboard
+* Analytics
+* Multi-tenancy
+
+These will be added later.
+
+PHASE 1 OBJECTIVE
+
+Build:
+
+Farmer
+↓
+WhatsApp
+↓
+Meta WhatsApp Cloud API
+↓
+FastAPI Backend
+↓
+OpenAI GPT-5
+↓
+WhatsApp Response
+
+TECH STACK
+
+Backend:
+
+* Python 3.12
+* FastAPI
+* SQLAlchemy
+* PostgreSQL
+* Uvicorn
+
+AI:
+
+* OpenAI Responses API
+* GPT-5-mini by default
+* Easy upgrade path to GPT-5
+
+Messaging:
+
+* Meta WhatsApp Cloud API
+
+Hosting:
+
+* Replit Deployments
+
+Database:
+
+* PostgreSQL
+
+CONFIGURATION
+
+Use environment variables:
+
+OPENAI_API_KEY
+WHATSAPP_ACCESS_TOKEN
+WHATSAPP_PHONE_NUMBER_ID
+WHATSAPP_VERIFY_TOKEN
+DATABASE_URL
+
+PROJECT STRUCTURE
+
+/app
+main.py
+config.py
+
+/routes
+whatsapp.py
+health.py
+
+/services
+openai_service.py
+whatsapp_service.py
+
+/models
+database.py
+
+/schemas
+whatsapp.py
+
+/utils
+logging.py
+
+WEBHOOK REQUIREMENTS
+
+Create:
+
+GET /webhook
+
+Purpose:
+Meta webhook verification
+
+Validate:
+
+hub.mode
+hub.verify_token
+hub.challenge
+
+Return challenge when token matches.
+
+POST /webhook
+
+Receive incoming WhatsApp messages.
+
+Handle:
+
+Text messages
+
+Ignore:
+
+Status updates
+Delivery receipts
+Read receipts
+
+MESSAGE FLOW
+
+When a WhatsApp message arrives:
+
+1. Extract sender number.
+2. Extract text message.
+3. Send text to GPT-5-mini.
+4. Use agricultural system prompt.
+5. Receive response.
+6. Send response back to WhatsApp.
+
+SYSTEM PROMPT
+
+You are Mhauri AI.
+
+You are an agricultural extension officer for Zimbabwe.
+
+Provide practical, actionable farming advice.
+
+Focus on:
+
+* Crop production
+* Livestock management
+* Pest control
+* Disease management
+* Soil fertility
+* Irrigation
+* Climate-smart agriculture
+
+Support:
+
+* English
+* Shona
+* Ndebele
+
+If uncertain:
+
+Clearly state uncertainty.
+
+Do not invent facts.
+
+WHATSAPP SERVICE
+
+Implement:
+
+send_text_message()
+
+Use:
+
+https://graph.facebook.com/v23.0/{PHONE_NUMBER_ID}/messages
+
+Support:
+
+* text replies
+* error handling
+* retries
+
+DATABASE
+
+Create PostgreSQL tables:
+
+users
+messages
+
+users
+
+id
+phone_number
+created_at
+
+messages
+
+id
+user_id
+message_text
+response_text
+created_at
+
+Store all conversations.
+
+API ENDPOINTS
+
+GET /health
+
+Returns:
+
+{
+"status": "ok"
+}
+
+GET /webhook
+
+Meta verification
+
+POST /webhook
+
+Incoming WhatsApp messages
+
+LOGGING
+
+Implement structured logging.
+
+Log:
+
+* incoming messages
+* OpenAI requests
+* OpenAI responses
+* WhatsApp send status
+* errors
+
+ERROR HANDLING
+
+Implement:
+
+* try/except
+* API timeout handling
+* OpenAI failures
+* WhatsApp API failures
+
+If AI fails:
+
+Return:
+
+"Sorry, I am temporarily unavailable. Please try again shortly."
+
+SECURITY
+
+* Never expose secrets
+* Use environment variables
+* Validate webhook requests
+* Sanitize inputs
+
+DELIVERABLE
+
+Generate a complete working codebase.
+
+Generate:
+
+* FastAPI backend
+* Database models
+* Webhook handlers
+* OpenAI integration
+* WhatsApp integration
+* Requirements file
+* Environment variable template
+* Deployment instructions for Replit
+
+The application must be deployable immediately and capable of handling real WhatsApp conversations through Meta WhatsApp Cloud API.
