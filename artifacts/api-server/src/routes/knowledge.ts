@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, ilike, or, sql, desc } from "drizzle-orm";
-import { db, articlesTable } from "@workspace/db";
+import { db, articlesTable, knowledgeSourcesTable } from "@workspace/db";
 import {
   ListArticlesQueryParams,
   CreateArticleBody,
@@ -12,6 +12,7 @@ import {
   GetArticleResponse,
   UpdateArticleResponse,
 } from "@workspace/api-zod";
+import { fetchSource, fetchAllActiveSources } from "../lib/source-fetcher";
 
 const router: IRouter = Router();
 
@@ -171,6 +172,69 @@ router.delete("/knowledge/articles/:id", async (req, res): Promise<void> => {
   }
 
   res.sendStatus(204);
+});
+
+// ── Knowledge Sources ──────────────────────────────────────────────
+
+router.get("/knowledge/sources", async (_req, res): Promise<void> => {
+  const sources = await db
+    .select()
+    .from(knowledgeSourcesTable)
+    .orderBy(knowledgeSourcesTable.id);
+  res.json(
+    sources.map((s) => ({
+      ...s,
+      lastFetched: s.lastFetched?.toISOString() ?? null,
+      createdAt: s.createdAt.toISOString(),
+    }))
+  );
+});
+
+router.patch("/knowledge/sources/:id", async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+
+  const { isActive, refreshIntervalHours } = req.body as { isActive?: boolean; refreshIntervalHours?: number };
+  const updates: Partial<typeof knowledgeSourcesTable.$inferInsert> = {};
+  if (typeof isActive === "boolean") updates.isActive = isActive;
+  if (typeof refreshIntervalHours === "number") updates.refreshIntervalHours = refreshIntervalHours;
+
+  const [updated] = await db
+    .update(knowledgeSourcesTable)
+    .set(updates)
+    .where(eq(knowledgeSourcesTable.id, id))
+    .returning();
+
+  if (!updated) {
+    res.status(404).json({ error: "Source not found" });
+    return;
+  }
+
+  res.json({ ...updated, lastFetched: updated.lastFetched?.toISOString() ?? null, createdAt: updated.createdAt.toISOString() });
+});
+
+router.post("/knowledge/sources/:id/refresh", async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+
+  res.json({ message: "Refresh started" });
+
+  void fetchSource(id).catch((err) =>
+    req.log.error({ err, sourceId: id }, "Manual source refresh failed")
+  );
+});
+
+router.post("/knowledge/sources/refresh-all", async (req, res): Promise<void> => {
+  res.json({ message: "Refresh all started" });
+  void fetchAllActiveSources().catch((err) =>
+    req.log.error({ err }, "Refresh all failed")
+  );
 });
 
 export { router as knowledgeRouter };

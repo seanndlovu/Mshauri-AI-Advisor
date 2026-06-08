@@ -1,10 +1,10 @@
 import { ilike, eq, or, and } from "drizzle-orm";
 import { db, articlesTable } from "@workspace/db";
+import { searchMarichoArticles, perplexityResearch } from "./live-search";
 
 /**
- * Finds the most relevant active knowledge base articles for a given query.
- * Uses simple keyword matching against title and content.
- * Returns up to maxResults articles, formatted for injection into AI context.
+ * Finds relevant articles from the DB knowledge base by keyword matching.
+ * Also calls live sources (Maricho search API, Perplexity) if available.
  */
 export async function findRelevantArticles(
   query: string,
@@ -17,8 +17,21 @@ export async function findRelevantArticles(
     .filter((w) => w.length > 3)
     .slice(0, 6);
 
-  if (words.length === 0) return "";
+  const [dbContext, marichoContext, perplexityContext] = await Promise.all([
+    words.length > 0 ? searchDbArticles(words, language, maxResults) : Promise.resolve(""),
+    searchMarichoArticles(query),
+    perplexityResearch(query),
+  ]);
 
+  const combined = [dbContext, marichoContext, perplexityContext].filter(Boolean).join("");
+  return combined;
+}
+
+async function searchDbArticles(
+  words: string[],
+  language: "en" | "sn" | "nd" | "all",
+  maxResults: number
+): Promise<string> {
   const languageFilter =
     language === "all"
       ? eq(articlesTable.isActive, true)
@@ -58,5 +71,5 @@ export async function findRelevantArticles(
     )
     .join("\n\n");
 
-  return `\n\n--- KNOWLEDGE BASE REFERENCES ---\nThe following articles from the Mhauri AI knowledge base are relevant to this question. Use them to provide accurate, specific advice:\n\n${formatted}\n--- END REFERENCES ---`;
+  return `\n\n--- KNOWLEDGE BASE REFERENCES ---\nThe following articles from the Mshauri AI knowledge base are relevant to this question. Use them to provide accurate, specific advice:\n\n${formatted}\n--- END REFERENCES ---`;
 }
