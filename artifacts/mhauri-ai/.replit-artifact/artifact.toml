@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Mhauri AI"
+version = "1.0.0"
+id = "artifacts/mhauri-ai"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20266
+
+[services.development]
+run = "pnpm --filter @workspace/mhauri-ai run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/mhauri-ai", "run", "build" ]
+publicDir = "artifacts/mhauri-ai/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20266"
+BASE_PATH = "/"
