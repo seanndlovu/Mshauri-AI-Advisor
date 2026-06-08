@@ -575,7 +575,7 @@ export default function Home() {
               rel="noopener noreferrer"
               className="block bg-[#22c55e] hover:bg-[#16a34a] rounded-full px-4 py-2.5 text-center text-white font-bold text-[14px] transition-colors"
             >
-              Send "Hi" to +263 714 280 244
+              Mshauri
             </a>
           </div>
 
