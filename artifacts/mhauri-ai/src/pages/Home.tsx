@@ -1,11 +1,11 @@
 import { useState, KeyboardEvent, useRef, useEffect } from "react";
 import { useLocation, Link } from "wouter";
-import { useListConversations, useListMarketPrices } from "@workspace/api-client-react";
+import { useListConversations } from "@workspace/api-client-react";
 import { useChatStream } from "@/hooks/use-chat-stream";
 import { formatDistanceToNow } from "date-fns";
 import {
   Image, Mic, MessageCircle, Repeat2, Heart, Share, Bookmark,
-  ChevronUp, ChevronDown, Search, TrendingUp, Sprout,
+  ChevronUp, ChevronDown, Search, Sprout,
   Flame, Clock, Award, MoreHorizontal, Pin, PinOff,
   Send, X, Check, Copy, Link2,
 } from "lucide-react";
@@ -14,7 +14,6 @@ import {
 
 const QUICK_PROMPTS = [
   { label: "🌽 Maize disease help", text: "My maize leaves are turning yellow at the tips. What could be wrong?" },
-  { label: "💰 Harare market prices", text: "What are the current market prices for vegetables in Harare?" },
   { label: "🐄 Cattle coughing", text: "My cattle are coughing and seem weak. What should I do?" },
   { label: "🌱 Planting schedule", text: "When is the best time to plant tomatoes in Mashonaland?" },
   { label: "🐛 Fall armyworm", text: "How do I control fall armyworm in my maize crop?" },
@@ -383,7 +382,6 @@ export default function Home() {
   const { sendMessage, isStreaming } = useChatStream();
 
   const { data: conversations = [], isLoading } = useListConversations();
-  const { data: marketPrices = [] } = useListMarketPrices();
 
   const handleAsk = () => {
     if (!askText.trim() || isStreaming) return;
@@ -555,24 +553,6 @@ export default function Home() {
             <button className="w-full px-4 py-3 text-[15px] text-[#22c55e] hover:bg-white/5 transition-colors text-left">Show more</button>
           </div>
 
-          {marketPrices.length > 0 && (
-            <div className="bg-[#16181C] rounded-2xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-[#2F3336] flex items-center justify-between">
-                <h2 className="text-[20px] font-black text-[#E7E9EA]">Market Prices</h2>
-                <Link href="/market-prices"><span className="text-[14px] text-[#22c55e] hover:underline cursor-pointer">View all</span></Link>
-              </div>
-              {marketPrices.slice(0, 5).map((item) => (
-                <div key={item.id} className="flex items-center justify-between px-4 py-3 border-b border-[#2F3336] last:border-0">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-[#22c55e]" />
-                    <span className="text-[15px] text-[#E7E9EA] font-medium">{item.commodity}</span>
-                  </div>
-                  <span className="text-[14px] font-bold text-[#22c55e]">${Number(item.priceUsd).toFixed(2)}/{item.unit}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
           <div className="bg-[#16181C] rounded-2xl overflow-hidden">
             <div className="px-4 py-3 border-b border-[#2F3336]">
               <h2 className="text-[20px] font-black text-[#E7E9EA]">Who's Using Mshauri</h2>
@@ -597,7 +577,14 @@ export default function Home() {
           <div className="bg-[#16181C] rounded-2xl px-4 py-4 border border-[#2F3336]">
             <p className="text-[20px] font-black text-[#E7E9EA] mb-1">📱 Also on WhatsApp</p>
             <p className="text-[14px] text-[#71767B] mb-3 leading-relaxed">Chat with Mshauri in the field — works with low data in English, Shona, or Ndebele.</p>
-            <div className="bg-[#22c55e] rounded-full px-4 py-2 text-center text-white font-bold text-[14px]">Send "Hi" on WhatsApp</div>
+            <a
+              href="https://wa.me/263714280244?text=Hi"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block bg-[#22c55e] hover:bg-[#16a34a] rounded-full px-4 py-2.5 text-center text-white font-bold text-[14px] transition-colors"
+            >
+              Send "Hi" to +263 714 280 244
+            </a>
           </div>
 
           <p className="text-[13px] text-[#71767B] px-1 pb-4 leading-relaxed">

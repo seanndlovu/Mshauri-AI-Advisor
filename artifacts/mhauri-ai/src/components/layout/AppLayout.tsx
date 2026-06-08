@@ -8,7 +8,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import {
-  Home, BookOpen, Users, TrendingUp, Radio, BarChart3,
+  Home, BookOpen, Users, Radio,
   MessageSquare, Trash2, Sprout, Menu, X, Feather,
 } from "lucide-react";
 import {
@@ -24,13 +24,9 @@ const FRONT_NAV = [
   { path: "/", label: "Home", icon: Home, testId: "button-home" },
   { path: "/knowledge-base", label: "Knowledge Base", icon: BookOpen, testId: "button-knowledge-base" },
   { path: "/farmers", label: "Farmers", icon: Users, testId: "button-farmers" },
-  { path: "/market-prices", label: "Market Prices", icon: TrendingUp, testId: "button-market-prices" },
   { path: "/broadcasts", label: "Broadcasts", icon: Radio, testId: "button-broadcasts" },
 ];
 
-const BACK_NAV = [
-  { path: "/analytics", label: "Analytics", icon: BarChart3, testId: "button-analytics" },
-];
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -112,26 +108,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               <Icon className={`w-[26px] h-[26px] shrink-0 ${isActive ? "text-[#22c55e]" : "text-[#E7E9EA]"}`} />
               <span className="hidden xl:block text-[19px] leading-none">{label}</span>
               {isActive && <div className="hidden xl:block ml-auto w-1.5 h-1.5 rounded-full bg-[#22c55e]" />}
-            </button>
-          );
-        })}
-
-        {/* Divider */}
-        <div className="mx-3 my-1 border-t border-[#2F3336]" />
-
-        {BACK_NAV.map(({ path, label, icon: Icon, testId }) => {
-          const isActive = location.startsWith(path);
-          return (
-            <button
-              key={path}
-              onClick={() => nav(path)}
-              data-testid={testId}
-              className={`flex items-center gap-4 p-3 rounded-full transition-colors text-left w-full hover:bg-white/10 ${
-                isActive ? "font-bold" : "font-normal text-[#71767B]"
-              }`}
-            >
-              <Icon className={`w-[26px] h-[26px] shrink-0 ${isActive ? "text-[#22c55e]" : "text-[#71767B]"}`} />
-              <span className="hidden xl:block text-[19px] leading-none text-[#71767B]">{label}</span>
             </button>
           );
         })}
