@@ -174,3 +174,212 @@ export const ListCategoriesResponseItem = zod.string()
 export const ListCategoriesResponse = zod.array(ListCategoriesResponseItem)
 
 
+/**
+ * @summary List all registered farmers
+ */
+export const ListFarmersQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "isActive": zod.coerce.boolean().optional()
+})
+
+export const ListFarmersResponseItem = zod.object({
+  "phone": zod.string(),
+  "name": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "crops": zod.array(zod.string()),
+  "livestock": zod.array(zod.string()),
+  "languagePref": zod.enum(['en', 'sn', 'nd']),
+  "isActive": zod.boolean(),
+  "lastSeen": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListFarmersResponse = zod.array(ListFarmersResponseItem)
+
+
+/**
+ * @summary Get a farmer by phone number
+ */
+export const GetFarmerParams = zod.object({
+  "phone": zod.coerce.string()
+})
+
+export const GetFarmerResponse = zod.object({
+  "phone": zod.string(),
+  "name": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "crops": zod.array(zod.string()),
+  "livestock": zod.array(zod.string()),
+  "languagePref": zod.enum(['en', 'sn', 'nd']),
+  "isActive": zod.boolean(),
+  "lastSeen": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Update a farmer profile
+ */
+export const UpdateFarmerParams = zod.object({
+  "phone": zod.coerce.string()
+})
+
+export const UpdateFarmerBody = zod.object({
+  "name": zod.string().optional(),
+  "location": zod.string().optional(),
+  "crops": zod.array(zod.string()).optional(),
+  "livestock": zod.array(zod.string()).optional(),
+  "languagePref": zod.enum(['en', 'sn', 'nd']).optional(),
+  "isActive": zod.boolean().optional()
+})
+
+export const UpdateFarmerResponse = zod.object({
+  "phone": zod.string(),
+  "name": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "crops": zod.array(zod.string()),
+  "livestock": zod.array(zod.string()),
+  "languagePref": zod.enum(['en', 'sn', 'nd']),
+  "isActive": zod.boolean(),
+  "lastSeen": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a farmer record
+ */
+export const DeleteFarmerParams = zod.object({
+  "phone": zod.coerce.string()
+})
+
+
+/**
+ * @summary List commodity prices
+ */
+export const ListMarketPricesQueryParams = zod.object({
+  "commodity": zod.coerce.string().optional(),
+  "market": zod.coerce.string().optional()
+})
+
+export const ListMarketPricesResponseItem = zod.object({
+  "id": zod.number(),
+  "commodity": zod.string(),
+  "unit": zod.string(),
+  "priceUsd": zod.string(),
+  "market": zod.string(),
+  "priceDate": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListMarketPricesResponse = zod.array(ListMarketPricesResponseItem)
+
+
+/**
+ * @summary Add a commodity price entry
+ */
+
+
+
+export const CreateMarketPriceBody = zod.object({
+  "commodity": zod.string().min(1),
+  "unit": zod.string().optional(),
+  "priceUsd": zod.string(),
+  "market": zod.string().optional(),
+  "priceDate": zod.string(),
+  "notes": zod.string().optional()
+})
+
+
+/**
+ * @summary Update a price entry
+ */
+export const UpdateMarketPriceParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const UpdateMarketPriceBody = zod.object({
+  "commodity": zod.string().min(1),
+  "unit": zod.string().optional(),
+  "priceUsd": zod.string(),
+  "market": zod.string().optional(),
+  "priceDate": zod.string(),
+  "notes": zod.string().optional()
+})
+
+export const UpdateMarketPriceResponse = zod.object({
+  "id": zod.number(),
+  "commodity": zod.string(),
+  "unit": zod.string(),
+  "priceUsd": zod.string(),
+  "market": zod.string(),
+  "priceDate": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a price entry
+ */
+export const DeleteMarketPriceParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary List all broadcasts
+ */
+export const ListBroadcastsResponseItem = zod.object({
+  "id": zod.number(),
+  "message": zod.string(),
+  "status": zod.enum(['draft', 'sending', 'sent', 'failed']),
+  "recipientCount": zod.number(),
+  "sentAt": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListBroadcastsResponse = zod.array(ListBroadcastsResponseItem)
+
+
+/**
+ * @summary Send a broadcast message to all active farmers
+ */
+
+
+
+export const SendBroadcastBody = zod.object({
+  "message": zod.string().min(1)
+})
+
+
+/**
+ * @summary Get analytics overview
+ */
+export const getAnalyticsSummaryQueryDaysDefault = 30;
+
+export const GetAnalyticsSummaryQueryParams = zod.object({
+  "days": zod.coerce.number().default(getAnalyticsSummaryQueryDaysDefault)
+})
+
+export const GetAnalyticsSummaryResponse = zod.object({
+  "totalMessages": zod.number(),
+  "totalFarmers": zod.number(),
+  "languageBreakdown": zod.record(zod.string(), zod.number()),
+  "messagesPerDay": zod.array(zod.object({
+  "date": zod.string(),
+  "count": zod.number()
+})),
+  "topEventTypes": zod.array(zod.object({
+  "eventType": zod.string(),
+  "count": zod.number()
+}))
+})
+
+

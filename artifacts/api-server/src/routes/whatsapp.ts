@@ -1,9 +1,11 @@
 import { Router, type IRouter } from "express";
 import { eq, desc } from "drizzle-orm";
-import { db, conversationsTable, messagesTable } from "@workspace/db";
+import { db, conversationsTable, messagesTable, farmersTable, analyticsEventsTable } from "@workspace/db";
+import type { Farmer } from "@workspace/db";
 import OpenAI from "openai";
 import { logger } from "../lib/logger";
 import { findRelevantArticles } from "../lib/knowledge-search";
+import { getMarketPricesContext } from "../lib/market-prices-context";
 
 const router: IRouter = Router();
 
@@ -66,12 +68,12 @@ async function sendWhatsAppMessage(to: string, text: string): Promise<void> {
   }
 }
 
-async function downloadWhatsAppMedia(mediaId: string): Promise<string> {
+async function downloadWhatsAppMedia(mediaId: string): Promise<{ dataUrl: string; mimeType: string }> {
   const urlRes = await fetch(`https://graph.facebook.com/v23.0/${mediaId}`, {
     headers: { Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}` },
   });
   if (!urlRes.ok) throw new Error("Failed to fetch media URL");
-  const { url } = (await urlRes.json()) as { url: string };
+  const { url, mime_type } = (await urlRes.json()) as { url: string; mime_type?: string };
 
   const mediaRes = await fetch(url, {
     headers: { Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}` },
@@ -80,8 +82,68 @@ async function downloadWhatsAppMedia(mediaId: string): Promise<string> {
 
   const buffer = await mediaRes.arrayBuffer();
   const base64 = Buffer.from(buffer).toString("base64");
-  const contentType = mediaRes.headers.get("content-type") ?? "image/jpeg";
-  return `data:${contentType};base64,${base64}`;
+  const contentType = mime_type ?? mediaRes.headers.get("content-type") ?? "image/jpeg";
+  return { dataUrl: `data:${contentType};base64,${base64}`, mimeType: contentType };
+}
+
+async function transcribeVoiceNote(mediaId: string): Promise<string> {
+  const { dataUrl, mimeType } = await downloadWhatsAppMedia(mediaId);
+  const base64Data = dataUrl.split(",")[1];
+  const buffer = Buffer.from(base64Data, "base64");
+
+  const ext = mimeType.includes("ogg") ? "ogg" : mimeType.includes("mp4") ? "mp4" : mimeType.includes("mpeg") ? "mp3" : "ogg";
+  const file = new File([buffer], `voice.${ext}`, { type: mimeType });
+
+  const transcription = await openai.audio.transcriptions.create({
+    file,
+    model: "whisper-1",
+  });
+
+  return transcription.text;
+}
+
+async function upsertFarmer(phone: string): Promise<Farmer | null> {
+  try {
+    const [farmer] = await db
+      .insert(farmersTable)
+      .values({ phone, lastSeen: new Date() })
+      .onConflictDoUpdate({
+        target: farmersTable.phone,
+        set: { lastSeen: new Date() },
+      })
+      .returning();
+    return farmer ?? null;
+  } catch (err) {
+    logger.error({ err, phone }, "Failed to upsert farmer");
+    return null;
+  }
+}
+
+function buildFarmerContext(farmer: Farmer | null): string {
+  if (!farmer) return "";
+  const parts: string[] = [];
+  if (farmer.name) parts.push(`Name: ${farmer.name}`);
+  if (farmer.location) parts.push(`Location: ${farmer.location}`);
+  if (farmer.crops.length > 0) parts.push(`Crops grown: ${farmer.crops.join(", ")}`);
+  if (farmer.livestock.length > 0) parts.push(`Livestock: ${farmer.livestock.join(", ")}`);
+  if (parts.length === 0) return "";
+  return `\n\n--- FARMER PROFILE ---\n${parts.join("\n")}\nTailor your advice to this farmer's specific context, crops, and location.\n--- END PROFILE ---`;
+}
+
+async function logAnalyticsEvent(
+  eventType: "message_received" | "voice_transcribed" | "image_analyzed",
+  phone: string,
+  language?: string,
+  preview?: string
+): Promise<void> {
+  try {
+    await db.insert(analyticsEventsTable).values({
+      eventType,
+      phone,
+      language,
+      messagePreview: preview?.slice(0, 100),
+    });
+  } catch {}
 }
 
 async function getOrCreateConversation(phone: string): Promise<number> {
@@ -111,13 +173,29 @@ async function getRecentHistory(conversationId: number) {
     .limit(20);
 }
 
-async function handleIncomingMessage(phone: string, userText: string, imageDataUrl?: string): Promise<void> {
-  const conversationId = await getOrCreateConversation(phone);
+async function handleIncomingMessage(
+  phone: string,
+  userText: string,
+  imageDataUrl?: string,
+  eventType: "message_received" | "voice_transcribed" | "image_analyzed" = "message_received"
+): Promise<void> {
+  // Fetch farmer profile and conversation in parallel
+  const [farmer, conversationId] = await Promise.all([
+    upsertFarmer(phone),
+    getOrCreateConversation(phone),
+  ]);
+
   const historyRows = await getRecentHistory(conversationId);
   const history = historyRows.reverse();
 
-  const knowledgeContext = await findRelevantArticles(userText);
-  const systemContent = MHAURI_SYSTEM_PROMPT + knowledgeContext;
+  // Build context in parallel
+  const [knowledgeContext, marketContext] = await Promise.all([
+    findRelevantArticles(userText, farmer?.languagePref ?? "all"),
+    getMarketPricesContext(),
+  ]);
+
+  const farmerContext = buildFarmerContext(farmer);
+  const systemContent = MHAURI_SYSTEM_PROMPT + farmerContext + marketContext + knowledgeContext;
 
   const chatMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
     { role: "system", content: systemContent },
@@ -145,6 +223,11 @@ async function handleIncomingMessage(phone: string, userText: string, imageDataU
   await db.update(conversationsTable)
     .set({ updatedAt: new Date() })
     .where(eq(conversationsTable.id, conversationId));
+
+  // Detect language from recent messages for analytics
+  const langPref = farmer?.languagePref ?? "en";
+
+  void logAnalyticsEvent(eventType, phone, langPref, userText);
 
   let reply = "Sorry, I am temporarily unavailable. Please try again shortly.";
   try {
@@ -202,6 +285,8 @@ router.post("/whatsapp/webhook", async (req, res): Promise<void> => {
             type?: string;
             text?: { body?: string };
             image?: { id?: string; caption?: string };
+            audio?: { id?: string };
+            voice?: { id?: string };
           }>;
           statuses?: unknown[];
         };
@@ -220,21 +305,34 @@ router.post("/whatsapp/webhook", async (req, res): Promise<void> => {
       if (!phone) continue;
 
       // Skip status updates, delivery receipts, etc.
-      if (msg.type !== "text" && msg.type !== "image") continue;
+      if (!["text", "image", "audio", "voice"].includes(msg.type ?? "")) continue;
 
       try {
         if (msg.type === "text") {
           const text = msg.text?.body;
           if (!text) continue;
           req.log.info({ phone, textLength: text.length }, "WhatsApp text message received");
-          await handleIncomingMessage(phone, text);
+          await handleIncomingMessage(phone, text, undefined, "message_received");
+
         } else if (msg.type === "image") {
           const mediaId = msg.image?.id;
           const caption = msg.image?.caption ?? "Please analyze this image.";
           if (!mediaId) continue;
           req.log.info({ phone, mediaId }, "WhatsApp image message received");
-          const imageDataUrl = await downloadWhatsAppMedia(mediaId);
-          await handleIncomingMessage(phone, caption, imageDataUrl);
+          const { dataUrl } = await downloadWhatsAppMedia(mediaId);
+          await handleIncomingMessage(phone, caption, dataUrl, "image_analyzed");
+
+        } else if (msg.type === "audio" || msg.type === "voice") {
+          const mediaId = (msg.audio?.id ?? msg.voice?.id);
+          if (!mediaId) continue;
+          req.log.info({ phone, mediaId }, "WhatsApp voice note received");
+          const transcript = await transcribeVoiceNote(mediaId);
+          if (!transcript.trim()) {
+            await sendWhatsAppMessage(phone, "Sorry, I could not understand the voice note. Please try again or send a text message.");
+            continue;
+          }
+          req.log.info({ phone, transcriptLength: transcript.length }, "Voice note transcribed");
+          await handleIncomingMessage(phone, `[Voice note]: ${transcript}`, undefined, "voice_transcribed");
         }
       } catch (err) {
         req.log.error({ err, phone }, "Error handling WhatsApp message");

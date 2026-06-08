@@ -8,7 +8,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, MessageSquare, Trash2, Menu, Sprout, BookOpen } from "lucide-react";
+import { Plus, MessageSquare, Trash2, Menu, Sprout, BookOpen, Users, TrendingUp, Radio, BarChart3 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { 
   AlertDialog,
@@ -22,6 +22,14 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+
+const NAV_ITEMS = [
+  { path: "/knowledge-base", label: "Knowledge Base", icon: BookOpen, testId: "button-knowledge-base" },
+  { path: "/farmers", label: "Farmers", icon: Users, testId: "button-farmers" },
+  { path: "/market-prices", label: "Market Prices", icon: TrendingUp, testId: "button-market-prices" },
+  { path: "/broadcasts", label: "Broadcasts", icon: Radio, testId: "button-broadcasts" },
+  { path: "/analytics", label: "Analytics", icon: BarChart3, testId: "button-analytics" },
+];
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -85,9 +93,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <Sprout className="w-6 h-6" />
           <span className="text-lg">Mhauri AI</span>
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1">
           <Button 
-            className="w-full justify-start gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-lg h-11"
+            className="w-full justify-start gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-lg h-11 mb-1"
             onClick={() => {
               setLocation("/");
               if (onNavigate) onNavigate();
@@ -97,27 +105,33 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             <Plus className="w-4 h-4" />
             New Conversation
           </Button>
-          
-          <Button
-            variant={location.startsWith("/knowledge-base") ? "secondary" : "ghost"}
-            className={`w-full justify-start gap-2 font-medium rounded-lg h-11 ${
-              location.startsWith("/knowledge-base") 
-                ? "bg-secondary text-secondary-foreground" 
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-            onClick={() => {
-              setLocation("/knowledge-base");
-              if (onNavigate) onNavigate();
-            }}
-            data-testid="button-knowledge-base"
-          >
-            <BookOpen className="w-4 h-4" />
-            Knowledge Base
-          </Button>
+
+          {NAV_ITEMS.map(({ path, label, icon: Icon, testId }) => {
+            const isActive = location.startsWith(path);
+            return (
+              <Button
+                key={path}
+                variant={isActive ? "secondary" : "ghost"}
+                className={`w-full justify-start gap-2 font-medium rounded-lg h-10 ${
+                  isActive
+                    ? "bg-secondary text-secondary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                onClick={() => {
+                  setLocation(path);
+                  if (onNavigate) onNavigate();
+                }}
+                data-testid={testId}
+              >
+                <Icon className="w-4 h-4" />
+                {label}
+              </Button>
+            );
+          })}
         </div>
       </div>
 
-      <div className="px-4 pb-2 pt-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+      <div className="px-4 pb-2 pt-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
         Past Conversations
       </div>
 

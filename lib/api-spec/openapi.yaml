@@ -13,6 +13,14 @@ tags:
     description: Chat and conversation operations
   - name: knowledge
     description: Knowledge base article operations
+  - name: farmers
+    description: Farmer profile operations
+  - name: market
+    description: Zimbabwe commodity market prices
+  - name: broadcasts
+    description: WhatsApp broadcast messages
+  - name: analytics
+    description: Usage analytics
 paths:
   /healthz:
     get:
@@ -215,6 +223,224 @@ paths:
                 items:
                   type: string
 
+  /farmers:
+    get:
+      operationId: listFarmers
+      tags: [farmers]
+      summary: List all registered farmers
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: isActive
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of farmers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Farmer"
+
+  /farmers/{phone}:
+    get:
+      operationId: getFarmer
+      tags: [farmers]
+      summary: Get a farmer by phone number
+      parameters:
+        - name: phone
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Farmer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farmer"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateFarmer
+      tags: [farmers]
+      summary: Update a farmer profile
+      parameters:
+        - name: phone
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FarmerUpdate"
+      responses:
+        "200":
+          description: Updated farmer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farmer"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteFarmer
+      tags: [farmers]
+      summary: Delete a farmer record
+      parameters:
+        - name: phone
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /market-prices:
+    get:
+      operationId: listMarketPrices
+      tags: [market]
+      summary: List commodity prices
+      parameters:
+        - name: commodity
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: market
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of market prices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MarketPrice"
+    post:
+      operationId: createMarketPrice
+      tags: [market]
+      summary: Add a commodity price entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarketPriceInput"
+      responses:
+        "201":
+          description: Created price entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketPrice"
+
+  /market-prices/{id}:
+    patch:
+      operationId: updateMarketPrice
+      tags: [market]
+      summary: Update a price entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarketPriceInput"
+      responses:
+        "200":
+          description: Updated price entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketPrice"
+    delete:
+      operationId: deleteMarketPrice
+      tags: [market]
+      summary: Delete a price entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /broadcasts:
+    get:
+      operationId: listBroadcasts
+      tags: [broadcasts]
+      summary: List all broadcasts
+      responses:
+        "200":
+          description: List of broadcasts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Broadcast"
+    post:
+      operationId: sendBroadcast
+      tags: [broadcasts]
+      summary: Send a broadcast message to all active farmers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BroadcastInput"
+      responses:
+        "201":
+          description: Broadcast queued and sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Broadcast"
+
+  /analytics/summary:
+    get:
+      operationId: getAnalyticsSummary
+      tags: [analytics]
+      summary: Get analytics overview
+      parameters:
+        - name: days
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 30
+      responses:
+        "200":
+          description: Analytics summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsSummary"
+
 components:
   schemas:
     HealthStatus:
@@ -333,3 +559,154 @@ components:
           enum: [en, sn, nd, all]
         isActive:
           type: boolean
+
+    Farmer:
+      type: object
+      required: [phone, crops, livestock, languagePref, isActive, lastSeen, createdAt, updatedAt]
+      properties:
+        phone:
+          type: string
+        name:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        crops:
+          type: array
+          items:
+            type: string
+        livestock:
+          type: array
+          items:
+            type: string
+        languagePref:
+          type: string
+          enum: [en, sn, nd]
+        isActive:
+          type: boolean
+        lastSeen:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    FarmerUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        crops:
+          type: array
+          items:
+            type: string
+        livestock:
+          type: array
+          items:
+            type: string
+        languagePref:
+          type: string
+          enum: [en, sn, nd]
+        isActive:
+          type: boolean
+
+    MarketPrice:
+      type: object
+      required: [id, commodity, unit, priceUsd, market, priceDate, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        commodity:
+          type: string
+        unit:
+          type: string
+        priceUsd:
+          type: string
+        market:
+          type: string
+        priceDate:
+          type: string
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    MarketPriceInput:
+      type: object
+      required: [commodity, priceUsd, priceDate]
+      properties:
+        commodity:
+          type: string
+          minLength: 1
+        unit:
+          type: string
+        priceUsd:
+          type: string
+        market:
+          type: string
+        priceDate:
+          type: string
+        notes:
+          type: string
+
+    Broadcast:
+      type: object
+      required: [id, message, status, recipientCount, createdAt]
+      properties:
+        id:
+          type: integer
+        message:
+          type: string
+        status:
+          type: string
+          enum: [draft, sending, sent, failed]
+        recipientCount:
+          type: integer
+        sentAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    BroadcastInput:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 1
+
+    AnalyticsSummary:
+      type: object
+      required: [totalMessages, totalFarmers, languageBreakdown, messagesPerDay, topEventTypes]
+      properties:
+        totalMessages:
+          type: integer
+        totalFarmers:
+          type: integer
+        languageBreakdown:
+          type: object
+          additionalProperties:
+            type: integer
+        messagesPerDay:
+          type: array
+          items:
+            type: object
+            required: [date, count]
+            properties:
+              date:
+                type: string
+              count:
+                type: integer
+        topEventTypes:
+          type: array
+          items:
+            type: object
+            required: [eventType, count]
+            properties:
+              eventType:
+                type: string
+              count:
+                type: integer

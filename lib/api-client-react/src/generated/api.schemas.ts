@@ -104,9 +104,133 @@ export interface ArticleUpdate {
   isActive?: boolean;
 }
 
+export type FarmerLanguagePref = typeof FarmerLanguagePref[keyof typeof FarmerLanguagePref];
+
+
+export const FarmerLanguagePref = {
+  en: 'en',
+  sn: 'sn',
+  nd: 'nd',
+} as const;
+
+export interface Farmer {
+  phone: string;
+  /** @nullable */
+  name?: string | null;
+  /** @nullable */
+  location?: string | null;
+  crops: string[];
+  livestock: string[];
+  languagePref: FarmerLanguagePref;
+  isActive: boolean;
+  lastSeen: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type FarmerUpdateLanguagePref = typeof FarmerUpdateLanguagePref[keyof typeof FarmerUpdateLanguagePref];
+
+
+export const FarmerUpdateLanguagePref = {
+  en: 'en',
+  sn: 'sn',
+  nd: 'nd',
+} as const;
+
+export interface FarmerUpdate {
+  name?: string;
+  location?: string;
+  crops?: string[];
+  livestock?: string[];
+  languagePref?: FarmerUpdateLanguagePref;
+  isActive?: boolean;
+}
+
+export interface MarketPrice {
+  id: number;
+  commodity: string;
+  unit: string;
+  priceUsd: string;
+  market: string;
+  priceDate: string;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketPriceInput {
+  /** @minLength 1 */
+  commodity: string;
+  unit?: string;
+  priceUsd: string;
+  market?: string;
+  priceDate: string;
+  notes?: string;
+}
+
+export type BroadcastStatus = typeof BroadcastStatus[keyof typeof BroadcastStatus];
+
+
+export const BroadcastStatus = {
+  draft: 'draft',
+  sending: 'sending',
+  sent: 'sent',
+  failed: 'failed',
+} as const;
+
+export interface Broadcast {
+  id: number;
+  message: string;
+  status: BroadcastStatus;
+  recipientCount: number;
+  /** @nullable */
+  sentAt?: string | null;
+  createdAt: string;
+}
+
+export interface BroadcastInput {
+  /** @minLength 1 */
+  message: string;
+}
+
+export type AnalyticsSummaryLanguageBreakdown = {[key: string]: number};
+
+export type AnalyticsSummaryMessagesPerDayItem = {
+  date: string;
+  count: number;
+};
+
+export type AnalyticsSummaryTopEventTypesItem = {
+  eventType: string;
+  count: number;
+};
+
+export interface AnalyticsSummary {
+  totalMessages: number;
+  totalFarmers: number;
+  languageBreakdown: AnalyticsSummaryLanguageBreakdown;
+  messagesPerDay: AnalyticsSummaryMessagesPerDayItem[];
+  topEventTypes: AnalyticsSummaryTopEventTypesItem[];
+}
+
 export type ListArticlesParams = {
 category?: string;
 language?: string;
 search?: string;
+};
+
+export type ListFarmersParams = {
+search?: string;
+isActive?: boolean;
+};
+
+export type ListMarketPricesParams = {
+commodity?: string;
+market?: string;
+};
+
+export type GetAnalyticsSummaryParams = {
+days?: number;
 };
 
