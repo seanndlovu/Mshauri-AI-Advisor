@@ -9,9 +9,13 @@ import { getMarketPricesContext } from "../lib/market-prices-context";
 
 const router: IRouter = Router();
 
-const WHATSAPP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN!;
-const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID!;
-const WHATSAPP_VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN!;
+function getWhatsAppConfig() {
+  return {
+    accessToken: process.env.WHATSAPP_ACCESS_TOKEN!,
+    phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID!,
+    verifyToken: process.env.WHATSAPP_VERIFY_TOKEN!,
+  };
+}
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -46,11 +50,12 @@ Rules:
 11. IMPORTANT: Keep responses concise for WhatsApp — under 1000 characters when possible. Use plain text, no markdown.`;
 
 async function sendWhatsAppMessage(to: string, text: string): Promise<void> {
-  const url = `https://graph.facebook.com/v23.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
+  const { accessToken, phoneNumberId } = getWhatsAppConfig();
+  const url = `https://graph.facebook.com/v23.0/${phoneNumberId}/messages`;
   const response = await fetch(url, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+      Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -69,14 +74,15 @@ async function sendWhatsAppMessage(to: string, text: string): Promise<void> {
 }
 
 async function downloadWhatsAppMedia(mediaId: string): Promise<{ dataUrl: string; mimeType: string }> {
+  const { accessToken } = getWhatsAppConfig();
   const urlRes = await fetch(`https://graph.facebook.com/v23.0/${mediaId}`, {
-    headers: { Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}` },
+    headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (!urlRes.ok) throw new Error("Failed to fetch media URL");
   const { url, mime_type } = (await urlRes.json()) as { url: string; mime_type?: string };
 
   const mediaRes = await fetch(url, {
-    headers: { Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}` },
+    headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (!mediaRes.ok) throw new Error("Failed to download media");
 
@@ -261,7 +267,7 @@ router.get("/whatsapp/webhook", (req, res): void => {
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
 
-  if (mode === "subscribe" && token === WHATSAPP_VERIFY_TOKEN) {
+  if (mode === "subscribe" && token === getWhatsAppConfig().verifyToken) {
     req.log.info("WhatsApp webhook verified");
     res.status(200).send(challenge);
   } else {
