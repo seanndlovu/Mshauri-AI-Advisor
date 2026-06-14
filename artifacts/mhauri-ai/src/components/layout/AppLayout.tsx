@@ -10,8 +10,8 @@ import { formatDistanceToNow } from "date-fns";
 import {
   Home, Map, Globe, Bot, TrendingUp, Cloud,
   Lightbulb, BookOpen, Bell, BarChart2, MessageSquare,
-  Bookmark, UserCircle, Settings, Trash2, Sprout,
-  Menu, X, ChevronRight, Star,
+  Bookmark, UserCircle, Settings, Trash2,
+  Menu, ChevronRight, Star,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -163,16 +163,21 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <Link href="/">
         <div
           onClick={() => onNavigate?.()}
-          className="flex items-center gap-2.5 px-3 py-2 mb-3 cursor-pointer hover:bg-[#0a1520] rounded-lg mx-2 transition-colors"
+          className="flex items-center justify-center xl:justify-start px-2 py-2 mb-3 cursor-pointer hover:bg-[#0a1520] rounded-lg mx-2 transition-colors"
         >
-          <div className="w-8 h-8 shrink-0 rounded-lg bg-[#22c55e]/15 border border-[#22c55e]/20 flex items-center justify-center">
-            <Sprout className="w-5 h-5 text-[#22c55e]" />
+          {/* Collapsed: small square logo */}
+          <div className="xl:hidden w-9 h-9 shrink-0 rounded-lg overflow-hidden bg-black flex items-center justify-center">
+            <img src="/mshauri-logo.png" alt="Mshauri" className="w-9 h-9 object-contain" />
           </div>
-          <div className="hidden xl:flex flex-col min-w-0">
-            <span className="font-black text-[#e7e9ea] text-[14px] tracking-tight leading-none">mshauri</span>
-            <span className="text-[#2a5040] text-[8px] font-bold uppercase tracking-[0.08em] leading-tight mt-0.5">
-              Agri Intelligence
-            </span>
+          {/* Expanded: full logo */}
+          <div className="hidden xl:flex items-center gap-2.5 min-w-0">
+            <img src="/mshauri-logo.png" alt="Mshauri" className="w-10 h-10 object-contain shrink-0" />
+            <div className="flex flex-col min-w-0">
+              <span className="font-black text-[#c8a84b] text-[15px] tracking-tight leading-none">mshauri</span>
+              <span className="text-[#7a6028] text-[8px] font-semibold uppercase tracking-[0.08em] leading-tight mt-0.5">
+                Agri Intelligence
+              </span>
+            </div>
           </div>
         </div>
       </Link>
