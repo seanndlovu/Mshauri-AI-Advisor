@@ -1,0 +1,269 @@
+You are a world-class startup founder, product manager, UI/UX designer, senior full-stack engineer, and AI architect.
+
+Build a production-ready MVP called Mshauri.
+
+IMPORTANT:
+Do not build a chatbot website.
+Do not build an agricultural news website.
+Do not build a generic forum.
+
+Build a modern, mobile-first platform that combines Reddit-style communities with an AI agricultural assistant for Zimbabwe and Africa.
+
+PROJECT NAME:
+Mshauri
+
+TAGLINE:
+Know What's Happening in Agriculture
+
+MISSION:
+Help farmers, agribusinesses, extension officers, researchers, and agricultural stakeholders share knowledge, ask questions, report market prices, report disease outbreaks, and receive AI-powered guidance.
+
+CORE CONCEPT:
+Reddit + WhatsApp Groups + Perplexity AI for Agriculture
+
+TARGET USERS:
+- Farmers
+- Livestock Producers
+- Agribusinesses
+- Extension Officers
+- Researchers
+- NGOs
+
+TECH STACK:
+- Next.js 15
+- React
+- TypeScript
+- TailwindCSS
+- shadcn/ui
+- PostgreSQL
+- Prisma ORM
+- Better Auth
+- OpenRouter API
+- Docker
+- Cloudflare Ready
+
+DESIGN REQUIREMENTS:
+- Premium SaaS design
+- Dark mode by default
+- Mobile-first
+- Fast loading
+- Modern animations
+- Inspired by Reddit, Linear, Perplexity and Vercel
+
+COLOR SYSTEM:
+Background: #0A0A0A
+Surface: #111111
+Primary: #00D26A
+Text: #FFFFFF
+Muted: #9CA3AF
+Danger: #EF4444
+
+MAIN NAVIGATION:
+1. Home
+2. Communities
+3. Ask AI
+4. Prices
+5. Profile
+
+FEATURE 1: HOME FEED
+
+Create a Reddit-style feed.
+
+Post Types:
+- Question
+- Disease Report
+- Market Price Report
+- Opportunity
+- Success Story
+- Weather Observation
+
+Each post contains:
+- Title
+- Description
+- Location
+- Category
+- Author
+- Timestamp
+- Upvotes
+- Comments
+
+FEATURE 2: COMMUNITIES
+
+Create default communities:
+
+r/Maize
+r/Livestock
+r/Poultry
+r/Irrigation
+r/Climate
+r/Agribusiness
+
+Users can:
+- Join communities
+- Create posts
+- Comment
+- Upvote
+- Search posts
+
+FEATURE 3: ASK MSHAURI AI
+
+Create an AI assistant page.
+
+User enters a farming question.
+
+Use OpenRouter API.
+
+Response should show:
+
+- Answer
+- Recommended Actions
+- Practical Tips
+- Disclaimer
+
+Add suggested prompts:
+
+"Why are my maize leaves yellow?"
+"What cattle breed is best for Matabeleland?"
+"How do I control Fall Armyworm?"
+"What is the best poultry feed?"
+
+FEATURE 4: MARKET PRICES
+
+Create a simple price reporting system.
+
+Users submit:
+
+Commodity
+Location
+Price
+Date
+
+Examples:
+
+Maize
+Soybeans
+Wheat
+Groundnuts
+Cattle
+Goats
+
+Display latest reported prices.
+
+Display average prices by location.
+
+FEATURE 5: USER PROFILES
+
+Fields:
+
+Name
+Location
+Role
+Communities Joined
+Posts Created
+Reputation Score
+
+Roles:
+
+Farmer
+Agribusiness
+Extension Officer
+Researcher
+
+FEATURE 6: ALERTS
+
+Users choose:
+
+Province
+Commodity
+Interest Area
+
+Receive notifications when:
+
+- New disease reports are posted
+- New market prices are reported
+- New discussions appear in joined communities
+
+DATABASE TABLES:
+
+users
+profiles
+communities
+posts
+comments
+votes
+price_reports
+alerts
+
+HOMEPAGE LAYOUT:
+
+SECTION 1:
+Hero
+
+Headline:
+Mshauri
+
+Subheadline:
+Community-powered agricultural intelligence for Zimbabwe.
+
+Search bar:
+Ask a farming question...
+
+SECTION 2:
+Trending Discussions
+
+SECTION 3:
+Latest Price Reports
+
+SECTION 4:
+Top Communities
+
+SECTION 5:
+Call To Action
+
+DEMO DATA:
+
+Generate:
+
+50 realistic farming discussions
+
+20 market price reports
+
+10 disease reports
+
+Locations:
+
+Bulawayo
+Harare
+Gwanda
+Lupane
+Gweru
+Mutare
+Beitbridge
+Victoria Falls
+
+PRODUCTION REQUIREMENTS:
+
+- Authentication
+- Responsive design
+- CRUD APIs
+- Error handling
+- Validation
+- Pagination
+- Search
+- Docker support
+- Seed data
+- README
+- Deployment instructions
+
+SUCCESS CRITERIA:
+
+A farmer should be able to:
+
+1. Register
+2. Join a community
+3. Ask an AI question
+4. Report a market price
+5. Comment on discussions
+6. Receive alerts
+
+Build the complete MVP with working frontend, backend, database schema, seed data, authentication, deployment configuration, and production-ready code.
