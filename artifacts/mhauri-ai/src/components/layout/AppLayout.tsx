@@ -9,7 +9,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import {
   Home, BookOpen, Users, Radio,
-  MessageSquare, Trash2, Sprout, Menu, X, Feather,
+  MessageSquare, Trash2, Sprout, Menu, Bot,
+  BarChart2, TrendingUp, Globe, UserCircle,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -19,14 +20,22 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAuth } from "@/hooks/use-auth";
 
-const FRONT_NAV = [
-  { path: "/", label: "Home", icon: Home, testId: "button-home" },
+const PRIMARY_NAV = [
+  { path: "/", label: "Home", icon: Home, testId: "button-home", exact: true },
+  { path: "/communities", label: "Communities", icon: Globe, testId: "button-communities" },
+  { path: "/ask", label: "Ask AI", icon: Bot, testId: "button-ask-ai" },
+  { path: "/prices", label: "Prices", icon: TrendingUp, testId: "button-prices" },
+  { path: "/profile", label: "Profile", icon: UserCircle, testId: "button-profile" },
+];
+
+const ADMIN_NAV = [
   { path: "/knowledge-base", label: "Knowledge Base", icon: BookOpen, testId: "button-knowledge-base" },
   { path: "/farmers", label: "Farmers", icon: Users, testId: "button-farmers" },
   { path: "/broadcasts", label: "Broadcasts", icon: Radio, testId: "button-broadcasts" },
+  { path: "/analytics", label: "Analytics", icon: BarChart2, testId: "button-analytics" },
 ];
-
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -50,16 +59,38 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </SheetContent>
       </Sheet>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-hidden min-w-0">
+      {/* Mobile bottom nav */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-black border-t border-[#2F3336] flex">
+        {PRIMARY_NAV.map(({ path, label, icon: Icon, exact }) => (
+          <MobileNavItem key={path} path={path} label={label} Icon={Icon} exact={exact} />
+        ))}
+      </nav>
+
+      {/* Main content — add pb-16 on mobile for bottom nav */}
+      <main className="flex-1 overflow-hidden min-w-0 pb-16 md:pb-0">
         {children}
       </main>
     </div>
   );
 }
 
+function MobileNavItem({ path, label, Icon, exact }: { path: string; label: string; Icon: React.ElementType; exact?: boolean }) {
+  const [location, setLocation] = useLocation();
+  const isActive = exact ? location === path : location === path || location.startsWith(path + "/");
+  return (
+    <button
+      onClick={() => setLocation(path)}
+      className={`flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition-colors ${isActive ? "text-[#22c55e]" : "text-[#71767B]"}`}
+    >
+      <Icon className="w-5 h-5" />
+      <span className="text-[10px] font-medium">{label}</span>
+    </button>
+  );
+}
+
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const [location, setLocation] = useLocation();
+  const { user } = useAuth();
   const { data: conversations, isLoading } = useListConversations();
   const deleteConversation = useDeleteConversation();
   const queryClient = useQueryClient();
@@ -92,10 +123,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       </Link>
 
-      {/* Main nav */}
+      {/* Primary nav */}
       <nav className="flex flex-col gap-0.5 mb-4">
-        {FRONT_NAV.map(({ path, label, icon: Icon, testId }) => {
-          const isActive = path === "/" ? location === "/" : location.startsWith(path);
+        {PRIMARY_NAV.map(({ path, label, icon: Icon, testId, exact }) => {
+          const isActive = exact ? location === path : location === path || location.startsWith(path + "/");
           return (
             <button
               key={path}
@@ -113,27 +144,57 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         })}
       </nav>
 
-      {/* Ask button */}
+      {/* Auth CTA or user pill */}
       <div className="mb-4">
+        {user ? (
+          <button
+            onClick={() => nav("/ask")}
+            data-testid="button-new-chat"
+            className="w-full xl:flex hidden items-center justify-center bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold text-[17px] py-3.5 rounded-full transition-colors"
+          >
+            Ask Mshauri
+          </button>
+        ) : (
+          <button
+            onClick={() => nav("/register")}
+            className="w-full xl:flex hidden items-center justify-center bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold text-[17px] py-3.5 rounded-full transition-colors"
+          >
+            Join Community
+          </button>
+        )}
         <button
-          onClick={() => nav("/")}
-          data-testid="button-new-chat"
-          className="w-full xl:flex hidden items-center justify-center bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold text-[17px] py-3.5 rounded-full transition-colors"
-        >
-          Ask Mshauri
-        </button>
-        <button
-          onClick={() => nav("/")}
+          onClick={() => nav(user ? "/ask" : "/register")}
           className="xl:hidden flex items-center justify-center w-12 h-12 bg-[#22c55e] hover:bg-[#16a34a] rounded-full transition-colors mx-auto"
         >
-          <Feather className="w-5 h-5 text-white" />
+          <Bot className="w-5 h-5 text-white" />
         </button>
       </div>
 
-      {/* Past conversations */}
+      {/* Admin section */}
+      <div className="mb-4">
+        <p className="hidden xl:block text-[11px] font-bold text-[#71767B] uppercase tracking-widest px-3 mb-2">Admin</p>
+        <div className="flex flex-col gap-0.5">
+          {ADMIN_NAV.map(({ path, label, icon: Icon, testId }) => {
+            const isActive = location.startsWith(path);
+            return (
+              <button
+                key={path}
+                onClick={() => nav(path)}
+                data-testid={testId}
+                className={`flex items-center gap-4 p-3 rounded-full transition-colors text-left w-full hover:bg-white/10 text-[#71767B] hover:text-[#E7E9EA] ${isActive ? "font-bold text-[#E7E9EA]" : ""}`}
+              >
+                <Icon className={`w-[22px] h-[22px] shrink-0 ${isActive ? "text-[#22c55e]" : ""}`} />
+                <span className="hidden xl:block text-[16px] leading-none">{label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Recent conversations */}
       <div className="flex-1 min-h-0 flex flex-col">
         <p className="hidden xl:block text-[12px] font-bold text-[#71767B] uppercase tracking-widest px-3 mb-2">
-          Recent
+          Recent Chats
         </p>
         <ScrollArea className="flex-1">
           <div className="flex flex-col gap-0.5 pb-4">

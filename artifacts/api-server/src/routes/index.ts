@@ -8,6 +8,9 @@ import { marketPricesRouter } from "./market-prices";
 import { broadcastsRouter } from "./broadcasts";
 import { analyticsRouter } from "./analytics";
 import { contactsRouter } from "./contacts";
+import { authRouter } from "./auth";
+import { communitiesRouter } from "./communities";
+import { postsRouter } from "./posts";
 
 const router: IRouter = Router();
 
@@ -20,5 +23,8 @@ router.use(marketPricesRouter);
 router.use(broadcastsRouter);
 router.use(analyticsRouter);
 router.use(contactsRouter);
+router.use(authRouter);
+router.use(communitiesRouter);
+router.use(postsRouter);
 
 export default router;

@@ -1,1 +1,4 @@
 - [OpenAPI YAML duplicate-key gotcha](openapi-yaml-dupe-key.md) — orval says "Failed to resolve input" when YAML has duplicate mapping keys (e.g. two `description:` lines at same indent level in the `tags:` block).
+- [Seed script transitive deps](seed-transitive-deps.md) — scripts/tsx can't resolve workspace transitive deps (e.g. drizzle-orm via @workspace/db); use raw pg for seed scripts instead.
+- [Session auth cookie production](session-auth-config.md) — express-session needs sameSite:none + secure:true in production for Replit's HTTPS proxy; dev uses sameSite:lax.
+- [WhatsApp token runtime](whatsapp-token.md) — WHATSAPP_ACCESS_TOKEN must be read at request time via getWhatsAppConfig(), not cached at startup.
