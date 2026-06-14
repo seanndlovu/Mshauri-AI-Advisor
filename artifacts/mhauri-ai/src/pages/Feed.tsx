@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, FormEvent } from "react";
 import { useLocation, Link } from "wouter";
 import {
-  ThumbsUp, MessageCircle, MapPin, Clock, Search,
-  TrendingUp, TrendingDown, Minus, AlertTriangle,
+  ThumbsUp, MessageCircle, MapPin, Search,
+  TrendingUp, TrendingDown,
   CloudRain, Beef, Lightbulb, ArrowRight, Send,
-  ChevronRight, Filter, Plus, Wifi
+  ChevronRight, Wifi
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
@@ -66,8 +66,6 @@ const POST_TYPE_META: Record<string, { label: string; color: string; bg: string;
   success_story: { label: "Success Story", color: "text-green-400", bg: "bg-green-500/15 border-green-500/30", icon: "✅" },
 };
 
-const FEED_FILTERS = ["All", "Alerts", "Markets", "Weather", "Opportunities", "Livestock"];
-
 const COMMUNITY_ICONS: Record<string, string> = {
   maize: "🌽", livestock: "🐄", poultry: "🐔", vegetables: "🥬",
   tobacco: "🌿", pests: "🐛", irrigation: "💧", agribusiness: "💼",
@@ -80,11 +78,6 @@ const QUICK_PROMPTS = [
   "Best cattle breeds for low rainfall",
   "Fall armyworm control methods",
 ];
-
-const FILTER_TYPE_MAP: Record<string, string | null> = {
-  "All": null, "Alerts": "disease_report", "Markets": "market_price",
-  "Weather": "weather", "Opportunities": "opportunity", "Livestock": null,
-};
 
 /* ─── TickerBar ───────────────────────────────────────── */
 function TickerBar({ onReport }: { onReport: () => void }) {
@@ -110,7 +103,7 @@ function TickerBar({ onReport }: { onReport: () => void }) {
         onClick={onReport}
         className="flex items-center gap-1.5 shrink-0 ml-3 mr-4 px-3 h-6 rounded-full bg-[#22c55e]/15 border border-[#22c55e]/30 text-[#22c55e] text-[11px] font-bold hover:bg-[#22c55e]/25 transition-colors"
       >
-        <Plus className="w-3 h-3" /> Report
+        + Report
       </button>
     </div>
   );
@@ -305,115 +298,72 @@ function PostThumb({ type }: { type: string }) {
 
 /* ─── Intelligence Feed ───────────────────────────────── */
 function IntelligenceFeed({ posts, loading }: { posts: Post[]; loading: boolean }) {
-  const [activeFilter, setActiveFilter] = useState("All");
-  const [, setLocation] = useLocation();
-
-  const filtered = activeFilter === "All"
-    ? posts
-    : activeFilter === "Livestock"
-    ? posts.filter((p) => p.communityId === 2)
-    : posts.filter((p) => p.type === FILTER_TYPE_MAP[activeFilter]);
-
   return (
-    <div className="flex-1 min-h-0">
-      {/* Filter tabs */}
-      <div className="flex items-center gap-1 px-4 pt-4 pb-2 border-b border-[#1f2937] overflow-x-auto scrollbar-none">
-        <div className="flex items-center gap-1 mr-2">
-          <Filter className="w-3.5 h-3.5 text-[#4a6a7a]" />
-        </div>
-        {FEED_FILTERS.map((f) => (
-          <button
-            key={f}
-            onClick={() => setActiveFilter(f)}
-            className={`px-3 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all ${
-              activeFilter === f
-                ? "bg-[#22c55e]/20 text-[#22c55e] border border-[#22c55e]/30"
-                : "text-[#4a6a7a] border border-transparent hover:text-[#a0b0b8] hover:bg-white/5"
-            }`}
-          >
-            {f}
-          </button>
-        ))}
-        <button className="flex items-center justify-center w-6 h-6 rounded-full border border-[#1f2937] text-[#4a6a7a] hover:text-[#e7e9ea] hover:bg-white/5 transition-colors ml-1 shrink-0">
-          <Plus className="w-3 h-3" />
-        </button>
-      </div>
-
-      {/* Cards */}
-      <div className="flex flex-col">
-        {loading
-          ? Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="px-4 py-4 border-b border-[#1f2937]">
-                <div className="flex gap-3">
-                  <div className="flex-1">
-                    <div className="h-3 w-24 bg-white/5 rounded animate-pulse mb-2" />
-                    <div className="h-4 w-3/4 bg-white/5 rounded animate-pulse mb-1.5" />
-                    <div className="h-3 w-full bg-white/5 rounded animate-pulse" />
-                  </div>
-                  <div className="w-[72px] h-[56px] bg-white/5 rounded-lg animate-pulse shrink-0" />
+    <div className="flex-1">
+      {loading
+        ? Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="px-4 py-4 border-b border-[#0d1117]">
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <div className="h-3 w-24 bg-white/5 rounded animate-pulse mb-2" />
+                  <div className="h-4 w-3/4 bg-white/5 rounded animate-pulse mb-1.5" />
+                  <div className="h-3 w-full bg-white/5 rounded animate-pulse" />
                 </div>
+                <div className="w-[72px] h-[56px] bg-white/5 rounded-lg animate-pulse shrink-0" />
               </div>
-            ))
-          : filtered.length === 0
-          ? (
-            <div className="text-center py-12 text-[#4a6a7a] text-sm">
-              No posts in this category yet
             </div>
-          )
-          : filtered.slice(0, 15).map((post, i) => {
-              const meta = POST_TYPE_META[post.type] ?? POST_TYPE_META.question;
-              const daysOld = Math.floor((Date.now() - new Date(post.createdAt).getTime()) / 86400000);
-              const timeLabel = daysOld === 0
-                ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: false }) + " ago"
-                : formatDistanceToNow(new Date(post.createdAt), { addSuffix: true });
-
-              return (
-                <Link key={post.id} href={`/posts/${post.id}`}>
-                  <div className={`px-4 py-3.5 border-b border-[#131a1f] hover:bg-[#0d1117] cursor-pointer transition-colors group`}>
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1 min-w-0">
-                        {/* Metadata row */}
-                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                          <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${meta.bg} ${meta.color}`}>
-                            <span>{meta.icon}</span> {meta.label}
-                          </span>
-                          <span className="text-[#3a5060] text-[10px]">•</span>
-                          <span className="text-[#3a5060] text-[10px]">{timeLabel}</span>
-                          {post.location && (
-                            <>
-                              <span className="text-[#3a5060] text-[10px]">•</span>
-                              <span className="flex items-center gap-0.5 text-[#4a6a7a] text-[10px]">
-                                <MapPin className="w-2.5 h-2.5" />{post.location}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                        {/* Title */}
-                        <h3 className="text-[#d0dde0] font-semibold text-[13px] leading-snug mb-1 group-hover:text-[#e7f0e7] transition-colors line-clamp-2">
-                          {post.title}
-                        </h3>
-                        {/* Body preview */}
-                        <p className="text-[#4a5a68] text-[11px] leading-relaxed line-clamp-1 mb-2">
-                          {post.content}
-                        </p>
-                        {/* Footer */}
-                        <div className="flex items-center gap-3 text-[#3a5060] text-[10px]">
-                          <span className="flex items-center gap-1">
-                            <ThumbsUp className="w-3 h-3" /> {post.upvotes}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <MessageCircle className="w-3 h-3" /> {post.commentCount}
-                          </span>
-                          <span>{post.authorName ?? "Anonymous"}</span>
-                        </div>
+          ))
+        : posts.length === 0
+        ? (
+          <div className="text-center py-16 text-[#4a6a7a] text-sm">
+            No posts yet — be the first to share
+          </div>
+        )
+        : posts.map((post) => {
+            const meta = POST_TYPE_META[post.type] ?? POST_TYPE_META.question;
+            const timeLabel = formatDistanceToNow(new Date(post.createdAt), { addSuffix: true });
+            return (
+              <Link key={post.id} href={`/posts/${post.id}`}>
+                <div className="px-4 py-3.5 border-b border-[#0d1117] hover:bg-[#0d1117] cursor-pointer transition-colors group">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${meta.bg} ${meta.color}`}>
+                          <span>{meta.icon}</span> {meta.label}
+                        </span>
+                        <span className="text-[#2a3a48] text-[10px]">•</span>
+                        <span className="text-[#3a5060] text-[10px]">{timeLabel}</span>
+                        {post.location && (
+                          <>
+                            <span className="text-[#2a3a48] text-[10px]">•</span>
+                            <span className="flex items-center gap-0.5 text-[#4a6a7a] text-[10px]">
+                              <MapPin className="w-2.5 h-2.5" />{post.location}
+                            </span>
+                          </>
+                        )}
                       </div>
-                      <PostThumb type={post.type} />
+                      <h3 className="text-[#d0dde0] font-semibold text-[13px] leading-snug mb-1 group-hover:text-[#e7f0e7] transition-colors line-clamp-2">
+                        {post.title}
+                      </h3>
+                      <p className="text-[#3a4a58] text-[11px] leading-relaxed line-clamp-1 mb-2">
+                        {post.content}
+                      </p>
+                      <div className="flex items-center gap-3 text-[#2a3a48] text-[10px]">
+                        <span className="flex items-center gap-1 hover:text-[#22c55e] transition-colors">
+                          <ThumbsUp className="w-3 h-3" /> {post.upvotes}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MessageCircle className="w-3 h-3" /> {post.commentCount}
+                        </span>
+                        <span className="text-[#2a4050]">{post.authorName ?? "Anonymous"}</span>
+                      </div>
                     </div>
+                    <PostThumb type={post.type} />
                   </div>
-                </Link>
-              );
-            })}
-      </div>
+                </div>
+              </Link>
+            );
+          })}
     </div>
   );
 }
