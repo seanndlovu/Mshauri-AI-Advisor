@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Search, RefreshCw, ExternalLink, TrendingUp, ShoppingBasket, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Search, RefreshCw, ShoppingBasket, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 interface LivePrice {
   item: string;
@@ -181,25 +181,6 @@ export default function MarketPrices() {
           </div>
         </div>
       )}
-
-      {/* ── Source links ── */}
-      <div className="flex gap-2 mb-5">
-        <a
-          href="https://docs.google.com/spreadsheets/d/1Xhm6GEsJTncv_aPhK9Ivo1eq40ZQTxeE3PphNy8uQ_s"
-          target="_blank" rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-[12px] font-bold text-[var(--text-2)] border border-[var(--border-color)] px-3 py-1.5 rounded-full hover:border-[#22c55e]/50 hover:text-[#22c55e] transition-colors bg-[var(--bg-card)]"
-        >
-          <span>📊</span> Price Sheet
-          <ExternalLink className="w-3 h-3 opacity-50" />
-        </a>
-        <a
-          href="https://zmx.co.zw" target="_blank" rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-[12px] font-bold text-[var(--text-2)] border border-[var(--border-color)] px-3 py-1.5 rounded-full hover:border-[#22c55e]/50 hover:text-[#22c55e] transition-colors bg-[var(--bg-card)]"
-        >
-          <TrendingUp className="w-3.5 h-3.5" /> ZMX Exchange
-          <ExternalLink className="w-3 h-3 opacity-50" />
-        </a>
-      </div>
 
       {/* ── Search ── */}
       <div className="relative mb-3">
