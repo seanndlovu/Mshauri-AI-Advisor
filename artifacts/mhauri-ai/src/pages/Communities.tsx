@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Users, TrendingUp, Plus, Sprout } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { CreateCommunityModal } from "@/components/CreateCommunityModal";
 
 interface Community {
   id: number;
@@ -15,20 +16,24 @@ interface Community {
 const COMMUNITY_ICONS: Record<string, string> = {
   maize: "🌽", livestock: "🐄", poultry: "🐔", irrigation: "💧",
   climate: "🌦️", agribusiness: "💼", tobacco: "🌿", vegetables: "🥬",
-  pests: "🐛", soils: "🪱",
+  pests: "🐛", soils: "🪱", crops: "🌾", diseases: "🦠",
+  faq: "❓", machinery: "⚙️", maricho: "📰", veterinary: "🐾",
 };
 
 export default function Communities() {
   const { user } = useAuth();
   const [communities, setCommunities] = useState<Community[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
 
-  useEffect(() => {
+  function loadCommunities() {
     fetch("/api/communities")
       .then((r) => r.json())
-      .then((data) => { setCommunities(data); setLoading(false); })
+      .then((data) => { if (Array.isArray(data)) setCommunities(data); setLoading(false); })
       .catch(() => setLoading(false));
-  }, []);
+  }
+
+  useEffect(() => { loadCommunities(); }, []);
 
   return (
     <div className="h-full overflow-y-auto">
@@ -39,7 +44,23 @@ export default function Communities() {
             <h1 className="text-[#E7E9EA] text-xl font-bold">Communities</h1>
             <p className="text-[#71767B] text-sm mt-0.5">Join discussions with Zimbabwe's farming community</p>
           </div>
+          {user && (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#22c55e] hover:bg-[#16a34a] text-white text-[13px] font-bold rounded-full transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Create
+            </button>
+          )}
         </div>
+
+        {!user && (
+          <div className="mb-5 px-4 py-3 bg-[#1e2025] border border-[#343536] rounded-xl text-[#818384] text-[13px] text-center">
+            <Link href="/login" className="text-[#22c55e] hover:underline font-bold">Log in</Link>
+            {" "}to create your own community
+          </div>
+        )}
 
         {/* Community list */}
         {loading ? (
@@ -54,7 +75,7 @@ export default function Communities() {
             <p>No communities yet</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-0">
+          <div className="flex flex-col gap-0 bg-[#1e2025] border border-[#343536] rounded-2xl overflow-hidden">
             {communities.map((c, i) => {
               const icon = COMMUNITY_ICONS[c.slug] ?? "🌱";
               return (
@@ -72,7 +93,7 @@ export default function Communities() {
                           </span>
                         )}
                       </div>
-                      <p className="text-[#71767B] text-sm truncate">{c.description}</p>
+                      <p className="text-[#71767B] text-sm truncate">{c.name}</p>
                       <div className="flex items-center gap-3 mt-1">
                         <span className="flex items-center gap-1 text-[12px] text-[#71767B]">
                           <Users className="w-3 h-3" /> {c.memberCount.toLocaleString()} members
@@ -88,6 +109,15 @@ export default function Communities() {
           </div>
         )}
       </div>
+
+      <CreateCommunityModal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        onCreated={(c) => {
+          setCommunities(prev => [...prev, c]);
+          setShowCreate(false);
+        }}
+      />
     </div>
   );
 }

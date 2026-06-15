@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { X, MapPin, Loader2, Search, ArrowLeft } from "lucide-react";
+import { X, MapPin, Loader2, Search, ArrowLeft, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { CreateCommunityModal } from "./CreateCommunityModal";
 
-interface Community { id: number; slug: string; name: string; }
+interface Community { id: number; slug: string; name: string; description: string; memberCount: number; postCount: number; }
 
 const COMMUNITY_ICONS: Record<string, string> = {
   maize:"🌽", livestock:"🐄", poultry:"🐔", vegetables:"🥬",
@@ -27,6 +28,7 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
   const [communities, setCommunities] = useState<Community[]>([]);
+  const [loadingCommunities, setLoadingCommunities] = useState(false);
   const [communityId, setCommunityId] = useState<number | "">("");
   const [type, setType] = useState("question");
   const [title, setTitle] = useState("");
@@ -38,15 +40,21 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
 
   // Community picker panel state
   const [showPicker, setShowPicker] = useState(false);
+  const [showCreateCommunity, setShowCreateCommunity] = useState(false);
   const [search, setSearch] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
 
+  function fetchCommunities() {
+    setLoadingCommunities(true);
+    fetch("/api/communities")
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d)) setCommunities(d); })
+      .catch(() => {})
+      .finally(() => setLoadingCommunities(false));
+  }
+
   useEffect(() => {
-    if (open && communities.length === 0) {
-      fetch("/api/communities").then(r => r.json()).then(d => {
-        if (Array.isArray(d)) setCommunities(d);
-      }).catch(() => {});
-    }
+    if (open) fetchCommunities();
   }, [open]);
 
   useEffect(() => {
@@ -71,6 +79,7 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
   function resetAndClose() {
     setTitle(""); setContent(""); setLocation(""); setCommunityId(""); setType("question");
     setShowDetails(false); setShowLocation(false); setShowPicker(false); setSearch("");
+    setShowCreateCommunity(false);
     onClose();
   }
 
@@ -143,7 +152,12 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
 
             {/* Community list */}
             <div className="overflow-y-auto flex-1">
-              {filtered.length === 0 ? (
+              {loadingCommunities ? (
+                <div className="flex items-center justify-center py-10 gap-2 text-[var(--text-3)]">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-[13px]">Loading communities…</span>
+                </div>
+              ) : filtered.length === 0 ? (
                 <p className="px-4 py-6 text-center text-[var(--text-3)] text-[13px]">No communities found</p>
               ) : filtered.map(c => (
                 <button
@@ -163,6 +177,20 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
                   {communityId === c.id && <span className="text-[#22c55e] text-lg">✓</span>}
                 </button>
               ))}
+
+              {/* Create Community button */}
+              <button
+                onClick={() => setShowCreateCommunity(true)}
+                className="w-full flex items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-[var(--bg-subtle)] text-[#22c55e]"
+              >
+                <span className="w-8 h-8 rounded-full border-2 border-dashed border-[#22c55e]/50 flex items-center justify-center shrink-0">
+                  <Plus className="w-4 h-4" />
+                </span>
+                <div>
+                  <div className="text-[13px] font-bold">Create a community</div>
+                  <div className="text-[11px] text-[var(--text-2)]">Start a new farming community</div>
+                </div>
+              </button>
             </div>
           </>
         ) : (
@@ -290,6 +318,18 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
           </>
         )}
       </div>
+
+      <CreateCommunityModal
+        open={showCreateCommunity}
+        onClose={() => setShowCreateCommunity(false)}
+        onCreated={(c) => {
+          setCommunities(prev => [...prev, c]);
+          setCommunityId(c.id);
+          setShowCreateCommunity(false);
+          setShowPicker(false);
+          setSearch("");
+        }}
+      />
     </div>
   );
 }
