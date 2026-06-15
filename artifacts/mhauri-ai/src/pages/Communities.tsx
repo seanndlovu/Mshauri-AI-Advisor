@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import { Users, TrendingUp, Plus, Sprout } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import { CreateCommunityModal } from "@/components/CreateCommunityModal";
+import { Users, TrendingUp, Sprout } from "lucide-react";
 
 interface Community {
   id: number;
@@ -21,48 +19,24 @@ const COMMUNITY_ICONS: Record<string, string> = {
 };
 
 export default function Communities() {
-  const { user } = useAuth();
   const [communities, setCommunities] = useState<Community[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
 
-  function loadCommunities() {
+  useEffect(() => {
     fetch("/api/communities")
       .then((r) => r.json())
       .then((data) => { if (Array.isArray(data)) setCommunities(data); setLoading(false); })
       .catch(() => setLoading(false));
-  }
-
-  useEffect(() => { loadCommunities(); }, []);
+  }, []);
 
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-2xl mx-auto px-4 py-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-[#E7E9EA] text-xl font-bold">Communities</h1>
-            <p className="text-[#71767B] text-sm mt-0.5">Join discussions with Zimbabwe's farming community</p>
-          </div>
-          {user && (
-            <button
-              onClick={() => setShowCreate(true)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-[#22c55e] hover:bg-[#16a34a] text-white text-[13px] font-bold rounded-full transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Create
-            </button>
-          )}
+        <div className="mb-6">
+          <h1 className="text-[#E7E9EA] text-xl font-bold">Communities</h1>
+          <p className="text-[#71767B] text-sm mt-0.5">Join discussions with Zimbabwe's farming community</p>
         </div>
 
-        {!user && (
-          <div className="mb-5 px-4 py-3 bg-[#1e2025] border border-[#343536] rounded-xl text-[#818384] text-[13px] text-center">
-            <Link href="/login" className="text-[#22c55e] hover:underline font-bold">Log in</Link>
-            {" "}to create your own community
-          </div>
-        )}
-
-        {/* Community list */}
         {loading ? (
           <div className="flex flex-col gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -101,7 +75,6 @@ export default function Communities() {
                         <span className="text-[12px] text-[#71767B]">{c.postCount.toLocaleString()} posts</span>
                       </div>
                     </div>
-                    <Plus className="w-5 h-5 text-[#22c55e] shrink-0" />
                   </div>
                 </Link>
               );
@@ -109,15 +82,6 @@ export default function Communities() {
           </div>
         )}
       </div>
-
-      <CreateCommunityModal
-        open={showCreate}
-        onClose={() => setShowCreate(false)}
-        onCreated={(c) => {
-          setCommunities(prev => [...prev, c]);
-          setShowCreate(false);
-        }}
-      />
     </div>
   );
 }
