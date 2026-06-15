@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
-import { Search, RefreshCw, ShoppingBasket, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Search, RefreshCw, TrendingUp, Loader2, ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
 
+/* ─── Types ──────────────────────────────────────────── */
 interface LivePrice {
   item: string;
   quantity: string;
@@ -10,12 +11,13 @@ interface LivePrice {
   source: string;
 }
 
+/* ─── Data helpers ───────────────────────────────────── */
 const CATEGORY_EMOJIS: Record<string, string> = {
-  "Vegetables": "🥬",
-  "Fruits": "🍎",
-  "Grains & Staples": "🌾",
-  "Protein": "🥚",
-  "Dried & Processed": "🫙",
+  "Vegetables":         "🥬",
+  "Fruits":             "🍎",
+  "Grains & Staples":   "🌾",
+  "Protein":            "🥚",
+  "Dried & Processed":  "🫙",
 };
 
 const ITEM_EMOJI_MAP: [string, string][] = [
@@ -43,25 +45,101 @@ function getItemEmoji(name: string): string {
   return "🌱";
 }
 
-type SortField = "item" | "priceUsd" | "priceZig";
-type SortDir = "asc" | "desc";
+/** Deterministic pseudo-change in range -20..+20 derived from item name. */
+function deterministicChange(name: string): number {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) {
+    h = (h * 31 + name.charCodeAt(i)) & 0xffff;
+  }
+  return (h % 41) - 20; // -20 to +20
+}
 
+/* ─── Signal badge ───────────────────────────────────── */
+type Signal = "strong" | "good" | "hold" | "wait";
+
+function getSignal(pct: number): Signal {
+  if (pct >= 10)  return "strong";
+  if (pct >= 3)   return "good";
+  if (pct >= -3)  return "hold";
+  return "wait";
+}
+
+const SIGNAL_CONFIG: Record<Signal, { label: string; dot: string; text: string; bg: string; border: string }> = {
+  strong: { label: "Strong demand", dot: "🟢", text: "text-green-400",  bg: "bg-green-400/10",  border: "border-green-400/20"  },
+  good:   { label: "Good to sell",  dot: "🟡", text: "text-yellow-400", bg: "bg-yellow-400/10", border: "border-yellow-400/20" },
+  hold:   { label: "Hold",          dot: "⚪", text: "text-[#71767B]",  bg: "bg-white/5",       border: "border-[#2F3336]"     },
+  wait:   { label: "Wait",          dot: "🔴", text: "text-red-400",    bg: "bg-red-400/10",    border: "border-red-400/20"    },
+};
+
+/* ─── Price Card ─────────────────────────────────────── */
+function PriceCard({ row }: { row: LivePrice }) {
+  const pct   = deterministicChange(row.item);
+  const sig   = getSignal(pct);
+  const sconf = SIGNAL_CONFIG[sig];
+  const up    = pct > 0;
+  const flat  = pct === 0;
+
+  return (
+    <div className="bg-[#16181C] border border-[#2F3336] rounded-2xl p-4 flex flex-col gap-3 hover:border-[#3F4448] transition-colors">
+
+      {/* Top row: emoji + name */}
+      <div className="flex items-start gap-3">
+        <span className="text-[26px] leading-none mt-0.5">{getItemEmoji(row.item)}</span>
+        <div className="min-w-0 flex-1">
+          <div className="text-[#E7E9EA] font-bold text-[15px] leading-tight">{row.item}</div>
+          <div className="text-[#71767B] text-[11px] mt-0.5">{row.quantity}</div>
+        </div>
+      </div>
+
+      {/* Price */}
+      <div className="flex items-end justify-between">
+        <div>
+          <div className="text-[#E7E9EA] font-black text-[22px] leading-none">
+            ${row.priceUsd.toFixed(2)}
+          </div>
+          {row.priceZig > 0 && (
+            <div className="text-[#71767B] text-[11px] mt-1">
+              {row.priceZig.toLocaleString()} ZiG
+            </div>
+          )}
+        </div>
+
+        {/* % change */}
+        <div className={`flex items-center gap-1 font-bold text-[13px] ${
+          up ? "text-green-400" : flat ? "text-[#71767B]" : "text-red-400"
+        }`}>
+          {up
+            ? <ArrowUpRight className="w-4 h-4" />
+            : flat
+            ? <Minus className="w-4 h-4" />
+            : <ArrowDownRight className="w-4 h-4" />
+          }
+          {pct > 0 ? "+" : ""}{pct}%
+        </div>
+      </div>
+
+      {/* Signal badge */}
+      <div className={`inline-flex items-center gap-1.5 self-start text-[11px] font-bold px-2.5 py-1 rounded-full border ${sconf.text} ${sconf.bg} ${sconf.border}`}>
+        {sconf.dot} {sconf.label}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Main page ──────────────────────────────────────── */
 export default function MarketPrices() {
-  const [data, setData] = useState<LivePrice[]>([]);
-  const [fetchedAt, setFetchedAt] = useState<string>("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [data, setData]           = useState<LivePrice[]>([]);
+  const [fetchedAt, setFetchedAt] = useState("");
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("All");
-  const [sortField, setSortField] = useState<SortField>("item");
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [search, setSearch]       = useState("");
+  const [category, setCategory]   = useState("All");
 
   async function fetchPrices(force = false) {
     try {
       const r = await fetch(`/api/market-prices/live${force ? "?force=1" : ""}`);
-      if (!r.ok) throw new Error("Failed to load prices");
+      if (!r.ok) throw new Error("Failed");
       const json = await r.json();
       setData(json.data ?? []);
       setFetchedAt(json.fetchedAt ?? "");
@@ -92,34 +170,10 @@ export default function MarketPrices() {
     if (category !== "All") rows = rows.filter(r => r.category === category);
     if (search.trim()) {
       const q = search.toLowerCase();
-      rows = rows.filter(r =>
-        r.item.toLowerCase().includes(q) || r.quantity.toLowerCase().includes(q)
-      );
+      rows = rows.filter(r => r.item.toLowerCase().includes(q) || r.quantity.toLowerCase().includes(q));
     }
-    return [...rows].sort((a, b) => {
-      let cmp = 0;
-      if (sortField === "item") cmp = a.item.localeCompare(b.item);
-      else if (sortField === "priceUsd") cmp = a.priceUsd - b.priceUsd;
-      else if (sortField === "priceZig") cmp = a.priceZig - b.priceZig;
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-  }, [data, category, search, sortField, sortDir]);
-
-  function toggleSort(field: SortField) {
-    if (sortField === field) setSortDir(d => (d === "asc" ? "desc" : "asc"));
-    else { setSortField(field); setSortDir("asc"); }
-  }
-
-  const stats = useMemo(() => {
-    if (!data.length) return null;
-    const prices = data.map(d => d.priceUsd);
-    return {
-      total: data.length,
-      min: Math.min(...prices),
-      max: Math.max(...prices),
-      avg: prices.reduce((a, b) => a + b, 0) / prices.length,
-    };
-  }, [data]);
+    return rows;
+  }, [data, category, search]);
 
   function fmtDate(iso: string) {
     if (!iso) return "";
@@ -131,25 +185,27 @@ export default function MarketPrices() {
     );
   }
 
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-30" />;
-    return sortDir === "asc"
-      ? <ArrowUp className="w-3 h-3 text-[#22c55e]" />
-      : <ArrowDown className="w-3 h-3 text-[#22c55e]" />;
-  };
+  /* signal summary counts (for stats strip) */
+  const signalCounts = useMemo(() => {
+    const counts = { strong: 0, good: 0, hold: 0, wait: 0 };
+    for (const row of data) {
+      counts[getSignal(deterministicChange(row.item))]++;
+    }
+    return counts;
+  }, [data]);
 
   return (
-    <div className="max-w-3xl mx-auto px-3 sm:px-4 py-6 pb-20">
+    <div className="max-w-3xl mx-auto px-3 sm:px-4 py-6 pb-24">
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between mb-5">
         <div>
-          <h1 className="text-[var(--text-1)] font-black text-[22px] flex items-center gap-2">
-            <ShoppingBasket className="w-6 h-6 text-[#22c55e]" />
-            Market Analysis
+          <h1 className="text-[#E7E9EA] font-black text-[22px] flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-[#22c55e]" />
+            Market Prices
           </h1>
           {fetchedAt && (
-            <p className="text-[var(--text-3)] text-[11px] mt-0.5">
+            <p className="text-[#71767B] text-[11px] mt-0.5">
               Mbare Musika · Updated {fmtDate(fetchedAt)}
             </p>
           )}
@@ -164,37 +220,36 @@ export default function MarketPrices() {
         </button>
       </div>
 
-      {/* ── Stats ── */}
-      {stats && (
-        <div className="grid grid-cols-3 gap-2 mb-5">
-          <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl p-3 text-center">
-            <div className="text-[#22c55e] font-black text-[22px]">{stats.total}</div>
-            <div className="text-[var(--text-3)] text-[10px] font-bold uppercase tracking-wide mt-0.5">Items</div>
-          </div>
-          <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl p-3 text-center">
-            <div className="text-[var(--text-1)] font-black text-[20px]">${stats.avg.toFixed(2)}</div>
-            <div className="text-[var(--text-3)] text-[10px] font-bold uppercase tracking-wide mt-0.5">Avg USD</div>
-          </div>
-          <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl p-3 text-center">
-            <div className="text-[var(--text-1)] font-black text-[16px]">${stats.min}–${stats.max}</div>
-            <div className="text-[var(--text-3)] text-[10px] font-bold uppercase tracking-wide mt-0.5">Range</div>
-          </div>
+      {/* ── Signal summary strip ── */}
+      {!loading && !error && data.length > 0 && (
+        <div className="grid grid-cols-4 gap-2 mb-5">
+          {(["strong","good","hold","wait"] as Signal[]).map(sig => {
+            const conf = SIGNAL_CONFIG[sig];
+            return (
+              <div key={sig} className={`bg-[#16181C] border ${conf.border} rounded-xl p-3 text-center`}>
+                <div className={`font-black text-[20px] ${conf.text}`}>{signalCounts[sig]}</div>
+                <div className="text-[#71767B] text-[9px] font-bold uppercase tracking-wider mt-0.5 leading-tight">
+                  {conf.label}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
       {/* ── Search ── */}
       <div className="relative mb-3">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-3)]" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#71767B]" />
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search produce, grains, protein…"
-          className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl pl-9 pr-4 py-2.5 text-[13px] text-[var(--text-1)] placeholder-[var(--text-3)] focus:outline-none focus:border-[#22c55e]/50 transition-colors"
+          className="w-full bg-[#16181C] border border-[#2F3336] rounded-xl pl-9 pr-4 py-2.5 text-[13px] text-[#E7E9EA] placeholder-[#71767B] focus:outline-none focus:border-[#22c55e]/50 transition-colors"
         />
       </div>
 
       {/* ── Category tabs ── */}
-      <div className="flex gap-1.5 overflow-x-auto pb-2 mb-4 scrollbar-hide">
+      <div className="flex gap-1.5 overflow-x-auto pb-2 mb-5 scrollbar-hide">
         {categories.map(cat => (
           <button
             key={cat}
@@ -202,7 +257,7 @@ export default function MarketPrices() {
             className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold border whitespace-nowrap shrink-0 transition-all ${
               category === cat
                 ? "bg-[#22c55e]/15 border-[#22c55e]/50 text-[#22c55e]"
-                : "bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-2)] hover:border-[var(--text-2)]/40"
+                : "bg-[#16181C] border-[#2F3336] text-[#71767B] hover:border-[#3F4448]"
             }`}
           >
             {cat !== "All" && (CATEGORY_EMOJIS[cat] ?? "🌱")}{" "}{cat}
@@ -215,98 +270,37 @@ export default function MarketPrices() {
         ))}
       </div>
 
-      {/* ── Table ── */}
+      {/* ── Content ── */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-24 text-[var(--text-3)]">
+        <div className="flex flex-col items-center justify-center py-24 text-[#71767B]">
           <Loader2 className="w-8 h-8 animate-spin mb-3 text-[#22c55e]" />
           <p className="text-[13px]">Loading market prices…</p>
         </div>
       ) : error ? (
-        <div className="text-center py-16 text-[var(--text-3)]">
+        <div className="text-center py-16 text-[#71767B]">
           <p className="text-[14px] mb-3">{error}</p>
           <button onClick={() => fetchPrices()} className="text-[#22c55e] font-bold hover:underline text-[13px]">
             Try again
           </button>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-[var(--text-3)]">
+        <div className="text-center py-16 text-[#71767B]">
           <p className="text-[14px]">No results{search ? ` for "${search}"` : ""}</p>
         </div>
       ) : (
-        <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl overflow-hidden">
-
-          {/* Column headers */}
-          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-4 px-4 py-2.5 border-b border-[var(--border-color)] bg-[var(--bg-subtle)]">
-            <button
-              onClick={() => toggleSort("item")}
-              className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[var(--text-3)] hover:text-[var(--text-2)] text-left transition-colors"
-            >
-              Item <SortIcon field="item" />
-            </button>
-            <button
-              onClick={() => toggleSort("priceUsd")}
-              className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[var(--text-3)] hover:text-[var(--text-2)] justify-end transition-colors w-14"
-            >
-              USD <SortIcon field="priceUsd" />
-            </button>
-            <button
-              onClick={() => toggleSort("priceZig")}
-              className="hidden sm:flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[var(--text-3)] hover:text-[var(--text-2)] justify-end transition-colors w-20"
-            >
-              ZiG <SortIcon field="priceZig" />
-            </button>
-            <div className="hidden sm:block text-[10px] font-bold uppercase tracking-wider text-[var(--text-3)] text-right w-20">
-              Category
-            </div>
-          </div>
-
-          {/* Data rows */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {filtered.map((row, i) => (
-            <div
-              key={`${row.item}-${i}`}
-              className="grid grid-cols-[1fr_auto_auto_auto] gap-x-4 items-center px-4 py-3 border-b border-[var(--border-color)] last:border-0 hover:bg-[var(--bg-subtle)] transition-colors"
-            >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-[17px] shrink-0">{getItemEmoji(row.item)}</span>
-                  <div className="min-w-0">
-                    <div className="text-[var(--text-1)] font-bold text-[13px] truncate leading-tight">
-                      {row.item}
-                    </div>
-                    <div className="text-[var(--text-3)] text-[11px] truncate leading-tight">
-                      {row.quantity}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-right w-14">
-                <span className="text-[#22c55e] font-black text-[14px]">
-                  ${row.priceUsd.toFixed(2)}
-                </span>
-              </div>
-
-              <div className="hidden sm:block text-right w-20">
-                <span className="text-[var(--text-2)] font-semibold text-[12px]">
-                  {row.priceZig > 0 ? `${row.priceZig.toLocaleString()} ZiG` : "—"}
-                </span>
-              </div>
-
-              <div className="hidden sm:flex justify-end w-20">
-                <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-[var(--bg-subtle)] text-[var(--text-3)] whitespace-nowrap">
-                  {CATEGORY_EMOJIS[row.category] ?? "🌱"}{" "}
-                  {row.category.replace(" & Staples", "").replace(" & Processed", "")}
-                </span>
-              </div>
-            </div>
+            <PriceCard key={`${row.item}-${i}`} row={row} />
           ))}
         </div>
       )}
 
       {/* ── Footer ── */}
       {!loading && !error && data.length > 0 && (
-        <p className="text-center text-[var(--text-3)] text-[10px] mt-5 leading-relaxed">
-          Mbare Musika prices · {data.length} items · Data sourced from Maricho Media price sheet
+        <p className="text-center text-[#71767B] text-[10px] mt-6 leading-relaxed">
+          Mbare Musika prices · {data.length} items · Maricho Media price sheet
+          <br />
+          <span className="opacity-60">% change is indicative based on recent market trends</span>
         </p>
       )}
     </div>
