@@ -40,6 +40,7 @@ function Router() {
             <Route path="/weather" component={Weather} />
             <Route path="/whatsapp" component={WhatsApp} />
             <Route path="/profile" component={Profile} />
+            <Route path="/me" component={Profile} />
             <Route path="/farmers" component={Farmers} />
             <Route path="/market-prices" component={MarketPrices} />
             <Route path="/broadcasts" component={Broadcasts} />

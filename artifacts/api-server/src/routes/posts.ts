@@ -36,7 +36,9 @@ const ZW_ANIMALS = [
 ];
 
 function randomAnimal(): string {
-  return ZW_ANIMALS[Math.floor(Math.random() * ZW_ANIMALS.length)];
+  const animal = ZW_ANIMALS[Math.floor(Math.random() * ZW_ANIMALS.length)];
+  const num = 100 + Math.floor(Math.random() * 900);
+  return `${animal}-${num}`;
 }
 
 function formatPost(p: typeof postsTable.$inferSelect) {
