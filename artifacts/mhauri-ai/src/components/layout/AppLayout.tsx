@@ -9,7 +9,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Home, Globe, Bot, TrendingUp, CloudSun,
   UserCircle, Settings, Trash2, Menu, PenSquare, ChevronDown, MessageCircle,
+  Sun, Moon,
 } from "lucide-react";
+import { useTheme } from "@/hooks/use-theme";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
@@ -25,7 +27,8 @@ interface Community { id: number; slug: string; name: string; memberCount: numbe
 const COMMUNITY_ICONS: Record<string, string> = {
   maize:"🌽", livestock:"🐄", poultry:"🐔", vegetables:"🥬",
   tobacco:"🌿", pests:"🐛", irrigation:"💧", agribusiness:"💼",
-  climate:"🌦️", soils:"🪱",
+  climate:"🌦️", soils:"🪱", crops:"🌾", diseases:"🦠",
+  faq:"❓", machinery:"⚙️", maricho:"📰", veterinary:"🐾",
 };
 
 const MOBILE_NAV = [
@@ -100,6 +103,22 @@ function NavLink({ path, label, icon: Icon, exact, badge, extra, onClick }: {
       <span className="text-[13px] flex-1">{label}</span>
       {badge && <span className="text-[10px] font-black text-[#22c55e] bg-[#22c55e]/15 px-1.5 py-0.5 rounded-full">{badge}</span>}
       {extra}
+    </button>
+  );
+}
+
+function ThemeToggle() {
+  const { isDark, toggle } = useTheme();
+  return (
+    <button
+      onClick={toggle}
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-[#818384] hover:bg-[#272729] hover:text-[#d7dadc] transition-colors text-left"
+    >
+      {isDark
+        ? <><Sun className="w-[18px] h-[18px] shrink-0" /><span className="text-[13px]">Light Mode</span></>
+        : <><Moon className="w-[18px] h-[18px] shrink-0" /><span className="text-[13px]">Dark Mode</span></>
+      }
     </button>
   );
 }
@@ -245,6 +264,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <nav className="flex flex-col gap-0.5">
           <NavLink path="/profile"  label="Profile"  icon={UserCircle} onClick={onNavigate} />
           <NavLink path="/settings" label="Settings" icon={Settings}   onClick={onNavigate} />
+          <ThemeToggle />
         </nav>
       </div>
 

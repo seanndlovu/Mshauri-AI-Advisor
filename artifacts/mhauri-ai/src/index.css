@@ -212,6 +212,52 @@
   --chart-5: 120 15% 50%;
 }
 
+/* ── Theme CSS variables ── */
+:root {
+  --bg-page:    #1a1a1b;
+  --bg-card:    #1e2025;
+  --bg-subtle:  #272729;
+  --bg-vote:    #161618;
+  --border-color: #343536;
+  --text-1:     #d7dadc;
+  --text-2:     #818384;
+  --text-3:     #4a5568;
+}
+
+html.light {
+  --bg-page:    #dae0e6;
+  --bg-card:    #ffffff;
+  --bg-subtle:  #f6f7f8;
+  --bg-vote:    #f8f9fa;
+  --border-color: #edeff1;
+  --text-1:     #1c1c1c;
+  --text-2:     #878a8c;
+  --text-3:     #b8bbbd;
+  color-scheme: light;
+}
+
+/* ── Light-mode overrides for Tailwind hex classes ── */
+html.light .bg-\[\#1a1a1b\]           { background-color: #dae0e6 !important; }
+html.light .bg-\[\#1e2025\]           { background-color: #ffffff !important; }
+html.light .bg-\[\#272729\]           { background-color: #f6f7f8 !important; }
+html.light .bg-\[\#161618\]           { background-color: #f8f9fa !important; }
+html.light .bg-\[\#2d2e30\]           { background-color: #edeff1 !important; }
+html.light .border-\[\#343536\]       { border-color:      #edeff1 !important; }
+html.light .border-t.border-\[\#343536\] { border-color:   #edeff1 !important; }
+html.light .border-r.border-\[\#343536\] { border-color:   #edeff1 !important; }
+html.light .border-b.border-\[\#343536\] { border-color:   #edeff1 !important; }
+html.light .text-\[\#d7dadc\]         { color: #1c1c1c !important; }
+html.light .text-\[\#818384\]         { color: #878a8c !important; }
+html.light .text-\[\#4a5568\]         { color: #b8bbbd !important; }
+html.light .hover\:bg-\[\#272729\]:hover { background-color: #edeff1 !important; }
+html.light .hover\:bg-\[\#2d2e30\]:hover { background-color: #e5e7ea !important; }
+html.light .hover\:text-\[\#d7dadc\]:hover { color: #1c1c1c !important; }
+html.light .bg-\[\#272729\]\/80       { background-color: rgba(246,247,248,0.9) !important; }
+
+/* sidebar & post card vote column in light */
+html.light aside                       { background-color: #ffffff !important; border-color: #edeff1 !important; }
+html.light nav.fixed.bottom-0         { background-color: #ffffff !important; border-color: #edeff1 !important; }
+
 @keyframes ticker-scroll {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
