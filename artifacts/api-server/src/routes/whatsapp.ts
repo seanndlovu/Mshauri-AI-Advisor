@@ -387,5 +387,35 @@ router.post("/whatsapp/subscribe", async (req, res): Promise<void> => {
   }
 });
 
+/* ─── WhatsApp Business Number ──────────────────────────── */
+router.get("/whatsapp/number", async (req, res): Promise<void> => {
+  const { accessToken, phoneNumberId } = getWhatsAppConfig();
+  if (!accessToken || !phoneNumberId) {
+    res.status(503).json({ error: "WhatsApp not configured" });
+    return;
+  }
+  try {
+    const r = await fetch(
+      `https://graph.facebook.com/v23.0/${phoneNumberId}?fields=display_phone_number,verified_name`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!r.ok) {
+      const body = await r.text();
+      req.log.warn({ status: r.status, body }, "WhatsApp number fetch failed");
+      res.status(502).json({ error: "Could not fetch number" });
+      return;
+    }
+    const data = await r.json() as { display_phone_number?: string; verified_name?: string };
+    res.json({
+      number: data.display_phone_number ?? null,
+      name: data.verified_name ?? "Mshauri",
+    });
+  } catch (err) {
+    req.log.error({ err }, "WhatsApp number fetch error");
+    res.status(500).json({ error: "Internal error" });
+  }
+});
+
 export default router;
+
 
