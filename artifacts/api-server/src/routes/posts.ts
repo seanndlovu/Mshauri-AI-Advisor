@@ -35,8 +35,8 @@ const ZW_ANIMALS = [
   "Nyamuzihwa","Tembo",
 ];
 
-function pickAnimal(seed: number): string {
-  return ZW_ANIMALS[Math.abs(seed) % ZW_ANIMALS.length];
+function randomAnimal(): string {
+  return ZW_ANIMALS[Math.floor(Math.random() * ZW_ANIMALS.length)];
 }
 
 function formatPost(p: typeof postsTable.$inferSelect) {
@@ -78,7 +78,7 @@ router.post("/posts", async (req, res): Promise<void> => {
     return;
   }
 
-  const authorName = userId ? pickAnimal(userId) : pickAnimal(Date.now() % ZW_ANIMALS.length);
+  const authorName = randomAnimal();
 
   const validTypes = ["question", "disease_report", "market_price", "opportunity", "success_story", "weather"] as const;
   const safeType = validTypes.includes(type as typeof validTypes[number]) ? (type as typeof validTypes[number]) : "question";
@@ -152,7 +152,7 @@ router.post("/posts/:id/comments", async (req, res): Promise<void> => {
   const { content } = req.body as { content: string };
   if (!content?.trim()) { res.status(400).json({ error: "content is required" }); return; }
 
-  const authorName = userId ? pickAnimal(userId) : pickAnimal(Date.now() % ZW_ANIMALS.length);
+  const authorName = randomAnimal();
 
   const [comment] = await db.insert(commentsTable).values({ postId, userId, content, authorName }).returning();
   await db.update(postsTable).set({ commentCount: sql`comment_count + 1` }).where(eq(postsTable.id, postId));
