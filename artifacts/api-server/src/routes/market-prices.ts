@@ -100,4 +100,84 @@ router.delete("/market-prices/:id", async (req, res): Promise<void> => {
   res.sendStatus(204);
 });
 
+/* ─── Live Prices Scraper (ZimPriceCheck) ─────────────────── */
+interface LivePrice {
+  item: string;
+  quantity: string;
+  priceUsd: number;
+  priceZig: number;
+  category: string;
+  source: "zimpricecheck";
+}
+
+let liveCache: { data: LivePrice[]; fetchedAt: number } | null = null;
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+function classifyCategory(item: string): string {
+  const l = item.toLowerCase();
+  if (/maize|wheat|sorghum|millet|rice|groundnut|soya|sugar bean|cow pea|popcorn|mapfunde|mhunga|mumhare|nyemba|nzungu/.test(l))
+    return "Grains & Staples";
+  if (/broiler|roadrunner|guinea|layer|kapenta|matemba|mopane|caterpillar|eggs|egg|matemba/.test(l))
+    return "Protein";
+  if (/dried|cooked|dehulled/.test(l))
+    return "Dried & Processed";
+  if (/apple|avocado|banana|lemon|orange|pineapple|pawpaw|strawberry|watermelon|masawu|matohwe|mauyu|sugarcane/.test(l))
+    return "Fruits";
+  return "Vegetables";
+}
+
+router.get("/market-prices/live", async (req, res): Promise<void> => {
+  const force = req.query.force === "1";
+  if (!force && liveCache && (Date.now() - liveCache.fetchedAt) < CACHE_TTL) {
+    res.json({ data: liveCache.data, fetchedAt: new Date(liveCache.fetchedAt).toISOString(), cached: true });
+    return;
+  }
+
+  try {
+    const r = await fetch(
+      "https://zimpricecheck.com/price-updates/fruit-and-vegetable-prices/",
+      {
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; Mshauri/1.0; +https://mshauri.co.zw)" },
+        signal: AbortSignal.timeout(12000),
+      }
+    );
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const html = await r.text();
+
+    const prices: LivePrice[] = [];
+    // Match all <tr> blocks
+    const rowRe = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+    let rowMatch: RegExpExecArray | null;
+    while ((rowMatch = rowRe.exec(html)) !== null) {
+      const cells = [...rowMatch[1].matchAll(/<td[^>]*>([^<]*)<\/td>/gi)].map(m => m[1].trim());
+      if (cells.length < 3) continue;
+      const [item, quantity, usdStr, zigStr = ""] = cells;
+      if (!item || item.toLowerCase() === "item") continue;
+      const usdMatch = usdStr.replace(/,/g, "").match(/[\d.]+/);
+      if (!usdMatch) continue;
+      const zigMatch = zigStr.replace(/,/g, "").replace(/\s+/g, "").match(/[\d.]+/);
+      prices.push({
+        item,
+        quantity,
+        priceUsd: parseFloat(usdMatch[0]),
+        priceZig: zigMatch ? parseFloat(zigMatch[0]) : 0,
+        category: classifyCategory(item),
+        source: "zimpricecheck",
+      });
+    }
+
+    if (prices.length === 0) throw new Error("No prices parsed");
+
+    liveCache = { data: prices, fetchedAt: Date.now() };
+    res.json({ data: prices, fetchedAt: new Date().toISOString(), cached: false });
+  } catch (err) {
+    req.log.error({ err }, "Live prices fetch failed");
+    if (liveCache) {
+      res.json({ data: liveCache.data, fetchedAt: new Date(liveCache.fetchedAt).toISOString(), cached: true, stale: true });
+    } else {
+      res.status(502).json({ error: "Could not fetch live prices" });
+    }
+  }
+});
+
 export { router as marketPricesRouter };

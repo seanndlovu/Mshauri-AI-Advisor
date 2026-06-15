@@ -1,352 +1,350 @@
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { useQueryClient } from "@tanstack/react-query";
-import {
-  useListMarketPrices,
-  getListMarketPricesQueryKey,
-  useCreateMarketPrice,
-  useUpdateMarketPrice,
-  useDeleteMarketPrice,
-} from "@workspace/api-client-react";
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useState, useEffect, useMemo } from "react";
+import { Search, RefreshCw, ExternalLink, TrendingUp, Plus, Loader2, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit2, Trash2, TrendingUp, Info } from "lucide-react";
 import { format } from "date-fns";
 
-const MARKETS = ["GMB", "Mbare Musika", "Grain Millers", "Farmer Market", "Other"];
-const COMMODITIES = [
-  "Maize", "Wheat", "Soybean", "Groundnuts", "Tobacco", "Sorghum", 
-  "Millet", "Cattle", "Goats", "Chickens", "Milk", "Tomatoes", "Potatoes"
-];
+/* ── Types ── */
+interface LivePrice {
+  item: string;
+  quantity: string;
+  priceUsd: number;
+  priceZig: number;
+  category: string;
+  source: "zimpricecheck";
+}
 
-const priceSchema = z.object({
-  commodity: z.string().min(1, "Commodity is required"),
-  unit: z.string().default("kg"),
-  priceUsd: z.string().or(z.number()).transform(v => String(v)),
-  market: z.string().default("GMB"),
-  priceDate: z.string().min(1, "Date is required"),
-  notes: z.string().optional().default(""),
-});
+interface LiveResponse {
+  data: LivePrice[];
+  fetchedAt: string;
+  cached: boolean;
+  stale?: boolean;
+}
 
-type PriceFormValues = z.infer<typeof priceSchema>;
+/* ── Helpers ── */
+const CATEGORIES = ["All", "Vegetables", "Fruits", "Grains & Staples", "Protein", "Dried & Processed"];
 
-export default function MarketPrices() {
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingPrice, setEditingPrice] = useState<any>(null);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+const CAT_COLORS: Record<string, string> = {
+  "Vegetables":        "bg-green-500/15 text-green-400 border-green-500/30",
+  "Fruits":            "bg-orange-500/15 text-orange-400 border-orange-500/30",
+  "Grains & Staples":  "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
+  "Protein":           "bg-red-500/15 text-red-400 border-red-500/30",
+  "Dried & Processed": "bg-amber-600/15 text-amber-400 border-amber-500/30",
+};
 
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  
-  const { data: prices, isLoading } = useListMarketPrices();
-  const createMutation = useCreateMarketPrice();
-  const updateMutation = useUpdateMarketPrice();
-  const deleteMutation = useDeleteMarketPrice();
+const CAT_EMOJI: Record<string, string> = {
+  "Vegetables": "🥬", "Fruits": "🍊", "Grains & Staples": "🌽",
+  "Protein": "🥩", "Dried & Processed": "🫙",
+};
 
-  const handleEdit = (price: any) => {
-    setEditingPrice(price);
-    setIsFormOpen(true);
-  };
+function getEmoji(item: string): string {
+  const l = item.toLowerCase();
+  if (/apple/.test(l)) return "🍎";
+  if (/avocado/.test(l)) return "🥑";
+  if (/banana/.test(l)) return "🍌";
+  if (/beetroot/.test(l)) return "🫀";
+  if (/broccoli/.test(l)) return "🥦";
+  if (/broiler|chicken/.test(l)) return "🐔";
+  if (/butternut|pumpkin/.test(l)) return "🎃";
+  if (/baby marrow/.test(l)) return "🥒";
+  if (/mushroom/.test(l)) return "🍄";
+  if (/cabbage|covo|rape|blackjack/.test(l)) return "🥬";
+  if (/carrot/.test(l)) return "🥕";
+  if (/cauliflower/.test(l)) return "🥦";
+  if (/chili|pepper/.test(l)) return "🌶️";
+  if (/green pepper/.test(l)) return "🫑";
+  if (/groundnut|nzungu/.test(l)) return "🥜";
+  if (/cucumber/.test(l)) return "🥒";
+  if (/egg/.test(l)) return "🥚";
+  if (/garlic/.test(l)) return "🧄";
+  if (/ginger/.test(l)) return "🫚";
+  if (/green bean|peas|nyemba|cow pea/.test(l)) return "🫘";
+  if (/maize|corn|mapfunde|mumhare/.test(l)) return "🌽";
+  if (/lemon/.test(l)) return "🍋";
+  if (/lettuce/.test(l)) return "🥬";
+  if (/mopane/.test(l)) return "🐛";
+  if (/millet|mhunga/.test(l)) return "🌾";
+  if (/sorghum/.test(l)) return "🌾";
+  if (/rice/.test(l)) return "🍚";
+  if (/kapenta|matemba/.test(l)) return "🐟";
+  if (/guinea|hanga/.test(l)) return "🐓";
+  if (/roadrunner/.test(l)) return "🐓";
+  if (/layer/.test(l)) return "🐔";
+  if (/masawu|matohwe|mauyu|sour fruit|snot apple|baobab/.test(l)) return "🌿";
+  if (/onion/.test(l)) return "🧅";
+  if (/orange/.test(l)) return "🍊";
+  if (/pawpaw|papaya/.test(l)) return "🍈";
+  if (/pineapple/.test(l)) return "🍍";
+  if (/potato/.test(l)) return "🥔";
+  if (/strawberry/.test(l)) return "🍓";
+  if (/soya/.test(l)) return "🫘";
+  if (/sugar bean/.test(l)) return "🫘";
+  if (/tomato/.test(l)) return "🍅";
+  if (/watermelon/.test(l)) return "🍉";
+  if (/okra/.test(l)) return "🌿";
+  if (/sugarcane/.test(l)) return "🎋";
+  if (/dried/.test(l)) return "🫙";
+  return "🌿";
+}
 
-  const handleDelete = async () => {
-    if (!deletingId) return;
-    try {
-      await deleteMutation.mutateAsync({ id: deletingId });
-      queryClient.invalidateQueries({ queryKey: getListMarketPricesQueryKey() });
-      toast({ title: "Price record deleted" });
-    } catch (err) {
-      toast({ variant: "destructive", title: "Error", description: "Failed to delete price." });
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
-  const sortedPrices = [...(prices || [])].sort((a, b) => 
-    new Date(b.priceDate).getTime() - new Date(a.priceDate).getTime()
-  );
-
+/* ── Price Card ── */
+function PriceCard({ price }: { price: LivePrice }) {
+  const catStyle = CAT_COLORS[price.category] ?? "bg-gray-500/15 text-gray-400 border-gray-500/30";
   return (
-    <div className="flex flex-col h-full bg-muted/20">
-      <div className="flex items-center justify-between px-6 py-4 border-b bg-background">
-        <div>
-          <h1 className="text-2xl font-semibold text-primary">Market Prices</h1>
-          <p className="text-sm text-muted-foreground">Manage commodity prices across Zimbabwe</p>
-        </div>
-        <Button onClick={() => { setEditingPrice(null); setIsFormOpen(true); }}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Price
-        </Button>
+    <div className="bg-[#1e2025] border border-[#343536] rounded-xl p-4 hover:border-[#818384]/40 hover:bg-[#23272c] transition-all group flex flex-col gap-2">
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-3xl leading-none">{getEmoji(price.item)}</span>
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${catStyle} whitespace-nowrap`}>
+          {price.category}
+        </span>
       </div>
-
-      <div className="flex-1 overflow-auto p-6">
-        <div className="max-w-6xl mx-auto bg-background rounded-xl border shadow-sm overflow-hidden">
-          {isLoading ? (
-            <div className="p-6 space-y-4">
-              {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+      <div>
+        <div className="text-[#d7dadc] font-bold text-[13px] leading-snug">{price.item}</div>
+        <div className="text-[#818384] text-[11px] mt-0.5">{price.quantity}</div>
+      </div>
+      <div className="border-t border-[#343536] pt-2 mt-auto">
+        <div className="flex items-end justify-between">
+          <div>
+            <div className="text-[#22c55e] font-black text-[18px] leading-none">
+              ${price.priceUsd.toFixed(2)}
             </div>
-          ) : prices?.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <TrendingUp className="h-12 w-12 text-primary/20 mb-4" />
-              <h3 className="text-lg font-medium">No prices recorded yet</h3>
-              <p className="text-muted-foreground">Start by adding the latest market rates.</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/30">
-                  <TableHead>Commodity</TableHead>
-                  <TableHead>Market</TableHead>
-                  <TableHead>Price (USD)</TableHead>
-                  <TableHead>Unit</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Notes</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedPrices.map((price) => (
-                  <TableRow key={price.id}>
-                    <TableCell className="font-medium">{price.commodity}</TableCell>
-                    <TableCell>{price.market}</TableCell>
-                    <TableCell className="text-primary font-semibold">${Number(price.priceUsd).toFixed(2)}</TableCell>
-                    <TableCell className="text-muted-foreground">{price.unit}</TableCell>
-                    <TableCell>{format(new Date(price.priceDate), "MMM dd, yyyy")}</TableCell>
-                    <TableCell className="max-w-[200px] truncate">
-                      {price.notes ? (
-                        <span className="flex items-center text-xs text-muted-foreground">
-                          <Info className="h-3 w-3 mr-1" /> {price.notes}
-                        </span>
-                      ) : "—"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(price)}>
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => setDeletingId(price.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+            {price.priceZig > 0 && (
+              <div className="text-[#818384] text-[11px] mt-0.5">
+                {price.priceZig.toLocaleString()} ZiG
+              </div>
+            )}
+          </div>
+          <div className="text-[10px] text-[#4a5568]">Mbare</div>
         </div>
       </div>
-
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>{editingPrice ? "Edit Market Price" : "Add New Market Price"}</DialogTitle>
-          </DialogHeader>
-          <PriceForm
-            price={editingPrice}
-            onSuccess={() => {
-              setIsFormOpen(false);
-              queryClient.invalidateQueries({ queryKey: getListMarketPricesQueryKey() });
-            }}
-            onCancel={() => setIsFormOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Price Record</AlertDialogTitle>
-            <AlertDialogDescription>Are you sure? This action cannot be undone.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
 
-function PriceForm({ price, onSuccess, onCancel }: { price?: any, onSuccess: () => void, onCancel: () => void }) {
-  const createMutation = useCreateMarketPrice();
-  const updateMutation = useUpdateMarketPrice();
+/* ── Main Page ── */
+export default function MarketPrices() {
   const { toast } = useToast();
+  const [liveData, setLiveData] = useState<LivePrice[]>([]);
+  const [fetchedAt, setFetchedAt] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(false);
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("All");
+  const [showCatMenu, setShowCatMenu] = useState(false);
 
-  const form = useForm<PriceFormValues>({
-    resolver: zodResolver(priceSchema),
-    defaultValues: {
-      commodity: price?.commodity || "",
-      unit: price?.unit || "kg",
-      priceUsd: price?.priceUsd || "",
-      market: price?.market || "GMB",
-      priceDate: price?.priceDate ? format(new Date(price.priceDate), "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
-      notes: price?.notes || "",
-    },
-  });
-
-  const onSubmit = async (values: PriceFormValues) => {
+  async function fetchLive(force = false) {
+    if (force) setRefreshing(true);
+    else setLoading(true);
+    setError(false);
     try {
-      if (price) {
-        await updateMutation.mutateAsync({ id: price.id, data: values as any });
-        toast({ title: "Price updated" });
-      } else {
-        await createMutation.mutateAsync({ data: values as any });
-        toast({ title: "Price added" });
-      }
-      onSuccess();
-    } catch (err) {
-      toast({ variant: "destructive", title: "Error", description: "Failed to save price." });
+      const r = await fetch(`/api/market-prices/live${force ? "?force=1" : ""}`);
+      if (!r.ok) throw new Error("Failed");
+      const json: LiveResponse = await r.json();
+      setLiveData(json.data);
+      setFetchedAt(json.fetchedAt);
+      if (force) toast({ title: "Prices refreshed ✓", description: `${json.data.length} items updated.` });
+    } catch {
+      setError(true);
+      if (force) toast({ title: "Refresh failed", description: "Could not fetch latest prices.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }
+
+  useEffect(() => { fetchLive(); }, []);
+
+  const filtered = useMemo(() => {
+    let items = liveData;
+    if (category !== "All") items = items.filter(p => p.category === category);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      items = items.filter(p => p.item.toLowerCase().includes(q) || p.quantity.toLowerCase().includes(q));
+    }
+    return items;
+  }, [liveData, category, search]);
+
+  const stats = useMemo(() => {
+    const byCategory: Record<string, number> = {};
+    for (const p of liveData) byCategory[p.category] = (byCategory[p.category] ?? 0) + 1;
+    return byCategory;
+  }, [liveData]);
+
+  const timeAgo = fetchedAt ? format(new Date(fetchedAt), "d MMM, h:mm a") : null;
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="commodity"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Commodity</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Input list="commodities-list" {...field} />
-                    <datalist id="commodities-list">
-                      {COMMODITIES.map(c => <option key={c} value={c} />)}
-                    </datalist>
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="market"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Market</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                  <SelectContent>
-                    {MARKETS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+    <div className="h-full overflow-y-auto bg-[#1a1a1b]">
+      {/* Sticky header */}
+      <div className="sticky top-0 z-10 bg-[#1a1a1b]/95 backdrop-blur-sm border-b border-[#343536] px-4 py-3">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h1 className="text-[#d7dadc] font-black text-[18px] flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-[#22c55e]" />
+                Market Prices
+              </h1>
+              {timeAgo && (
+                <p className="text-[#818384] text-[11px]">
+                  Last updated {timeAgo} · Mbare Musika
+                </p>
+              )}
+            </div>
+            <button
+              onClick={() => fetchLive(true)}
+              disabled={refreshing}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#272729] hover:bg-[#2d2e30] border border-[#343536] rounded-full text-[#818384] hover:text-[#d7dadc] text-[12px] font-bold transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+              {refreshing ? "Refreshing…" : "Refresh"}
+            </button>
+          </div>
+
+          {/* Search + filter */}
+          <div className="flex gap-2">
+            <div className="flex-1 flex items-center gap-2 bg-[#272729] border border-[#343536] rounded-full px-3 py-2">
+              <Search className="w-4 h-4 text-[#818384] shrink-0" />
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search tomatoes, maize, eggs…"
+                className="flex-1 bg-transparent text-[#d7dadc] text-[13px] placeholder-[#4a5568] focus:outline-none"
+              />
+              {search && (
+                <button onClick={() => setSearch("")} className="text-[#818384] hover:text-[#d7dadc] text-lg leading-none">×</button>
+              )}
+            </div>
+            <div className="relative">
+              <button
+                onClick={() => setShowCatMenu(o => !o)}
+                className="flex items-center gap-1.5 px-3 py-2 bg-[#272729] border border-[#343536] rounded-full text-[#d7dadc] text-[12px] font-bold whitespace-nowrap transition-colors hover:bg-[#2d2e30]"
+              >
+                {CAT_EMOJI[category] ?? "🌿"} {category}
+                <ChevronDown className={`w-3 h-3 transition-transform ${showCatMenu ? "rotate-180" : ""}`} />
+              </button>
+              {showCatMenu && (
+                <div className="absolute right-0 top-full mt-1 bg-[#1e2025] border border-[#343536] rounded-xl shadow-xl z-20 min-w-[180px] overflow-hidden py-1">
+                  {CATEGORIES.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => { setCategory(cat); setShowCatMenu(false); }}
+                      className={`w-full flex items-center justify-between px-4 py-2.5 text-[12px] font-bold text-left hover:bg-[#272729] transition-colors ${category === cat ? "text-[#22c55e]" : "text-[#d7dadc]"}`}
+                    >
+                      <span>{CAT_EMOJI[cat] ?? "🌿"} {cat}</span>
+                      {cat !== "All" && stats[cat] && (
+                        <span className="text-[#818384] font-normal">{stats[cat]}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="priceUsd"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Price (USD)</FormLabel>
-                <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="unit"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Unit</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                  <SelectContent>
-                    <SelectItem value="kg">Per kg</SelectItem>
-                    <SelectItem value="tonne">Per tonne</SelectItem>
-                    <SelectItem value="head">Per head</SelectItem>
-                    <SelectItem value="litre">Per litre</SelectItem>
-                    <SelectItem value="bucket">Per bucket</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 py-5">
+
+        {/* Category pills (desktop) */}
+        <div className="hidden sm:flex gap-2 mb-5 flex-wrap">
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setCategory(cat)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold border transition-all ${
+                category === cat
+                  ? "bg-[#22c55e]/15 border-[#22c55e]/50 text-[#22c55e]"
+                  : "bg-[#1e2025] border-[#343536] text-[#818384] hover:text-[#d7dadc] hover:border-[#818384]/40"
+              }`}
+            >
+              {CAT_EMOJI[cat] ?? "🌿"} {cat}
+              {cat !== "All" && stats[cat] ? <span className="opacity-60">{stats[cat]}</span> : null}
+            </button>
+          ))}
         </div>
-        <FormField
-          control={form.control}
-          name="priceDate"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Date</FormLabel>
-              <FormControl><Input type="date" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Notes</FormLabel>
-              <FormControl><Textarea {...field} rows={3} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div className="flex justify-end gap-3 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-          <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-            {price ? "Update" : "Add Price"}
-          </Button>
+
+        {/* Data source banner */}
+        <div className="flex gap-3 mb-5 flex-wrap">
+          <a
+            href="https://zimpricecheck.com/price-updates/fruit-and-vegetable-prices/"
+            target="_blank" rel="noreferrer"
+            className="flex-1 min-w-[200px] flex items-center gap-3 bg-[#1e2025] border border-[#343536] hover:border-[#22c55e]/40 rounded-xl px-4 py-3 transition-colors group"
+          >
+            <span className="text-2xl">🛒</span>
+            <div className="flex-1 min-w-0">
+              <div className="text-[#d7dadc] font-bold text-[13px] group-hover:text-[#22c55e] transition-colors">ZimPriceCheck</div>
+              <div className="text-[#818384] text-[11px]">Mbare Musika — {liveData.length} items live</div>
+            </div>
+            <ExternalLink className="w-3.5 h-3.5 text-[#818384] shrink-0" />
+          </a>
+          <a
+            href="https://zmx.co.zw/market-data/"
+            target="_blank" rel="noreferrer"
+            className="flex-1 min-w-[200px] flex items-center gap-3 bg-[#1e2025] border border-[#343536] hover:border-[#22c55e]/40 rounded-xl px-4 py-3 transition-colors group"
+          >
+            <span className="text-2xl">📊</span>
+            <div className="flex-1 min-w-0">
+              <div className="text-[#d7dadc] font-bold text-[13px] group-hover:text-[#22c55e] transition-colors">ZMX Exchange</div>
+              <div className="text-[#818384] text-[11px]">Zimbabwe Mercantile Exchange · Live futures</div>
+            </div>
+            <ExternalLink className="w-3.5 h-3.5 text-[#818384] shrink-0" />
+          </a>
         </div>
-      </form>
-    </Form>
+
+        {/* Loading */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <Loader2 className="w-8 h-8 text-[#22c55e] animate-spin" />
+            <p className="text-[#818384] text-[13px]">Fetching latest prices from Mbare Musika…</p>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+            <span className="text-4xl">😕</span>
+            <div>
+              <p className="text-[#d7dadc] font-bold mb-1">Could not load prices</p>
+              <p className="text-[#818384] text-[13px] mb-4">Check your connection and try again.</p>
+              <button
+                onClick={() => fetchLive(true)}
+                className="px-5 py-2 bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold rounded-full text-[13px] transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
+            <span className="text-4xl">🔍</span>
+            <p className="text-[#818384] text-[13px]">No items match "{search}"</p>
+            <button onClick={() => { setSearch(""); setCategory("All"); }} className="text-[#22c55e] text-[12px] hover:underline">
+              Clear filters
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[#818384] text-[12px]">
+                {filtered.length} item{filtered.length !== 1 ? "s" : ""}
+                {category !== "All" || search ? ` · filtered from ${liveData.length}` : ""}
+              </p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              {filtered.map((price, i) => (
+                <PriceCard key={`${price.item}-${i}`} price={price} />
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Attribution */}
+        <div className="mt-8 pt-5 border-t border-[#343536] text-center">
+          <p className="text-[#4a5568] text-[11px]">
+            Prices from{" "}
+            <a href="https://zimpricecheck.com" target="_blank" rel="noreferrer" className="text-[#818384] hover:text-[#d7dadc] underline">ZimPriceCheck</a>
+            {" "}(Mbare Musika, Harare) and{" "}
+            <a href="https://zmx.co.zw" target="_blank" rel="noreferrer" className="text-[#818384] hover:text-[#d7dadc] underline">ZMX</a>.
+            {" "}Prices are indicative. Always verify before trading.
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
