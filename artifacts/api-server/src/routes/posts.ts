@@ -4,6 +4,41 @@ import { db, postsTable, commentsTable, communitiesTable, usersTable } from "@wo
 
 const router: IRouter = Router();
 
+/* ─── Zimbabwean animal names across all 12+ official languages ─── */
+const ZW_ANIMALS = [
+  // Shona (chiShona — ~70% of Zimbabwe)
+  "Shumba","Nzou","Mhara","Garwe","Bveni","Mbizi","Tsuro","Bere",
+  "Jongwe","Hweva","Nhewa","Chidembo","Zizi","Kamba","Hove","Nguruve",
+  "Ngwe","Tsoko","Nyati","Nhengo","Gondo","Hungwe","Nganga","Nzwere",
+  // isiNdebele (~20% of Zimbabwe)
+  "Ibhubhesi","Indlovu","Ingwe","Impisi","Idube","Imvubu","Ingwenya",
+  "Imbila","Umvundla","Isikhova","Inkunzi","Ingulube","Ubhejane","Ingqungqulu",
+  // Kalanga (Bulilima-Mangwe area)
+  "Gwena","Nkwe","Phiri",
+  // Tonga (Zambezi Valley)
+  "Nkuzu","Chikuvu","Nkanga","Chipembere",
+  // Venda (Beit Bridge / Limpopo)
+  "Ndou","Nngwe","Phukha","Phala","Tshikhozi",
+  // Ndau (Chimanimani / Chipinge)
+  "Gudo","Njuzu",
+  // Nambya (Hwange area)
+  "Njovu",
+  // Shangani / Tsonga (south-east Zimbabwe)
+  "Nghala","Mhisi","Ndzou",
+  // Chewa / Nyanja (eastern Zimbabwe)
+  "Mkango","Njobvu","Nyalugwe","Makaka","Mvuu","Ngona",
+  // Sotho (Sesotho speakers in Zimbabwe)
+  "Tau","Tlou","Nare",
+  // Tswana (small community)
+  "Kubu",
+  // Korekore (northern Zimbabwe — Shona dialect group)
+  "Nyamuzihwa","Tembo",
+];
+
+function pickAnimal(seed: number): string {
+  return ZW_ANIMALS[Math.abs(seed) % ZW_ANIMALS.length];
+}
+
 function formatPost(p: typeof postsTable.$inferSelect) {
   return { ...p, createdAt: p.createdAt.toISOString(), updatedAt: p.updatedAt.toISOString() };
 }
@@ -43,11 +78,7 @@ router.post("/posts", async (req, res): Promise<void> => {
     return;
   }
 
-  let authorName = "anonymous";
-  if (userId) {
-    const [user] = await db.select({ email: usersTable.email }).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
-    if (user) authorName = user.email.split("@")[0];
-  }
+  const authorName = userId ? pickAnimal(userId) : pickAnimal(Date.now() % ZW_ANIMALS.length);
 
   const validTypes = ["question", "disease_report", "market_price", "opportunity", "success_story", "weather"] as const;
   const safeType = validTypes.includes(type as typeof validTypes[number]) ? (type as typeof validTypes[number]) : "question";
@@ -121,11 +152,7 @@ router.post("/posts/:id/comments", async (req, res): Promise<void> => {
   const { content } = req.body as { content: string };
   if (!content?.trim()) { res.status(400).json({ error: "content is required" }); return; }
 
-  let authorName = "anonymous";
-  if (userId) {
-    const [user] = await db.select({ email: usersTable.email }).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
-    if (user) authorName = user.email.split("@")[0];
-  }
+  const authorName = userId ? pickAnimal(userId) : pickAnimal(Date.now() % ZW_ANIMALS.length);
 
   const [comment] = await db.insert(commentsTable).values({ postId, userId, content, authorName }).returning();
   await db.update(postsTable).set({ commentCount: sql`comment_count + 1` }).where(eq(postsTable.id, postId));
