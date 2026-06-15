@@ -153,7 +153,7 @@ export default function PostDetail() {
             <span className="flex items-center gap-1.5 text-[#71767B] text-sm">
               <MessageCircle className="w-4 h-4" />{post.commentCount} comments
             </span>
-            <span className="text-[#71767B] text-sm ml-auto">{post.authorName ?? "Anonymous"}</span>
+            <span className="text-[#71767B] text-sm ml-auto">u/{post.authorName ?? "anonymous"}</span>
             <span className="flex items-center gap-1 text-[#71767B] text-sm">
               <Clock className="w-3.5 h-3.5" />
               {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
@@ -167,21 +167,15 @@ export default function PostDetail() {
             <textarea
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
-              placeholder={user ? "Add a comment…" : "Sign in to comment"}
-              disabled={!user}
+              placeholder="Share your thoughts…"
               rows={2}
-              className="flex-1 bg-[#16181C] border border-[#2F3336] rounded-xl px-4 py-3 text-[#E7E9EA] text-sm placeholder-[#71767B] focus:outline-none focus:border-[#22c55e] resize-none disabled:opacity-50 transition-colors"
+              className="flex-1 bg-[#16181C] border border-[#2F3336] rounded-xl px-4 py-3 text-[#E7E9EA] text-sm placeholder-[#71767B] focus:outline-none focus:border-[#22c55e] resize-none transition-colors"
             />
-            <button type="submit" disabled={submitting || !commentText.trim() || !user}
+            <button type="submit" disabled={submitting || !commentText.trim()}
               className="p-3 bg-[#22c55e] hover:bg-[#16a34a] text-white rounded-xl disabled:opacity-50 transition-colors self-end">
               <Send className="w-4 h-4" />
             </button>
           </div>
-          {!user && (
-            <p className="text-[#71767B] text-xs mt-1.5">
-              <Link href="/login" className="text-[#22c55e] hover:underline">Sign in</Link> to join the discussion
-            </p>
-          )}
         </form>
 
         {/* Comments */}
@@ -197,7 +191,7 @@ export default function PostDetail() {
                     <div className="w-7 h-7 rounded-full bg-[#22c55e]/20 flex items-center justify-center text-[#22c55e] font-bold text-xs">
                       {(comment.authorName ?? "A")[0].toUpperCase()}
                     </div>
-                    <span className="text-[#E7E9EA] text-sm font-medium">{comment.authorName ?? "Anonymous"}</span>
+                    <span className="text-[#E7E9EA] text-sm font-medium">u/{comment.authorName ?? "anonymous"}</span>
                     <span className="text-[#71767B] text-xs">
                       {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                     </span>

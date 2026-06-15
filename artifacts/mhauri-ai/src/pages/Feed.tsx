@@ -189,7 +189,7 @@ function PostCard({ post, onVote }: { post: Post; onVote:(id:number,dir:"up"|"do
         <div className="flex items-center gap-1.5 flex-wrap mb-2">
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${meta.bg} ${meta.color}`}>{meta.label}</span>
           <span className="text-[#3a4a58] text-[10px]">•</span>
-          <span className="text-[#5a7080] text-[11px]">{post.authorName ?? "Anonymous"}</span>
+          <span className="text-[#5a7080] text-[11px]">u/{post.authorName ?? "anonymous"}</span>
           <span className="text-[#3a4a58] text-[10px]">•</span>
           <span className="text-[#5a7080] text-[11px]">{time}</span>
           {post.location && (

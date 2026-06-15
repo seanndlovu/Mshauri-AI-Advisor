@@ -43,10 +43,10 @@ router.post("/posts", async (req, res): Promise<void> => {
     return;
   }
 
-  let authorName = "Anonymous";
+  let authorName = "anonymous";
   if (userId) {
-    const [user] = await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
-    if (user) authorName = user.name;
+    const [user] = await db.select({ email: usersTable.email }).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+    if (user) authorName = user.email.split("@")[0];
   }
 
   const validTypes = ["question", "disease_report", "market_price", "opportunity", "success_story", "weather"] as const;
@@ -121,10 +121,10 @@ router.post("/posts/:id/comments", async (req, res): Promise<void> => {
   const { content } = req.body as { content: string };
   if (!content?.trim()) { res.status(400).json({ error: "content is required" }); return; }
 
-  let authorName = "Anonymous";
+  let authorName = "anonymous";
   if (userId) {
-    const [user] = await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
-    if (user) authorName = user.name;
+    const [user] = await db.select({ email: usersTable.email }).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+    if (user) authorName = user.email.split("@")[0];
   }
 
   const [comment] = await db.insert(commentsTable).values({ postId, userId, content, authorName }).returning();

@@ -204,7 +204,7 @@ export default function CommunityFeed() {
                       <p className="text-[#71767B] text-sm line-clamp-2">{post.content}</p>
                       <div className="flex items-center gap-3 mt-2 text-[#71767B] text-[12px]">
                         <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" />{post.commentCount}</span>
-                        <span>{post.authorName ?? "Anonymous"}</span>
+                        <span>u/{post.authorName ?? "anonymous"}</span>
                         <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
                       </div>
                     </div>
