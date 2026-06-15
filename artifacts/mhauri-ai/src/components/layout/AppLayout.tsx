@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import {
   useListConversations,
@@ -9,6 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Home, Bot, TrendingUp, UserCircle,
   Trash2, Menu, PenSquare, Sun, Moon,
+  ChevronUp, ChevronDown, Star, Settings,
 } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import {
@@ -110,6 +111,86 @@ function ThemeToggle() {
   );
 }
 
+// Deterministic avatar colour from community slug
+const AVATAR_COLORS = [
+  "#22c55e","#3b82f6","#f59e0b","#ef4444","#8b5cf6",
+  "#06b6d4","#ec4899","#10b981","#f97316","#6366f1",
+];
+function avatarColor(slug: string) {
+  let h = 0;
+  for (let i = 0; i < slug.length; i++) h = (h * 31 + slug.charCodeAt(i)) & 0xffff;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+
+interface Community { id: number; slug: string; name: string; memberCount: number; }
+
+function CommunitiesSidebar({ onNavigate }: { onNavigate?: () => void }) {
+  const [open, setOpen] = useState(true);
+  const [communities, setCommunities] = useState<Community[]>([]);
+  const [location] = useLocation();
+
+  useEffect(() => {
+    fetch("/api/communities", { credentials: "include" })
+      .then(r => r.json())
+      .then(d => Array.isArray(d) && setCommunities(d))
+      .catch(() => {});
+  }, []);
+
+  if (communities.length === 0) return null;
+
+  return (
+    <>
+      <div className="mx-3 border-t border-[#343536] my-2" />
+      {/* Header row */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center justify-between w-full px-3 mb-1 group"
+      >
+        <span className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Communities</span>
+        {open
+          ? <ChevronUp className="w-3.5 h-3.5 text-[#818384] group-hover:text-[#d7dadc]" />
+          : <ChevronDown className="w-3.5 h-3.5 text-[#818384] group-hover:text-[#d7dadc]" />}
+      </button>
+
+      {open && (
+        <div className="flex flex-col overflow-y-auto max-h-56">
+          {/* Manage link */}
+          <Link href="/communities" onClick={onNavigate}>
+            <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg mx-1 text-[#818384] hover:bg-[#272729] hover:text-[#d7dadc] transition-colors group cursor-pointer">
+              <div className="w-6 h-6 rounded-full bg-[#272729] border border-[#343536] flex items-center justify-center shrink-0">
+                <Settings className="w-3 h-3 text-[#818384]" />
+              </div>
+              <span className="text-[12px] flex-1">Manage Communities</span>
+            </div>
+          </Link>
+
+          {communities.map(c => {
+            const active = location.startsWith(`/communities/${c.slug}`);
+            const color = avatarColor(c.slug);
+            return (
+              <Link key={c.id} href={`/communities/${c.slug}`} onClick={onNavigate}>
+                <div className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg mx-1 transition-colors group cursor-pointer ${
+                  active ? "bg-[#272729] text-[#d7dadc]" : "text-[#818384] hover:bg-[#272729] hover:text-[#d7dadc]"
+                }`}>
+                  {/* Avatar */}
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-white font-black text-[10px]"
+                    style={{ backgroundColor: color }}
+                  >
+                    {c.name[0].toUpperCase()}
+                  </div>
+                  <span className="text-[12px] flex-1 truncate">r/{c.slug}</span>
+                  <Star className="w-3 h-3 opacity-0 group-hover:opacity-60 shrink-0 transition-opacity" />
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
+
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const [location, setLocation] = useLocation();
   const { user } = useAuth();
@@ -198,6 +279,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </div>
         </>
       )}
+
+      {/* Communities list */}
+      <CommunitiesSidebar onNavigate={onNavigate} />
 
       <div className="flex-1" />
 
