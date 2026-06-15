@@ -40,11 +40,7 @@ router.get("/communities/:slug/posts", async (req, res): Promise<void> => {
 });
 
 router.post("/communities", async (req, res): Promise<void> => {
-  const userId = (req.session as any)?.userId;
-  if (!userId) {
-    res.status(401).json({ error: "You must be logged in to create a community" });
-    return;
-  }
+  const userId = (req.session as any)?.userId ?? null;
 
   const { name, slug, description } = req.body as { name?: string; slug?: string; description?: string };
   if (!name?.trim() || !slug?.trim() || !description?.trim()) {

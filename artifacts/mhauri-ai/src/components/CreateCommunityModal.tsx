@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { X, Loader2 } from "lucide-react";
-import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
 
 interface Community { id: number; slug: string; name: string; description: string; memberCount: number; postCount: number; }
 
@@ -18,7 +16,6 @@ function slugify(name: string): string {
 
 export function CreateCommunityModal({ open, onClose, onCreated }: Props) {
   const { toast } = useToast();
-  const { user } = useAuth();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugManual, setSlugManual] = useState(false);
@@ -48,6 +45,7 @@ export function CreateCommunityModal({ open, onClose, onCreated }: Props) {
       const res = await fetch("/api/communities", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ name: name.trim(), slug: slug.trim(), description: description.trim() }),
       });
       const data = await res.json();
@@ -75,28 +73,6 @@ export function CreateCommunityModal({ open, onClose, onCreated }: Props) {
           </button>
         </div>
 
-        {/* Auth gate — show sign-in prompt for guests */}
-        {!user ? (
-          <div className="px-5 py-8 text-center">
-            <div className="text-3xl mb-3">🌱</div>
-            <h3 className="text-[#E7E9EA] font-bold text-[16px] mb-2">Sign in to create a community</h3>
-            <p className="text-[#71767B] text-[13px] leading-relaxed mb-6">
-              Communities are organised spaces for farmers to share knowledge and ask questions.
-            </p>
-            <div className="flex gap-3">
-              <button type="button" onClick={onClose}
-                className="flex-1 py-2.5 rounded-full border border-[#2F3336] text-[#71767B] text-[13px] font-bold hover:bg-white/5 transition-colors">
-                Cancel
-              </button>
-              <Link href="/login" className="flex-1">
-                <button type="button" onClick={onClose}
-                  className="w-full py-2.5 rounded-full bg-[#22c55e] hover:bg-[#16a34a] text-white text-[13px] font-bold transition-colors">
-                  Sign In
-                </button>
-              </Link>
-            </div>
-          </div>
-        ) : (
         <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
           {/* Name */}
           <div>
@@ -161,7 +137,6 @@ export function CreateCommunityModal({ open, onClose, onCreated }: Props) {
             </button>
           </div>
         </form>
-        )}
       </div>
     </div>
   );
