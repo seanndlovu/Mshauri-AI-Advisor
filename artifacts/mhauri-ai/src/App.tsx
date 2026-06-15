@@ -6,7 +6,6 @@ import NotFound from "@/pages/not-found";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Home from "@/pages/Home";
 import Conversation from "@/pages/Conversation";
-import KnowledgeBase from "@/pages/KnowledgeBase";
 import Farmers from "@/pages/Farmers";
 import MarketPrices from "@/pages/MarketPrices";
 import Broadcasts from "@/pages/Broadcasts";
@@ -18,6 +17,8 @@ import PostDetail from "@/pages/PostDetail";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Profile from "@/pages/Profile";
+import Weather from "@/pages/Weather";
+import WhatsApp from "@/pages/WhatsApp";
 
 const queryClient = new QueryClient();
 
@@ -36,8 +37,9 @@ function Router() {
             <Route path="/communities/:slug" component={CommunityFeed} />
             <Route path="/posts/:id" component={PostDetail} />
             <Route path="/prices" component={MarketPrices} />
+            <Route path="/weather" component={Weather} />
+            <Route path="/whatsapp" component={WhatsApp} />
             <Route path="/profile" component={Profile} />
-            <Route path="/knowledge-base" component={KnowledgeBase} />
             <Route path="/farmers" component={Farmers} />
             <Route path="/market-prices" component={MarketPrices} />
             <Route path="/broadcasts" component={Broadcasts} />

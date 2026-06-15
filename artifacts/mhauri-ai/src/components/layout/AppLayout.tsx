@@ -7,8 +7,8 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  Home, Globe, Bot, TrendingUp, BookOpen, UserCircle,
-  Settings, Trash2, Menu, PenSquare, ChevronDown,
+  Home, Globe, Bot, TrendingUp, CloudSun,
+  UserCircle, Settings, Trash2, Menu, PenSquare, ChevronDown, MessageCircle,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -18,6 +18,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import { CreatePostModal } from "@/components/CreatePostModal";
 
 interface Community { id: number; slug: string; name: string; memberCount: number; }
 
@@ -28,11 +29,11 @@ const COMMUNITY_ICONS: Record<string, string> = {
 };
 
 const MOBILE_NAV = [
-  { path:"/",             label:"Feed",       icon:Home,        exact:true },
-  { path:"/communities",  label:"Communities",icon:Globe        },
-  { path:"/ask",          label:"AI",         icon:Bot          },
-  { path:"/prices",       label:"Markets",    icon:TrendingUp   },
-  { path:"/profile",      label:"Profile",    icon:UserCircle   },
+  { path:"/",          label:"Feed",       icon:Home,        exact:true },
+  { path:"/communities",label:"Communities",icon:Globe        },
+  { path:"/ask",       label:"AI",         icon:Bot          },
+  { path:"/weather",   label:"Weather",    icon:CloudSun     },
+  { path:"/whatsapp",  label:"WhatsApp",   icon:MessageCircle},
 ];
 
 export function AppLayout({ children }: { children: ReactNode }) {
@@ -40,12 +41,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-[100dvh] w-full bg-[#1a1a1b] text-[#d7dadc] overflow-hidden">
-      {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-[240px] bg-[#1a1a1b] border-r border-[#343536] shrink-0 h-full overflow-y-auto">
         <SidebarContent />
       </aside>
 
-      {/* Mobile hamburger */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetTrigger asChild>
           <button className="md:hidden fixed top-3 left-3 z-50 w-9 h-9 bg-[#272729] rounded-full flex items-center justify-center border border-[#343536]">
@@ -57,14 +56,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </SheetContent>
       </Sheet>
 
-      {/* Mobile bottom nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#1a1a1b] border-t border-[#343536] flex">
         {MOBILE_NAV.map(({ path, label, icon: Icon, exact }) => (
           <MobileTab key={path} path={path} label={label} Icon={Icon} exact={exact} />
         ))}
       </nav>
 
-      {/* Main */}
       <main className="flex-1 overflow-hidden min-w-0 pb-16 md:pb-0">
         {children}
       </main>
@@ -86,12 +83,12 @@ function MobileTab({ path, label, Icon, exact }: { path:string; label:string; Ic
   );
 }
 
-function NavLink({ path, label, icon: Icon, exact, badge, onClick }: {
-  path: string; label: string; icon: React.ElementType; exact?: boolean;
-  badge?: string; onClick?: () => void;
+function NavLink({ path, label, icon: Icon, exact, badge, extra, onClick }: {
+  path:string; label:string; icon:React.ElementType; exact?:boolean;
+  badge?:string; extra?: React.ReactNode; onClick?:()=>void;
 }) {
   const [location, setLocation] = useLocation();
-  const active = exact ? location === path : location === path || location.startsWith(path + "/");
+  const active = exact ? location === path : location === path || location.startsWith(path+"/");
   return (
     <button
       onClick={() => { setLocation(path); onClick?.(); }}
@@ -101,9 +98,8 @@ function NavLink({ path, label, icon: Icon, exact, badge, onClick }: {
     >
       <Icon className="w-[18px] h-[18px] shrink-0" />
       <span className="text-[13px] flex-1">{label}</span>
-      {badge && (
-        <span className="text-[10px] font-black text-[#22c55e] bg-[#22c55e]/15 px-1.5 py-0.5 rounded-full">{badge}</span>
-      )}
+      {badge && <span className="text-[10px] font-black text-[#22c55e] bg-[#22c55e]/15 px-1.5 py-0.5 rounded-full">{badge}</span>}
+      {extra}
     </button>
   );
 }
@@ -113,6 +109,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { user } = useAuth();
   const [communities, setCommunities] = useState<Community[]>([]);
   const [showAllComm, setShowAllComm] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const { data: conversations } = useListConversations();
   const deleteConversation = useDeleteConversation();
   const queryClient = useQueryClient();
@@ -137,10 +134,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     <div className="flex flex-col h-full py-3">
       {/* Logo */}
       <Link href="/">
-        <div
-          onClick={onNavigate}
-          className="flex items-center gap-2.5 px-4 py-2.5 mb-2 cursor-pointer hover:bg-[#272729] rounded-lg mx-2 transition-colors"
-        >
+        <div onClick={onNavigate} className="flex items-center gap-2.5 px-4 py-2.5 mb-2 cursor-pointer hover:bg-[#272729] rounded-lg mx-2 transition-colors">
           <img src="/mshauri-logo.png" alt="Mshauri" className="w-9 h-9 object-contain shrink-0" />
           <div>
             <div className="font-black text-[#c8a84b] text-[15px] tracking-tight leading-none">mshauri</div>
@@ -149,10 +143,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       </Link>
 
-      {/* Create post CTA */}
+      {/* Create Post CTA */}
       <div className="px-3 mb-3">
         <button
-          onClick={() => { setLocation("/communities"); onNavigate?.(); }}
+          onClick={() => setCreateOpen(true)}
           className="w-full flex items-center justify-center gap-2 bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold py-2 rounded-full text-[13px] transition-colors"
         >
           <PenSquare className="w-4 h-4" /> Create Post
@@ -161,16 +155,20 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
       {/* Main nav */}
       <nav className="px-2 mb-2 flex flex-col gap-0.5">
-        <NavLink path="/" label="Home" icon={Home} exact onClick={onNavigate} />
-        <NavLink path="/communities" label="Communities" icon={Globe} onClick={onNavigate} />
-        <NavLink path="/ask" label="Ask Mshauri AI" icon={Bot} onClick={onNavigate} />
-        <NavLink path="/prices" label="Market Prices" icon={TrendingUp} onClick={onNavigate} />
-        <NavLink path="/knowledge-base" label="Knowledge Base" icon={BookOpen} onClick={onNavigate} />
+        <NavLink path="/"            label="Home"            icon={Home}          exact onClick={onNavigate} />
+        <NavLink path="/communities" label="Communities"     icon={Globe}         onClick={onNavigate} />
+        <NavLink path="/ask"         label="Ask Mshauri AI"  icon={Bot}           onClick={onNavigate} />
+        <NavLink path="/prices"      label="Market Prices"   icon={TrendingUp}    onClick={onNavigate} />
+        <NavLink path="/weather"     label="Weather"         icon={CloudSun}      onClick={onNavigate} />
+        <NavLink
+          path="/whatsapp" label="WhatsApp" icon={MessageCircle} onClick={onNavigate}
+          extra={<span className="w-2 h-2 rounded-full bg-[#25d366] animate-pulse shrink-0" />}
+        />
       </nav>
 
-      {/* Divider + Communities */}
+      {/* Communities */}
       <div className="mx-3 border-t border-[#343536] my-2" />
-      <div className="px-3 mb-1.5 flex items-center justify-between">
+      <div className="px-3 mb-1.5">
         <span className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Communities</span>
       </div>
       <div className="px-2 flex flex-col gap-0.5">
@@ -181,18 +179,17 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               <div className={`flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
                 active ? "bg-[#272729] text-[#d7dadc]" : "text-[#818384] hover:bg-[#272729] hover:text-[#d7dadc]"
               }`}>
-                <span className="text-base shrink-0">{COMMUNITY_ICONS[c.slug] ?? "🌱"}</span>
+                <span className="text-base shrink-0">{COMMUNITY_ICONS[c.slug]??"🌱"}</span>
                 <span className="text-[13px] truncate">r/{c.slug}</span>
               </div>
             </Link>
           );
         })}
         {communities.length > 6 && (
-          <button
-            onClick={() => setShowAllComm(s => !s)}
+          <button onClick={() => setShowAllComm(s=>!s)}
             className="flex items-center gap-1.5 px-3 py-2 text-[#818384] hover:text-[#d7dadc] text-[12px] transition-colors"
           >
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAllComm ? "rotate-180" : ""}`} />
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAllComm?"rotate-180":""}`} />
             {showAllComm ? "Show less" : `${communities.length - 6} more…`}
           </button>
         )}
@@ -229,8 +226,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                           <AlertDialogDescription className="text-[#818384]">This will permanently remove this conversation.</AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel className="bg-transparent border border-[#343536] text-[#d7dadc]" onClick={e => e.stopPropagation()}>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={e => handleDelete(conv.id, e as React.MouseEvent)} className="bg-red-500 hover:bg-red-600 text-white border-0">Delete</AlertDialogAction>
+                          <AlertDialogCancel className="bg-transparent border border-[#343536] text-[#d7dadc]" onClick={e=>e.stopPropagation()}>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={e=>handleDelete(conv.id, e as React.MouseEvent)} className="bg-red-500 hover:bg-red-600 text-white border-0">Delete</AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
@@ -242,14 +239,12 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </>
       )}
 
-      {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Bottom nav */}
       <div className="mx-3 border-t border-[#343536] pt-2 mt-2">
-        <nav className="flex flex-col gap-0.5 px-[-1px]">
-          <NavLink path="/profile" label="Profile" icon={UserCircle} onClick={onNavigate} />
-          <NavLink path="/settings" label="Settings" icon={Settings} onClick={onNavigate} />
+        <nav className="flex flex-col gap-0.5">
+          <NavLink path="/profile"  label="Profile"  icon={UserCircle} onClick={onNavigate} />
+          <NavLink path="/settings" label="Settings" icon={Settings}   onClick={onNavigate} />
         </nav>
       </div>
 
@@ -270,19 +265,21 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         ) : (
           <div className="flex flex-col gap-1.5">
             <Link href="/register" onClick={onNavigate}>
-              <button className="w-full py-2 bg-[#22c55e] hover:bg-[#16a34a] rounded-full text-white text-[12px] font-bold transition-colors">
-                Sign Up
-              </button>
+              <button className="w-full py-2 bg-[#22c55e] hover:bg-[#16a34a] rounded-full text-white text-[12px] font-bold transition-colors">Sign Up</button>
             </Link>
             <Link href="/login" onClick={onNavigate}>
-              <button className="w-full py-2 border border-[#343536] hover:bg-[#272729] rounded-full text-[#818384] text-[12px] transition-colors">
-                Log In
-              </button>
+              <button className="w-full py-2 border border-[#343536] hover:bg-[#272729] rounded-full text-[#818384] text-[12px] transition-colors">Log In</button>
             </Link>
           </div>
         )}
       </div>
       <div className="h-3" />
+
+      <CreatePostModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={() => {}}
+      />
     </div>
   );
 }

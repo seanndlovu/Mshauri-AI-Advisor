@@ -353,4 +353,39 @@ router.post("/whatsapp/webhook", async (req, res): Promise<void> => {
   }
 });
 
+/* ─── WhatsApp Subscribe ──────────────────────────────── */
+router.post("/whatsapp/subscribe", async (req, res): Promise<void> => {
+  const { phone } = req.body as { phone?: string };
+  if (!phone) { res.status(400).json({ error: "Phone number required" }); return; }
+
+  const config = getWhatsAppConfig();
+  const to = phone.replace(/\D/g, "");
+
+  try {
+    const waRes = await fetch(`https://graph.facebook.com/v20.0/${config.phoneNumberId}/messages`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${config.accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to,
+        type: "text",
+        text: {
+          body: "👋 *Welcome to Mshauri!* You're now connected.\n\nYou can:\n• Ask any farming question\n• Get daily market prices\n• Receive pest & disease alerts\n• Check localised weather\n\nTry asking: *What pests affect maize in November?*\n\n_Powered by Maricho Media_ 🌱",
+        },
+      }),
+    });
+    if (!waRes.ok) {
+      const errBody = await waRes.text();
+      req.log.warn({ phone, errBody }, "WhatsApp subscribe send failed");
+      res.status(502).json({ error: "Failed to send WhatsApp message" });
+      return;
+    }
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err, phone }, "WhatsApp subscribe error");
+    res.status(500).json({ error: "Internal error" });
+  }
+});
+
 export default router;
+
