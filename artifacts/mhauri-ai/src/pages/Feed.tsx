@@ -1,19 +1,30 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocation, Link } from "wouter";
 import {
-  MessageCircle, MapPin, Share2,
-  TrendingUp, TrendingDown, ExternalLink,
+  MessageCircle, Share2, ExternalLink,
+  MapPin, Loader2, ArrowUpRight, ArrowDownRight,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
-/* ─── types ─────────────────────────────────────────────── */
+/* ─── Types ──────────────────────────────────────────────── */
 interface Post {
   id: number; communityId: number; type: string; title: string;
   content: string; location: string | null; upvotes: number;
   commentCount: number; authorName: string | null; createdAt: string;
 }
 
-/* ─── constants ──────────────────────────────────────────── */
+interface WeatherData {
+  temp: number;
+  precip: number;
+  code: number;
+}
+
+interface MarketItem {
+  item: string;
+  priceUsd: number;
+}
+
+/* ─── Constants ──────────────────────────────────────────── */
 const POST_META: Record<string, { label: string; color: string; bg: string }> = {
   disease_report: { label: "Disease Alert",  color: "text-red-400",    bg: "bg-red-500/10"     },
   market_price:   { label: "Market Update",  color: "text-emerald-400",bg: "bg-emerald-500/10" },
@@ -23,15 +34,6 @@ const POST_META: Record<string, { label: string; color: string; bg: string }> = 
   success_story:  { label: "Success Story",  color: "text-green-400",  bg: "bg-green-500/10"   },
 };
 
-const MARKET_SNAPSHOT = [
-  { crop:"Maize",      price:"$0.28/kg", change:"+3%",  up: true  },
-  { crop:"Tomatoes",   price:"$0.45/kg", change:"+15%", up: true  },
-  { crop:"Soya Beans", price:"$0.62/kg", change:"-2%",  up: false },
-  { crop:"Groundnuts", price:"$1.10/kg", change:"0%",   up: null  },
-  { crop:"Cotton",     price:"$0.85/kg", change:"+2%",  up: true  },
-];
-
-// Maricho Media resource promo cards — interspersed every 7 posts
 const MARICHO_RESOURCES = [
   {
     icon: "📅", tag: "Free Download",
@@ -61,25 +63,140 @@ const MARICHO_RESOURCES = [
 
 type SortMode = "helpful" | "recent";
 
-function sortPosts(posts: Post[], mode: SortMode) {
-  const c = [...posts];
-  if (mode === "helpful") c.sort((a, b) => b.upvotes - a.upvotes);
-  if (mode === "recent")  c.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
-  return c;
+/* ─── Market signal (same logic as MarketPrices page) ─────── */
+function deterministicChange(name: string): number {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff;
+  return (h % 41) - 20;
 }
 
-/* ─── Maricho promo card ─────────────────────────────────── */
+/* ─── Weather helpers ────────────────────────────────────── */
+function weatherEmoji(code: number): string {
+  if (code === 0)          return "☀️";
+  if (code <= 3)           return "🌤️";
+  if (code <= 48)          return "🌫️";
+  if (code <= 55)          return "🌦️";
+  if (code <= 65)          return "🌧️";
+  if (code <= 82)          return "🌧️";
+  if (code <= 86)          return "🌨️";
+  return "⛈️";
+}
+
+function weatherAdvice(code: number, precip: number): string {
+  if (code >= 95)          return "Thunderstorm — stay safe";
+  if (code >= 80)          return "Rain showers — check drainage";
+  if (code >= 61)          return "Rain today — avoid field work";
+  if (code >= 51)          return "Light drizzle — monitor fields";
+  if (precip >= 60)        return "Rain likely — protect harvested crops";
+  if (precip >= 30)        return "Some rain possible — stay prepared";
+  if (code === 0)          return "Clear sky — good planting conditions";
+  if (code <= 2)           return "Good farming conditions today";
+  return "Partly cloudy — check soil moisture";
+}
+
+/* ─── Subcomponents ──────────────────────────────────────── */
+
+/** Horizontal situational awareness strip */
+function AwarenessStrip({
+  weather, topMover, pulseCount, loadingWeather, loadingMover,
+}: {
+  weather: WeatherData | null;
+  topMover: { item: string; priceUsd: number; pct: number } | null;
+  pulseCount: number;
+  loadingWeather: boolean;
+  loadingMover: boolean;
+}) {
+  const cards = [
+    /* Weather */
+    <div key="weather" className="shrink-0 w-52 bg-[#16181C] border border-[#2F3336] border-l-2 border-l-[#22c55e] rounded-2xl p-3.5 flex flex-col justify-between h-[90px]">
+      {loadingWeather ? (
+        <div className="flex items-center gap-2 text-[#71767B] text-[12px]">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading weather…
+        </div>
+      ) : weather ? (
+        <>
+          <div className="flex items-center gap-2">
+            <span className="text-[22px] leading-none">{weatherEmoji(weather.code)}</span>
+            <div>
+              <div className="text-[#E7E9EA] font-black text-[16px] leading-none">{weather.temp.toFixed(0)}°C</div>
+              <div className="text-[#71767B] text-[10px]">{weather.precip}% rain chance</div>
+            </div>
+          </div>
+          <div className="text-[#22c55e] text-[10px] font-semibold leading-tight">
+            {weatherAdvice(weather.code, weather.precip)}
+          </div>
+        </>
+      ) : (
+        <div className="text-[#71767B] text-[11px]">Weather unavailable</div>
+      )}
+    </div>,
+
+    /* Top market mover */
+    <Link key="mover" href="/prices">
+      <div className="shrink-0 w-52 bg-[#16181C] border border-[#2F3336] border-l-2 border-l-[#22c55e] rounded-2xl p-3.5 flex flex-col justify-between h-[90px] cursor-pointer hover:border-[#3F4448] transition-colors">
+        {loadingMover ? (
+          <div className="flex items-center gap-2 text-[#71767B] text-[12px]">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading prices…
+          </div>
+        ) : topMover ? (
+          <>
+            <div>
+              <div className="text-[#71767B] text-[10px] uppercase tracking-wider font-bold mb-0.5">Top Mover</div>
+              <div className="text-[#E7E9EA] font-bold text-[14px] leading-tight truncate">{topMover.item}</div>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[#E7E9EA] font-black text-[15px]">${topMover.priceUsd.toFixed(2)}</span>
+              <span className={`flex items-center gap-0.5 text-[12px] font-bold ${topMover.pct >= 0 ? "text-[#22c55e]" : "text-red-400"}`}>
+                {topMover.pct >= 0
+                  ? <ArrowUpRight className="w-3.5 h-3.5" />
+                  : <ArrowDownRight className="w-3.5 h-3.5" />
+                }
+                {topMover.pct > 0 ? "+" : ""}{topMover.pct}%
+              </span>
+            </div>
+          </>
+        ) : (
+          <div className="text-[#71767B] text-[11px]">Market data unavailable</div>
+        )}
+      </div>
+    </Link>,
+
+    /* Community pulse */
+    <div key="pulse" className="shrink-0 w-52 bg-[#16181C] border border-[#2F3336] border-l-2 border-l-[#22c55e] rounded-2xl p-3.5 flex flex-col justify-between h-[90px]">
+      <div>
+        <div className="text-[#71767B] text-[10px] uppercase tracking-wider font-bold mb-0.5">Community Pulse</div>
+        <div className="text-[#E7E9EA] font-black text-[18px] leading-none">
+          {pulseCount > 0 ? pulseCount : "—"}
+        </div>
+        <div className="text-[#71767B] text-[11px] mt-0.5">
+          {pulseCount > 0 ? "new discussions today" : "discussions active"}
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
+        <span className="text-[#22c55e] text-[10px] font-semibold">1,204 farmers active</span>
+      </div>
+    </div>,
+  ];
+
+  return (
+    <div className="flex gap-3 overflow-x-auto pb-1 mb-5 scrollbar-hide">
+      {cards}
+    </div>
+  );
+}
+
 function MarichoPromoCard({ resource }: { resource: typeof MARICHO_RESOURCES[number] }) {
   return (
     <div className={`flex items-start gap-3 border rounded-2xl p-4 mb-3 ${resource.color}`}>
       <span className="text-2xl shrink-0">{resource.icon}</span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1.5">
-          <span className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Maricho Media</span>
-          <span className="text-[9px] bg-[#272729] border border-[#343536] text-[#818384] px-1.5 py-0.5 rounded-full">{resource.tag}</span>
+          <span className="text-[10px] font-bold text-[#71767B] uppercase tracking-wider">Maricho Media</span>
+          <span className="text-[9px] bg-[#1a1a1b] border border-[#2F3336] text-[#71767B] px-1.5 py-0.5 rounded-full">{resource.tag}</span>
         </div>
-        <h3 className="text-[#d7dadc] font-semibold text-[13px] leading-snug mb-1">{resource.title}</h3>
-        <p className="text-[#818384] text-[11px] leading-relaxed mb-2.5">{resource.desc}</p>
+        <h3 className="text-[#E7E9EA] font-semibold text-[13px] leading-snug mb-1">{resource.title}</h3>
+        <p className="text-[#71767B] text-[11px] leading-relaxed mb-2.5">{resource.desc}</p>
         <button className="flex items-center gap-1 text-[#22c55e] text-[11px] font-bold hover:underline">
           <ExternalLink className="w-3 h-3" /> {resource.cta}
         </button>
@@ -88,16 +205,15 @@ function MarichoPromoCard({ resource }: { resource: typeof MARICHO_RESOURCES[num
   );
 }
 
-/* ─── Sort toggle ────────────────────────────────────────── */
 function SortToggle({ sort, setSort }: { sort: SortMode; setSort: (m: SortMode) => void }) {
   return (
     <div className="flex items-center gap-1 mb-4">
       {(["helpful", "recent"] as SortMode[]).map(mode => (
         <button key={mode} onClick={() => setSort(mode)}
-          className={`px-4 py-1.5 rounded-full text-[12px] font-bold transition-all capitalize ${
+          className={`px-4 py-1.5 rounded-full text-[12px] font-bold transition-all ${
             sort === mode
               ? "bg-[#22c55e]/15 text-[#22c55e] border border-[#22c55e]/30"
-              : "text-[#818384] hover:text-[#d7dadc] border border-transparent hover:border-[#343536]"
+              : "text-[#71767B] hover:text-[#E7E9EA] border border-transparent hover:border-[#2F3336]"
           }`}
         >
           {mode === "helpful" ? "Most Helpful" : "Recent"}
@@ -107,7 +223,6 @@ function SortToggle({ sort, setSort }: { sort: SortMode; setSort: (m: SortMode) 
   );
 }
 
-/* ─── Post card ──────────────────────────────────────────── */
 function PostCard({ post }: { post: Post }) {
   const [, nav] = useLocation();
   const meta = POST_META[post.type] ?? POST_META.question;
@@ -118,7 +233,6 @@ function PostCard({ post }: { post: Post }) {
       onClick={() => nav(`/posts/${post.id}`)}
       className="bg-[#16181C] border border-[#2F3336] hover:border-[#4a5568] rounded-2xl p-4 mb-3 cursor-pointer transition-all group"
     >
-      {/* Meta line */}
       <div className="flex items-center gap-1.5 flex-wrap mb-2.5">
         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${meta.bg} ${meta.color}`}>
           {meta.label}
@@ -137,17 +251,14 @@ function PostCard({ post }: { post: Post }) {
         )}
       </div>
 
-      {/* Title */}
       <h3 className="text-[#E7E9EA] font-bold text-[16px] leading-tight mb-2 group-hover:text-white transition-colors">
         {post.title}
       </h3>
 
-      {/* Content preview */}
       <p className="text-[#71767B] text-[13px] leading-relaxed line-clamp-2 mb-3">
         {post.content}
       </p>
 
-      {/* Actions bar */}
       <div className="flex items-center gap-0.5 pt-3 border-t border-[#2F3336]">
         <span className="flex items-center gap-1.5 text-[#71767B] text-[11px] font-medium px-2 py-1">
           👍 {post.upvotes} helpful
@@ -157,7 +268,7 @@ function PostCard({ post }: { post: Post }) {
         </span>
         <button
           onClick={e => e.stopPropagation()}
-          className="flex items-center gap-1.5 text-[#71767B] hover:text-[#d7dadc] text-[11px] font-medium px-2 py-1 rounded-full hover:bg-white/5 transition-colors ml-auto"
+          className="flex items-center gap-1.5 text-[#71767B] hover:text-[#E7E9EA] text-[11px] font-medium px-2 py-1 rounded-full hover:bg-white/5 transition-colors ml-auto"
         >
           <Share2 className="w-3.5 h-3.5" /> Share
         </button>
@@ -177,7 +288,6 @@ function PostSkeleton() {
   );
 }
 
-/* ─── Right panel cards ──────────────────────────────────── */
 function AboutCard() {
   const [, nav] = useLocation();
   return (
@@ -213,31 +323,6 @@ function AboutCard() {
   );
 }
 
-function MarketSnapshot() {
-  return (
-    <div className="bg-[#16181C] border border-[#2F3336] rounded-2xl p-4 mb-3">
-      <h3 className="font-bold text-[#E7E9EA] text-[11px] uppercase tracking-wider mb-3">Market Snapshot</h3>
-      <div className="flex flex-col gap-2.5">
-        {MARKET_SNAPSHOT.map(item => (
-          <div key={item.crop} className="flex items-center justify-between">
-            <span className="text-[#E7E9EA] text-[12px]">{item.crop}</span>
-            <div className="flex items-center gap-2">
-              <span className="text-[#E7E9EA] text-[11px] font-semibold">{item.price}</span>
-              <span className={`text-[10px] font-bold flex items-center gap-0.5 ${
-                item.up === true ? "text-[#22c55e]" : item.up === false ? "text-[#ef4444]" : "text-[#71767B]"
-              }`}>
-                {item.up === true && <TrendingUp className="w-3 h-3" />}
-                {item.up === false && <TrendingDown className="w-3 h-3" />}
-                {item.change}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function FarmersOnline() {
   return (
     <div className="bg-[#16181C] border border-[#2F3336] rounded-2xl p-4 mb-3">
@@ -250,25 +335,111 @@ function FarmersOnline() {
   );
 }
 
+/** Ask Mshauri CTA block — used in right panel (desktop) and sticky bar (mobile) */
+function AskMshauriCTA({ compact = false }: { compact?: boolean }) {
+  const [, nav] = useLocation();
+  if (compact) {
+    return (
+      <button
+        onClick={() => nav("/ask")}
+        className="flex items-center justify-between w-full bg-[#16181C] border border-[#22c55e]/30 rounded-2xl px-4 py-3 hover:bg-[#22c55e]/5 transition-colors group"
+      >
+        <div className="flex items-center gap-2.5">
+          <span className="text-[20px]">🌿</span>
+          <span className="text-[#E7E9EA] text-[13px] font-semibold">Have a farming question?</span>
+        </div>
+        <span className="text-[#22c55e] text-[12px] font-bold group-hover:translate-x-0.5 transition-transform">
+          Ask Mshauri →
+        </span>
+      </button>
+    );
+  }
+  return (
+    <div className="bg-[#16181C] border border-[#22c55e]/30 rounded-2xl p-4 mb-3">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-[20px]">🌿</span>
+        <span className="text-[#E7E9EA] text-[13px] font-semibold">Have a farming question?</span>
+      </div>
+      <p className="text-[#71767B] text-[11px] leading-relaxed mb-3 pl-8">
+        Ask in English, Shona, or Ndebele. Upload a photo of your crop or pest.
+      </p>
+      <button
+        onClick={() => nav("/ask")}
+        className="w-full bg-[#22c55e] hover:bg-[#16a34a] text-white text-[12px] font-bold py-2.5 rounded-full transition-colors"
+      >
+        Ask Mshauri AI →
+      </button>
+    </div>
+  );
+}
+
 /* ─── Main Feed ──────────────────────────────────────────── */
 export default function Feed() {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [sort, setSort] = useState<SortMode>("helpful");
+  const [posts, setPosts]               = useState<Post[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [sort, setSort]                 = useState<SortMode>("helpful");
 
+  /* awareness strip state */
+  const [weather, setWeather]           = useState<WeatherData | null>(null);
+  const [loadingWeather, setLoadingWeather] = useState(true);
+  const [topMover, setTopMover]         = useState<{ item: string; priceUsd: number; pct: number } | null>(null);
+  const [loadingMover, setLoadingMover] = useState(true);
+
+  /* fetch posts */
   useEffect(() => {
-    fetch("/api/posts?sort=new&limit=40")
+    fetch("/api/posts?sort=top&limit=40")
       .then(r => r.json())
       .then(d => { if (Array.isArray(d)) setPosts(d); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 
-  const feed = sortPosts(posts, sort);
+  /* fetch weather */
+  useEffect(() => {
+    fetch(
+      "https://api.open-meteo.com/v1/forecast?latitude=-17.83&longitude=31.05" +
+      "&current=temperature_2m,precipitation_probability,weather_code&timezone=Africa%2FHarare"
+    )
+      .then(r => r.json())
+      .then(json => {
+        const c = json?.current;
+        if (c) setWeather({ temp: c.temperature_2m, precip: c.precipitation_probability, code: c.weather_code });
+      })
+      .catch(() => {})
+      .finally(() => setLoadingWeather(false));
+  }, []);
+
+  /* fetch top market mover */
+  useEffect(() => {
+    fetch("/api/market-prices/live")
+      .then(r => r.json())
+      .then(json => {
+        const items: MarketItem[] = json?.data ?? [];
+        if (!items.length) return;
+        const withPct = items.map(it => ({ ...it, pct: deterministicChange(it.item) }));
+        const top = withPct.reduce((best, cur) => cur.pct > best.pct ? cur : best, withPct[0]);
+        setTopMover({ item: top.item, priceUsd: top.priceUsd, pct: top.pct });
+      })
+      .catch(() => {})
+      .finally(() => setLoadingMover(false));
+  }, []);
+
+  /* pulse = posts from last 24 h */
+  const pulseCount = posts.filter(
+    p => Date.now() - new Date(p.createdAt).getTime() < 86_400_000
+  ).length;
+
+  /* sorted feed with promo cards interspersed every 7 posts */
+  const sortedPosts = useCallback(() => {
+    const c = [...posts];
+    if (sort === "helpful") c.sort((a, b) => b.upvotes - a.upvotes);
+    else c.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+    return c;
+  }, [posts, sort])();
 
   type FeedItem = { kind: "post"; post: Post } | { kind: "promo"; resource: typeof MARICHO_RESOURCES[number] };
   const feedItems: FeedItem[] = [];
   let promoIdx = 0;
-  feed.forEach((post, i) => {
+  sortedPosts.forEach((post, i) => {
     feedItems.push({ kind: "post", post });
     if ((i + 1) % 7 === 0 && promoIdx < MARICHO_RESOURCES.length) {
       feedItems.push({ kind: "promo", resource: MARICHO_RESOURCES[promoIdx++] });
@@ -278,12 +449,20 @@ export default function Feed() {
   return (
     <div className="h-full overflow-y-auto bg-[#1a1a1b]">
       <div className="max-w-5xl mx-auto px-4 py-5">
+
+        {/* Situational Awareness Strip */}
+        <AwarenessStrip
+          weather={weather}
+          topMover={topMover}
+          pulseCount={pulseCount}
+          loadingWeather={loadingWeather}
+          loadingMover={loadingMover}
+        />
+
         <div className="flex gap-6">
-          {/* Feed column */}
+          {/* ── Feed column ── */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1">
-              <h2 className="text-[#E7E9EA] font-bold text-[15px]">Most Helpful Discussions</h2>
-            </div>
+            <h2 className="text-[#E7E9EA] font-bold text-[15px] mb-1">Most Helpful Discussions</h2>
             <SortToggle sort={sort} setSort={setSort} />
 
             {loading
@@ -304,14 +483,21 @@ export default function Feed() {
             }
           </div>
 
-          {/* Right panel */}
+          {/* ── Right panel (desktop) ── */}
           <div className="hidden lg:block w-[300px] shrink-0">
             <div className="sticky top-5">
               <AboutCard />
-              <MarketSnapshot />
               <FarmersOnline />
+              <AskMshauriCTA />
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ── Sticky Ask Mshauri CTA (mobile) ── */}
+      <div className="lg:hidden fixed bottom-16 left-0 right-0 px-4 pb-2 pointer-events-none">
+        <div className="pointer-events-auto">
+          <AskMshauriCTA compact />
         </div>
       </div>
     </div>
