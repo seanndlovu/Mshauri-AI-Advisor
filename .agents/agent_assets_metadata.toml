@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "kAhajhVxGpQbWLr96jzAP"
+uri = "file://MSHAURI_2026_BUILD_PROMPT.md"
+type = "text"
+title = "Mshauri 2026 — Master Build Prompt"
