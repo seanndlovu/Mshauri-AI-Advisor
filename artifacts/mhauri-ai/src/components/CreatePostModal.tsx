@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { X, MapPin, Loader2, Plus, Search, ChevronDown, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { CreateCommunityModal } from "./CreateCommunityModal";
 
 interface Community {
@@ -39,6 +40,7 @@ interface Props { open: boolean; onClose: () => void; onCreated: () => void; }
 
 export function CreatePostModal({ open, onClose, onCreated }: Props) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -104,6 +106,7 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
     try {
       const res = await fetch("/api/posts", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           communityId, type,
@@ -369,19 +372,31 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
               )}
 
               {/* Create a community row */}
-              <button
-                type="button"
-                onClick={() => { setShowPicker(false); setShowCreateCommunity(true); }}
-                className="flex items-center gap-3 w-full px-4 py-3.5 text-left hover:bg-[var(--bg-subtle)] transition-colors border-t border-[var(--border-color)]"
-              >
-                <div className="w-10 h-10 rounded-full bg-[var(--bg-subtle)] border border-dashed border-[#22c55e]/50 flex items-center justify-center shrink-0">
-                  <Plus className="w-4 h-4 text-[#22c55e]" />
+              {user ? (
+                <button
+                  type="button"
+                  onClick={() => { setShowPicker(false); setShowCreateCommunity(true); }}
+                  className="flex items-center gap-3 w-full px-4 py-3.5 text-left hover:bg-[var(--bg-subtle)] transition-colors border-t border-[var(--border-color)]"
+                >
+                  <div className="w-10 h-10 rounded-full bg-[var(--bg-subtle)] border border-dashed border-[#22c55e]/50 flex items-center justify-center shrink-0">
+                    <Plus className="w-4 h-4 text-[#22c55e]" />
+                  </div>
+                  <div>
+                    <div className="text-[#22c55e] font-bold text-[13px]">Start a community</div>
+                    <div className="text-[var(--text-3)] text-[11px] mt-0.5">Create your own farming community</div>
+                  </div>
+                </button>
+              ) : (
+                <div className="flex items-center gap-3 w-full px-4 py-3.5 border-t border-[var(--border-color)] opacity-60">
+                  <div className="w-10 h-10 rounded-full bg-[var(--bg-subtle)] border border-dashed border-[#2F3336] flex items-center justify-center shrink-0">
+                    <Plus className="w-4 h-4 text-[#71767B]" />
+                  </div>
+                  <div>
+                    <div className="text-[#71767B] font-bold text-[13px]">Start a community</div>
+                    <div className="text-[#71767B] text-[11px] mt-0.5">Sign in to create your own community</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-[#22c55e] font-bold text-[13px]">Start a community</div>
-                  <div className="text-[var(--text-3)] text-[11px] mt-0.5">Create your own farming community</div>
-                </div>
-              </button>
+              )}
             </div>
           </div>
         </div>

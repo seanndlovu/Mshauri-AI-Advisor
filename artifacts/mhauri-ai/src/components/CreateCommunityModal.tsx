@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { X, Loader2 } from "lucide-react";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
 interface Community { id: number; slug: string; name: string; description: string; memberCount: number; postCount: number; }
 
@@ -16,6 +18,7 @@ function slugify(name: string): string {
 
 export function CreateCommunityModal({ open, onClose, onCreated }: Props) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugManual, setSlugManual] = useState(false);
@@ -63,19 +66,41 @@ export function CreateCommunityModal({ open, onClose, onCreated }: Props) {
   return (
     <div className="fixed inset-0 z-[60] flex flex-col justify-end sm:items-center sm:justify-center">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-[var(--bg-card)] border border-[var(--border-color)] rounded-t-2xl sm:rounded-2xl w-full sm:max-w-[480px] shadow-2xl">
+      <div className="relative bg-[#16181C] border border-[#2F3336] rounded-t-2xl sm:rounded-2xl w-full sm:max-w-[480px] shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-color)]">
-          <h2 className="text-[var(--text-1)] font-bold text-[16px]">Create Community</h2>
-          <button onClick={onClose} className="p-1.5 rounded-full text-[var(--text-2)] hover:bg-[var(--bg-subtle)]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#2F3336]">
+          <h2 className="text-[#E7E9EA] font-bold text-[16px]">Create Community</h2>
+          <button onClick={onClose} className="p-1.5 rounded-full text-[#71767B] hover:bg-white/5">
             <X className="w-4 h-4" />
           </button>
         </div>
 
+        {/* Auth gate — show sign-in prompt for guests */}
+        {!user ? (
+          <div className="px-5 py-8 text-center">
+            <div className="text-3xl mb-3">🌱</div>
+            <h3 className="text-[#E7E9EA] font-bold text-[16px] mb-2">Sign in to create a community</h3>
+            <p className="text-[#71767B] text-[13px] leading-relaxed mb-6">
+              Communities are organised spaces for farmers to share knowledge and ask questions.
+            </p>
+            <div className="flex gap-3">
+              <button type="button" onClick={onClose}
+                className="flex-1 py-2.5 rounded-full border border-[#2F3336] text-[#71767B] text-[13px] font-bold hover:bg-white/5 transition-colors">
+                Cancel
+              </button>
+              <Link href="/login" className="flex-1">
+                <button type="button" onClick={onClose}
+                  className="w-full py-2.5 rounded-full bg-[#22c55e] hover:bg-[#16a34a] text-white text-[13px] font-bold transition-colors">
+                  Sign In
+                </button>
+              </Link>
+            </div>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-[12px] font-bold text-[var(--text-2)] mb-1.5 uppercase tracking-wide">
+            <label className="block text-[12px] font-bold text-[#71767B] mb-1.5 uppercase tracking-wide">
               Community Name
             </label>
             <input
@@ -83,31 +108,31 @@ export function CreateCommunityModal({ open, onClose, onCreated }: Props) {
               onChange={e => setName(e.target.value)}
               placeholder="e.g. Aquaculture Zimbabwe"
               maxLength={80}
-              className="w-full bg-[var(--bg-subtle)] border border-[var(--border-color)] rounded-lg px-3 py-2.5 text-[var(--text-1)] text-[14px] placeholder-[var(--text-3)] focus:outline-none focus:border-[#22c55e]/60 transition-colors"
+              className="w-full bg-black border border-[#2F3336] rounded-lg px-3 py-2.5 text-[#E7E9EA] text-[14px] placeholder-[#71767B] focus:outline-none focus:border-[#22c55e]/60 transition-colors"
             />
           </div>
 
           {/* Slug */}
           <div>
-            <label className="block text-[12px] font-bold text-[var(--text-2)] mb-1.5 uppercase tracking-wide">
-              URL Slug <span className="text-[var(--text-3)] font-normal normal-case">(r/slug)</span>
+            <label className="block text-[12px] font-bold text-[#71767B] mb-1.5 uppercase tracking-wide">
+              URL Slug <span className="text-[#71767B] font-normal normal-case">(r/slug)</span>
             </label>
-            <div className="flex items-center gap-0 bg-[var(--bg-subtle)] border border-[var(--border-color)] rounded-lg overflow-hidden focus-within:border-[#22c55e]/60 transition-colors">
-              <span className="px-3 text-[var(--text-3)] text-[14px] shrink-0">r/</span>
+            <div className="flex items-center bg-black border border-[#2F3336] rounded-lg overflow-hidden focus-within:border-[#22c55e]/60 transition-colors">
+              <span className="px-3 text-[#71767B] text-[14px] shrink-0">r/</span>
               <input
                 value={slug}
                 onChange={e => { setSlug(e.target.value); setSlugManual(true); }}
                 placeholder="aquaculture-zw"
                 maxLength={40}
-                className="flex-1 bg-transparent py-2.5 pr-3 text-[var(--text-1)] text-[14px] placeholder-[var(--text-3)] focus:outline-none"
+                className="flex-1 bg-transparent py-2.5 pr-3 text-[#E7E9EA] text-[14px] placeholder-[#71767B] focus:outline-none"
               />
             </div>
-            <p className="text-[11px] text-[var(--text-3)] mt-1">Only letters, numbers, and hyphens. Cannot be changed later.</p>
+            <p className="text-[11px] text-[#71767B] mt-1">Only letters, numbers, and hyphens. Cannot be changed later.</p>
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-[12px] font-bold text-[var(--text-2)] mb-1.5 uppercase tracking-wide">
+            <label className="block text-[12px] font-bold text-[#71767B] mb-1.5 uppercase tracking-wide">
               Description
             </label>
             <textarea
@@ -116,9 +141,9 @@ export function CreateCommunityModal({ open, onClose, onCreated }: Props) {
               placeholder="What is this community about? Who should join?"
               maxLength={300}
               rows={3}
-              className="w-full bg-[var(--bg-subtle)] border border-[var(--border-color)] rounded-lg px-3 py-2.5 text-[var(--text-1)] text-[14px] placeholder-[var(--text-3)] focus:outline-none focus:border-[#22c55e]/60 transition-colors resize-none"
+              className="w-full bg-black border border-[#2F3336] rounded-lg px-3 py-2.5 text-[#E7E9EA] text-[14px] placeholder-[#71767B] focus:outline-none focus:border-[#22c55e]/60 transition-colors resize-none"
             />
-            <p className="text-[11px] text-[var(--text-3)] mt-1">{description.length}/300</p>
+            <p className="text-[11px] text-[#71767B] mt-1">{description.length}/300</p>
           </div>
 
           {error && (
@@ -127,7 +152,7 @@ export function CreateCommunityModal({ open, onClose, onCreated }: Props) {
 
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 rounded-full border border-[var(--border-color)] text-[var(--text-2)] text-[13px] font-bold hover:bg-[var(--bg-subtle)] transition-colors">
+              className="flex-1 py-2.5 rounded-full border border-[#2F3336] text-[#71767B] text-[13px] font-bold hover:bg-white/5 transition-colors">
               Cancel
             </button>
             <button type="submit" disabled={submitting || !name.trim() || !slug.trim() || !description.trim()}
@@ -136,6 +161,7 @@ export function CreateCommunityModal({ open, onClose, onCreated }: Props) {
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );
