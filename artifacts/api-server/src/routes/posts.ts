@@ -67,12 +67,13 @@ router.get("/posts", async (req, res): Promise<void> => {
 
 router.post("/posts", async (req, res): Promise<void> => {
   const userId = req.session?.userId ?? null;
-  const { communityId, type, title, content, location } = req.body as {
+  const { communityId, type, title, content, location, imageUrl } = req.body as {
     communityId: number;
     type: string;
     title: string;
     content: string;
     location?: string;
+    imageUrl?: string;
   };
 
   if (!communityId || !title || !content) {
@@ -92,6 +93,7 @@ router.post("/posts", async (req, res): Promise<void> => {
     title,
     content,
     location: location ?? null,
+    imageUrl: imageUrl ?? null,
     authorName,
   }).returning();
 

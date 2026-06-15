@@ -29,6 +29,7 @@ export const postsTable = pgTable("posts", {
   downvotes: integer("downvotes").notNull().default(0),
   commentCount: integer("comment_count").notNull().default(0),
   authorName: text("author_name"),
+  imageUrl: text("image_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
