@@ -1,19 +1,23 @@
 import { useState, FormEvent } from "react";
 import { Link, useLocation } from "wouter";
-import { User, MapPin, Star, Edit2, Check, X, LogOut } from "lucide-react";
+import { MapPin, LogOut, Check, X, ChevronRight, Sprout } from "lucide-react";
 import { useAuth, type UserRole } from "@/hooks/use-auth";
 
+/* ─── constants ───────────────────────────────────────── */
 const ROLE_LABELS: Record<UserRole, string> = {
-  farmer: "Farmer", agribusiness: "Agribusiness", extension_officer: "Extension Officer",
-  researcher: "Researcher", ngo: "NGO / Development Partner",
+  farmer:           "Farmer",
+  agribusiness:     "Agribusiness",
+  extension_officer:"Extension Officer",
+  researcher:       "Researcher",
+  ngo:              "NGO / Development Partner",
 };
 
-const ROLE_COLORS: Record<UserRole, string> = {
-  farmer: "text-green-400 bg-green-400/10",
-  agribusiness: "text-blue-400 bg-blue-400/10",
-  extension_officer: "text-yellow-400 bg-yellow-400/10",
-  researcher: "text-purple-400 bg-purple-400/10",
-  ngo: "text-orange-400 bg-orange-400/10",
+const ROLE_COLORS: Record<UserRole, { text: string; bg: string; border: string }> = {
+  farmer:           { text: "text-green-400",  bg: "bg-green-400/10",  border: "border-green-400/20"  },
+  agribusiness:     { text: "text-blue-400",   bg: "bg-blue-400/10",   border: "border-blue-400/20"   },
+  extension_officer:{ text: "text-yellow-400", bg: "bg-yellow-400/10", border: "border-yellow-400/20" },
+  researcher:       { text: "text-purple-400", bg: "bg-purple-400/10", border: "border-purple-400/20" },
+  ngo:              { text: "text-orange-400", bg: "bg-orange-400/10", border: "border-orange-400/20" },
 };
 
 const LOCATIONS = [
@@ -21,41 +25,78 @@ const LOCATIONS = [
   "Chinhoyi", "Bindura", "Gwanda", "Lupane", "Beitbridge", "Victoria Falls",
 ];
 
+/* Animal emojis matching the Shona names */
+const ANIMALS = [
+  { name: "Shumba",  emoji: "🦁" },
+  { name: "Nzou",    emoji: "🐘" },
+  { name: "Mhofu",   emoji: "🦌" },
+  { name: "Mvuu",    emoji: "🦛" },
+  { name: "Ngwe",    emoji: "🐆" },
+  { name: "Nyati",   emoji: "🐃" },
+  { name: "Hove",    emoji: "🐟" },
+  { name: "Mhara",   emoji: "🐾" },
+  { name: "Bveni",   emoji: "🦍" },
+  { name: "Tsoko",   emoji: "🐒" },
+];
+
+function getAnonymousId(userId: number): { display: string; emoji: string } {
+  const animal = ANIMALS[userId % ANIMALS.length];
+  const num = 100 + ((userId * 127) % 900);
+  return { display: `${animal.name}-${num}`, emoji: animal.emoji };
+}
+
+/* ─── Guest view ──────────────────────────────────────── */
+function GuestView() {
+  return (
+    <div className="h-full overflow-y-auto bg-[#1a1a1b]">
+      <div className="max-w-lg mx-auto px-4 pt-16 pb-10 flex flex-col items-center text-center">
+        <div className="w-20 h-20 rounded-full bg-[#22c55e]/10 border-2 border-[#22c55e]/20 flex items-center justify-center mb-5">
+          <Sprout className="w-9 h-9 text-[#22c55e]" />
+        </div>
+        <h2 className="text-[#E7E9EA] font-bold text-[22px] mb-2">You're browsing as a guest</h2>
+        <p className="text-[#71767B] text-[14px] leading-relaxed mb-8 max-w-sm">
+          Sign in to save your conversations, track your questions, and build your reputation among Zimbabwean farmers.
+        </p>
+        <div className="flex gap-3 w-full max-w-xs">
+          <Link href="/login" className="flex-1">
+            <button className="w-full px-5 py-3 border border-[#2F3336] rounded-full text-[#E7E9EA] hover:bg-white/5 transition-colors font-semibold text-[14px]">
+              Sign In
+            </button>
+          </Link>
+          <Link href="/register" className="flex-1">
+            <button className="w-full px-5 py-3 bg-[#22c55e] hover:bg-[#16a34a] rounded-full text-white transition-colors font-bold text-[14px]">
+              Create Account
+            </button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Main Me page ────────────────────────────────────── */
 export default function Profile() {
   const [, setLocation] = useLocation();
   const { user, logout } = useAuth();
-  const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ name: "", location: "", role: "" });
+  const [editSettings, setEditSettings] = useState(false);
+  const [form, setForm] = useState({ location: "", role: "" as UserRole | "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
 
-  if (!user) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-center">
-          <User className="w-12 h-12 mx-auto mb-4 text-[#71767B]" />
-          <h2 className="text-[#E7E9EA] font-bold text-lg mb-2">Sign in to view your profile</h2>
-          <p className="text-[#71767B] text-sm mb-6">Join Mshauri to participate in discussions</p>
-          <div className="flex gap-3 justify-center">
-            <Link href="/login">
-              <button className="px-6 py-2.5 border border-[#2F3336] rounded-full text-[#E7E9EA] hover:bg-white/10 transition-colors font-medium">Sign in</button>
-            </Link>
-            <Link href="/register">
-              <button className="px-6 py-2.5 bg-[#22c55e] hover:bg-[#16a34a] rounded-full text-white transition-colors font-bold">Register</button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (!user) return <GuestView />;
 
-  function startEdit() {
-    setForm({ name: user!.name, location: user!.location ?? "", role: user!.role });
-    setEditing(true);
+  const { display: anonId, emoji: anonEmoji } = getAnonymousId(user.id);
+  const roleStyle = ROLE_COLORS[user.role];
+
+  function openSettings() {
+    setForm({ location: user!.location ?? "", role: user!.role });
+    setEditSettings(true);
     setError("");
+    setSaved(false);
   }
 
-  async function saveEdit(e: FormEvent) {
+  async function saveSettings(e: FormEvent) {
     e.preventDefault();
     setSaving(true);
     setError("");
@@ -64,13 +105,14 @@ export default function Profile() {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ location: form.location, role: form.role }),
       });
       if (!res.ok) throw new Error("Failed to save");
-      setEditing(false);
+      setSaved(true);
+      setEditSettings(false);
       window.location.reload();
     } catch {
-      setError("Failed to save changes");
+      setError("Failed to save. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -81,88 +123,139 @@ export default function Profile() {
     setLocation("/");
   }
 
-  const initials = user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
-
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        {/* Avatar + basic info */}
-        <div className="bg-[#16181C] border border-[#2F3336] rounded-2xl p-6 mb-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-[#22c55e]/20 border-2 border-[#22c55e]/40 flex items-center justify-center text-[#22c55e] font-black text-xl">
-                {initials}
-              </div>
-              <div>
-                <h1 className="text-[#E7E9EA] font-bold text-xl">{user.name}</h1>
-                <p className="text-[#71767B] text-sm">{user.email}</p>
-                <span className={`inline-flex mt-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${ROLE_COLORS[user.role]}`}>
-                  {ROLE_LABELS[user.role]}
-                </span>
-              </div>
-            </div>
-            <button onClick={startEdit}
-              className="p-2 rounded-full border border-[#2F3336] hover:bg-white/10 text-[#71767B] transition-colors">
-              <Edit2 className="w-4 h-4" />
-            </button>
+    <div className="h-full overflow-y-auto bg-[#1a1a1b]">
+      <div className="max-w-lg mx-auto px-4 py-6">
+
+        {/* Identity card */}
+        <div className="bg-[#16181C] border border-[#2F3336] rounded-2xl p-6 mb-4 text-center">
+          {/* Animal avatar */}
+          <div className="w-20 h-20 rounded-full bg-[#22c55e]/10 border-2 border-[#22c55e]/25 flex items-center justify-center mx-auto mb-3 text-4xl">
+            {anonEmoji}
           </div>
 
-          <div className="flex items-center gap-4 mt-4 pt-4 border-t border-[#2F3336]">
-            {user.location && (
-              <span className="flex items-center gap-1.5 text-[#71767B] text-sm">
-                <MapPin className="w-4 h-4" />{user.location}
-              </span>
-            )}
-            <span className="flex items-center gap-1.5 text-[#71767B] text-sm">
-              <Star className="w-4 h-4 text-yellow-400" />
-              <span className="text-[#E7E9EA] font-medium">{user.reputationScore}</span> reputation
-            </span>
+          {/* Anonymous ID */}
+          <h1 className="text-[#E7E9EA] font-black text-[24px] tracking-tight mb-2">
+            {anonId}
+          </h1>
+
+          {/* Role badge */}
+          <span className={`inline-flex items-center text-[12px] font-bold px-3 py-1 rounded-full border ${roleStyle.text} ${roleStyle.bg} ${roleStyle.border}`}>
+            {ROLE_LABELS[user.role]}
+          </span>
+
+          {/* Location */}
+          {user.location && (
+            <div className="flex items-center justify-center gap-1.5 mt-3 text-[#71767B] text-[13px]">
+              <MapPin className="w-3.5 h-3.5" />
+              {user.location}
+            </div>
+          )}
+
+          {/* Stats row */}
+          <div className="grid grid-cols-3 gap-0 mt-5 pt-5 border-t border-[#2F3336]">
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="text-[#E7E9EA] font-black text-[20px]">{user.reputationScore}</span>
+              <span className="text-[#71767B] text-[10px] uppercase tracking-wider font-semibold">Reputation</span>
+            </div>
+            <div className="flex flex-col items-center gap-0.5 border-x border-[#2F3336]">
+              <span className="text-[#E7E9EA] font-black text-[20px]">—</span>
+              <span className="text-[#71767B] text-[10px] uppercase tracking-wider font-semibold">Questions</span>
+            </div>
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="text-[#E7E9EA] font-black text-[20px]">—</span>
+              <span className="text-[#71767B] text-[10px] uppercase tracking-wider font-semibold">Helpful</span>
+            </div>
           </div>
         </div>
 
-        {/* Edit form */}
-        {editing && (
-          <form onSubmit={saveEdit} className="bg-[#16181C] border border-[#2F3336] rounded-2xl p-5 mb-4 flex flex-col gap-3">
-            <h2 className="text-[#E7E9EA] font-bold">Edit Profile</h2>
-            {error && <p className="text-red-400 text-sm">{error}</p>}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[#71767B] text-sm">Name</label>
-              <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required
-                className="bg-black border border-[#2F3336] rounded-lg px-3 py-2.5 text-[#E7E9EA] text-sm focus:outline-none focus:border-[#22c55e]" />
+        {/* Privacy note */}
+        <p className="text-[#71767B] text-[11px] text-center mb-4 px-2">
+          Your identity is anonymous. Real name and contact details are never shown publicly.
+        </p>
+
+        {/* Settings section */}
+        {!editSettings ? (
+          <div className="bg-[#16181C] border border-[#2F3336] rounded-2xl overflow-hidden mb-4">
+            <div className="px-5 py-3.5 border-b border-[#2F3336]">
+              <h2 className="text-[#E7E9EA] font-bold text-[13px] uppercase tracking-wider">Settings</h2>
             </div>
+
+            <button onClick={openSettings}
+              className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/[0.03] transition-colors border-b border-[#2F3336]">
+              <div className="text-left">
+                <div className="text-[#E7E9EA] text-[14px] font-medium">Location</div>
+                <div className="text-[#71767B] text-[12px]">{user.location || "Not set"}</div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-[#71767B]" />
+            </button>
+
+            <button onClick={openSettings}
+              className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/[0.03] transition-colors">
+              <div className="text-left">
+                <div className="text-[#E7E9EA] text-[14px] font-medium">Role</div>
+                <div className="text-[#71767B] text-[12px]">{ROLE_LABELS[user.role]}</div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-[#71767B]" />
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={saveSettings} className="bg-[#16181C] border border-[#2F3336] rounded-2xl p-5 mb-4 flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-[#E7E9EA] font-bold text-[14px]">Edit Settings</h2>
+              <button type="button" onClick={() => setEditSettings(false)}
+                className="p-1.5 rounded-full hover:bg-white/5 text-[#71767B] transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {error && <p className="text-red-400 text-[13px]">{error}</p>}
+
             <div className="flex flex-col gap-1.5">
-              <label className="text-[#71767B] text-sm">Location</label>
-              <select value={form.location} onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-                className="bg-black border border-[#2F3336] rounded-lg px-3 py-2.5 text-[#E7E9EA] text-sm focus:outline-none focus:border-[#22c55e]">
-                <option value="">None</option>
-                {LOCATIONS.map((l) => <option key={l} value={l}>{l}</option>)}
+              <label className="text-[#71767B] text-[12px] font-semibold uppercase tracking-wider">Location</label>
+              <select
+                value={form.location}
+                onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
+                className="bg-black border border-[#2F3336] rounded-xl px-3 py-2.5 text-[#E7E9EA] text-[14px] focus:outline-none focus:border-[#22c55e] transition-colors"
+              >
+                <option value="">Not set</option>
+                {LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
               </select>
             </div>
+
             <div className="flex flex-col gap-1.5">
-              <label className="text-[#71767B] text-sm">Role</label>
-              <select value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
-                className="bg-black border border-[#2F3336] rounded-lg px-3 py-2.5 text-[#E7E9EA] text-sm focus:outline-none focus:border-[#22c55e]">
+              <label className="text-[#71767B] text-[12px] font-semibold uppercase tracking-wider">Role</label>
+              <select
+                value={form.role}
+                onChange={e => setForm(f => ({ ...f, role: e.target.value as UserRole }))}
+                className="bg-black border border-[#2F3336] rounded-xl px-3 py-2.5 text-[#E7E9EA] text-[14px] focus:outline-none focus:border-[#22c55e] transition-colors"
+              >
                 {Object.entries(ROLE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
-            <div className="flex gap-2 justify-end">
-              <button type="button" onClick={() => setEditing(false)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#2F3336] text-[#71767B] text-sm hover:bg-white/5">
-                <X className="w-3.5 h-3.5" /> Cancel
-              </button>
-              <button type="submit" disabled={saving}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#22c55e] text-white text-sm font-bold hover:bg-[#16a34a] disabled:opacity-60">
-                <Check className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Save"}
-              </button>
-            </div>
+
+            <button type="submit" disabled={saving}
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-full bg-[#22c55e] hover:bg-[#16a34a] disabled:opacity-60 text-white font-bold text-[14px] transition-colors">
+              <Check className="w-4 h-4" /> {saving ? "Saving…" : "Save Changes"}
+            </button>
           </form>
         )}
 
+        {saved && (
+          <p className="text-[#22c55e] text-[13px] text-center mb-3 font-semibold">✓ Settings saved</p>
+        )}
+
         {/* Sign out */}
-        <button onClick={handleLogout}
-          className="flex items-center gap-2 text-red-400 hover:text-red-300 text-sm px-3 py-2 rounded-lg hover:bg-red-500/10 transition-colors">
-          <LogOut className="w-4 h-4" /> Sign out
-        </button>
+        <div className="bg-[#16181C] border border-[#2F3336] rounded-2xl overflow-hidden">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-5 py-4 hover:bg-red-500/5 transition-colors group"
+          >
+            <LogOut className="w-4 h-4 text-red-400 group-hover:text-red-300 transition-colors" />
+            <span className="text-red-400 group-hover:text-red-300 text-[14px] font-semibold transition-colors">Sign Out</span>
+          </button>
+        </div>
+
       </div>
     </div>
   );
