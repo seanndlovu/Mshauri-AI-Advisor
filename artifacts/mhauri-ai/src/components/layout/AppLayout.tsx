@@ -130,7 +130,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       {/* Logo */}
       <Link href="/">
         <div onClick={onNavigate} className="flex items-center gap-2.5 px-4 py-2.5 mb-2 cursor-pointer hover:bg-[#272729] rounded-lg mx-2 transition-colors">
-          <img src="/mshauri-logo.png" alt="Mshauri" className="w-9 h-9 object-contain shrink-0" />
+          <img src="/mshauri-logo.png?v=2" alt="Mshauri" className="w-10 h-10 object-contain shrink-0" />
           <div>
             <div className="font-black text-[#c8a84b] text-[15px] tracking-tight leading-none">mshauri</div>
             <div className="text-[#5a4020] text-[9px] font-semibold uppercase tracking-wide mt-0.5">Agriculture & Climate Intelligence</div>

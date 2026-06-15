@@ -295,7 +295,7 @@ function AboutCard() {
       <div className="h-10 bg-gradient-to-r from-[#16a34a] to-[#22c55e]" />
       <div className="px-4 pb-4">
         <div className="flex items-end gap-2 -mt-5 mb-3">
-          <img src="/mshauri-logo.png" alt="Mshauri" className="w-12 h-12 rounded-full border-2 border-[#16181C] bg-black object-contain" />
+          <img src="/mshauri-logo.png?v=2" alt="Mshauri" className="w-16 h-16 rounded-xl bg-black object-contain" />
         </div>
         <h2 className="font-bold text-[#E7E9EA] text-[13px] mb-1">About Mshauri</h2>
         <p className="text-[#71767B] text-[11px] leading-relaxed mb-3">
@@ -345,7 +345,7 @@ function AskMshauriCTA({ compact = false }: { compact?: boolean }) {
         className="flex items-center justify-between w-full bg-[#16181C] border border-[#22c55e]/30 rounded-2xl px-4 py-3 hover:bg-[#22c55e]/5 transition-colors group"
       >
         <div className="flex items-center gap-2.5">
-          <span className="text-[20px]">🌿</span>
+          <img src="/mshauri-logo.png?v=2" alt="Mshauri" className="w-7 h-7 object-contain shrink-0" />
           <span className="text-[#E7E9EA] text-[13px] font-semibold">Have a farming question?</span>
         </div>
         <span className="text-[#22c55e] text-[12px] font-bold group-hover:translate-x-0.5 transition-transform">
@@ -357,7 +357,7 @@ function AskMshauriCTA({ compact = false }: { compact?: boolean }) {
   return (
     <div className="bg-[#16181C] border border-[#22c55e]/30 rounded-2xl p-4 mb-3">
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-[20px]">🌿</span>
+        <img src="/mshauri-logo.png?v=2" alt="Mshauri" className="w-7 h-7 object-contain shrink-0" />
         <span className="text-[#E7E9EA] text-[13px] font-semibold">Have a farming question?</span>
       </div>
       <p className="text-[#71767B] text-[11px] leading-relaxed mb-3 pl-8">
