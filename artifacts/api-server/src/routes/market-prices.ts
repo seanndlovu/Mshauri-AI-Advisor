@@ -135,31 +135,34 @@ router.get("/market-prices/live", async (req, res): Promise<void> => {
 
   try {
     const r = await fetch(
-      "https://zimpricecheck.com/price-updates/fruit-and-vegetable-prices/",
+      "https://docs.google.com/spreadsheets/d/1Xhm6GEsJTncv_aPhK9Ivo1eq40ZQTxeE3PphNy8uQ_s/gviz/tq?tqx=out:csv",
       {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; Mshauri/1.0; +https://mshauri.co.zw)" },
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; Mshauri/1.0)" },
         signal: AbortSignal.timeout(12000),
       }
     );
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const html = await r.text();
+    const csv = await r.text();
 
     const prices: LivePrice[] = [];
-    // Match all <tr> blocks
-    const rowRe = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-    let rowMatch: RegExpExecArray | null;
-    while ((rowMatch = rowRe.exec(html)) !== null) {
-      const cells = [...rowMatch[1].matchAll(/<td[^>]*>([^<]*)<\/td>/gi)].map(m => m[1].trim());
-      if (cells.length < 3) continue;
-      const [item, quantity, usdStr, zigStr = ""] = cells;
-      if (!item || item.toLowerCase() === "item") continue;
+    const lines = csv.split("\n").slice(1); // skip header row
+
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      // Parse quoted CSV fields
+      const cols = (line.match(/"([^"]*)"/g) ?? []).map(c => c.replace(/^"|"$/g, "").trim());
+      if (cols.length < 3) continue;
+      const [item, quantity, usdStr, zigStr = ""] = cols;
+      if (!item) continue;
       const usdMatch = usdStr.replace(/,/g, "").match(/[\d.]+/);
       if (!usdMatch) continue;
+      const priceUsd = parseFloat(usdMatch[0]);
+      if (priceUsd === 0) continue;
       const zigMatch = zigStr.replace(/,/g, "").replace(/\s+/g, "").match(/[\d.]+/);
       prices.push({
         item,
         quantity,
-        priceUsd: parseFloat(usdMatch[0]),
+        priceUsd,
         priceZig: zigMatch ? parseFloat(zigMatch[0]) : 0,
         category: classifyCategory(item),
         source: "zimpricecheck",

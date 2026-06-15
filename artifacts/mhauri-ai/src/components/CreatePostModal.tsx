@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { X, MapPin, Loader2, Search, ArrowLeft, Plus } from "lucide-react";
+import { X, MapPin, Loader2, Plus, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CreateCommunityModal } from "./CreateCommunityModal";
 
@@ -37,48 +37,29 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
   const [showLocation, setShowLocation] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
-  // Community picker panel state
-  const [showPicker, setShowPicker] = useState(false);
   const [showCreateCommunity, setShowCreateCommunity] = useState(false);
-  const [search, setSearch] = useState("");
-  const searchRef = useRef<HTMLInputElement>(null);
-
-  function fetchCommunities() {
-    setLoadingCommunities(true);
-    fetch("/api/communities")
-      .then(r => r.json())
-      .then(d => { if (Array.isArray(d)) setCommunities(d); })
-      .catch(() => {})
-      .finally(() => setLoadingCommunities(false));
-  }
+  const [showAllCommunities, setShowAllCommunities] = useState(false);
 
   useEffect(() => {
-    if (open) fetchCommunities();
+    if (open) {
+      setLoadingCommunities(true);
+      fetch("/api/communities")
+        .then(r => r.json())
+        .then(d => { if (Array.isArray(d)) setCommunities(d); })
+        .catch(() => {})
+        .finally(() => setLoadingCommunities(false));
+    }
   }, [open]);
 
   useEffect(() => {
-    if (showPicker) {
-      setTimeout(() => searchRef.current?.focus(), 50);
-    }
-  }, [showPicker]);
-
-  useEffect(() => {
-    if (open && !showPicker) {
-      setTimeout(() => titleRef.current?.focus(), 50);
-    }
-  }, [open, showPicker]);
+    if (open) setTimeout(() => titleRef.current?.focus(), 80);
+  }, [open]);
 
   const selectedCommunity = communities.find(c => c.id === communityId);
-  const filtered = search.trim()
-    ? communities.filter(c =>
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.slug.toLowerCase().includes(search.toLowerCase()))
-    : communities;
 
   function resetAndClose() {
     setTitle(""); setContent(""); setLocation(""); setCommunityId(""); setType("question");
-    setShowDetails(false); setShowLocation(false); setShowPicker(false); setSearch("");
+    setShowDetails(false); setShowLocation(false); setShowAllCommunities(false);
     setShowCreateCommunity(false);
     onClose();
   }
@@ -109,214 +90,186 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
 
   if (!open) return null;
 
+  const visibleCommunities = showAllCommunities ? communities : communities.slice(0, 12);
+
   return (
-    /* Full-screen overlay */
-    <div className="fixed inset-0 z-50 flex flex-col justify-end sm:items-center sm:justify-start sm:pt-[5vh]">
+    <div className="fixed inset-0 z-50 flex flex-col justify-end sm:items-center sm:justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={resetAndClose} />
 
-      {/* Modal — bottom-sheet on mobile, centered card on desktop */}
-      <div className="relative bg-[var(--bg-card)] border border-[var(--border-color)] rounded-t-2xl sm:rounded-2xl w-full sm:max-w-[540px] shadow-2xl flex flex-col max-h-[92dvh] overflow-hidden">
+      <div className="relative bg-[var(--bg-card)] border border-[var(--border-color)] rounded-t-2xl sm:rounded-2xl w-full sm:max-w-[560px] shadow-2xl flex flex-col max-h-[94dvh] overflow-hidden">
 
-        {/* ─── Community Picker Panel ─── */}
-        {showPicker ? (
-          <>
-            {/* Picker header */}
-            <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[var(--border-color)] shrink-0">
-              <button
-                onClick={() => { setShowPicker(false); setSearch(""); }}
-                className="p-1 rounded-full text-[var(--text-2)] hover:bg-[var(--bg-subtle)] transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </button>
-              <h3 className="text-[var(--text-1)] font-bold text-[15px]">Post to</h3>
-            </div>
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] shrink-0">
+          <h2 className="text-[var(--text-1)] font-bold text-[15px]">Create Post</h2>
+          <button onClick={resetAndClose} className="p-1.5 rounded-full text-[var(--text-2)] hover:bg-[var(--bg-subtle)] transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
-            {/* Search */}
-            <div className="px-4 py-3 border-b border-[var(--border-color)] shrink-0">
-              <div className="flex items-center gap-2 bg-[var(--bg-subtle)] rounded-full px-3 py-2">
-                <Search className="w-4 h-4 text-[var(--text-3)] shrink-0" />
-                <input
-                  ref={searchRef}
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  placeholder="Search communities…"
-                  className="flex-1 bg-transparent text-[var(--text-1)] text-[13px] placeholder-[var(--text-3)] focus:outline-none"
-                />
-                {search && (
-                  <button onClick={() => setSearch("")} className="text-[var(--text-3)] hover:text-[var(--text-2)]">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+        <div className="overflow-y-auto flex-1">
+          <form onSubmit={handleSubmit}>
+
+            {/* ── Community selector (inline) ── */}
+            <div className="px-4 pt-4 pb-3 border-b border-[var(--border-color)]">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-bold text-[var(--text-3)] uppercase tracking-widest">Post to community</span>
+                {selectedCommunity && (
+                  <span className="text-[11px] text-[#22c55e] font-bold">
+                    {COMMUNITY_ICONS[selectedCommunity.slug] ?? "🌱"} r/{selectedCommunity.slug} ✓
+                  </span>
                 )}
               </div>
-            </div>
 
-            {/* Community list */}
-            <div className="overflow-y-auto flex-1">
               {loadingCommunities ? (
-                <div className="flex items-center justify-center py-10 gap-2 text-[var(--text-3)]">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-[13px]">Loading communities…</span>
+                <div className="flex items-center gap-2 py-2 text-[var(--text-3)]">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span className="text-[12px]">Loading communities…</span>
                 </div>
-              ) : filtered.length === 0 ? (
-                <p className="px-4 py-6 text-center text-[var(--text-3)] text-[13px]">No communities found</p>
-              ) : filtered.map(c => (
-                <button
-                  key={c.id}
-                  onClick={() => { setCommunityId(c.id); setShowPicker(false); setSearch(""); }}
-                  className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[var(--bg-subtle)] border-b border-[var(--border-color)]/40 ${
-                    communityId === c.id ? "bg-[#22c55e]/8" : ""
-                  }`}
-                >
-                  <span className="text-2xl shrink-0">{COMMUNITY_ICONS[c.slug] ?? "🌱"}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className={`text-[13px] font-bold ${communityId === c.id ? "text-[#22c55e]" : "text-[var(--text-1)]"}`}>
-                      r/{c.slug}
-                    </div>
-                    <div className="text-[11px] text-[var(--text-2)] truncate">{c.name}</div>
-                  </div>
-                  {communityId === c.id && <span className="text-[#22c55e] text-lg">✓</span>}
-                </button>
-              ))}
-
-              {/* Create Community button */}
-              <button
-                onClick={() => setShowCreateCommunity(true)}
-                className="w-full flex items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-[var(--bg-subtle)] text-[#22c55e]"
-              >
-                <span className="w-8 h-8 rounded-full border-2 border-dashed border-[#22c55e]/50 flex items-center justify-center shrink-0">
-                  <Plus className="w-4 h-4" />
-                </span>
-                <div>
-                  <div className="text-[13px] font-bold">Create a community</div>
-                  <div className="text-[11px] text-[var(--text-2)]">Start a new farming community</div>
-                </div>
-              </button>
-            </div>
-          </>
-        ) : (
-          /* ─── Post Form ─── */
-          <>
-            {/* Top bar */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowPicker(true)}
-                className="flex items-center gap-2 bg-[var(--bg-subtle)] hover:bg-[var(--bg-vote)] border border-[var(--border-color)] rounded-full pl-3 pr-4 py-2 text-[12px] font-bold text-[var(--text-1)] transition-colors max-w-[70%]"
-              >
-                <span className="text-base shrink-0">{selectedCommunity ? (COMMUNITY_ICONS[selectedCommunity.slug] ?? "🌱") : "🌱"}</span>
-                <span className="truncate">{selectedCommunity ? `r/${selectedCommunity.slug}` : "Select Community"}</span>
-                <svg className="w-3 h-3 ml-1 shrink-0 text-[var(--text-2)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
-              </button>
-              <button onClick={resetAndClose} className="p-2 rounded-full text-[var(--text-2)] hover:bg-[var(--bg-subtle)] transition-colors shrink-0">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden">
-              {/* Title */}
-              <div className="px-4 pt-4 pb-2">
-                <textarea
-                  ref={titleRef}
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  maxLength={300}
-                  rows={2}
-                  placeholder="What's on your mind? *"
-                  className="w-full bg-transparent text-[var(--text-1)] text-[16px] font-semibold placeholder-[var(--text-3)] focus:outline-none resize-none leading-snug"
-                />
-              </div>
-
-              {/* Post type chips */}
-              <div className="px-4 pb-3 flex flex-wrap gap-1.5">
-                {POST_TYPES.map(pt => (
-                  <button
-                    key={pt.value} type="button"
-                    onClick={() => setType(pt.value)}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all ${
-                      type === pt.value
-                        ? "border-[#22c55e]/60 bg-[#22c55e]/15 text-[#22c55e]"
-                        : "border-[var(--border-color)] bg-[var(--bg-subtle)] text-[var(--text-2)] hover:border-[var(--text-2)]/40 hover:text-[var(--text-1)]"
-                    }`}
-                  >
-                    {pt.icon} {pt.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="border-t border-[var(--border-color)]" />
-
-              {/* Details */}
-              <div className="px-4 py-3 min-h-[60px]">
-                {showDetails ? (
-                  <textarea
-                    value={content}
-                    onChange={e => setContent(e.target.value)}
-                    rows={4}
-                    placeholder="Share the details…"
-                    className="w-full bg-transparent text-[var(--text-1)] text-[13px] placeholder-[var(--text-3)] focus:outline-none resize-none"
-                  />
-                ) : (
-                  <button type="button" onClick={() => setShowDetails(true)}
-                    className="text-[var(--text-3)] text-[13px] hover:text-[var(--text-2)] transition-colors w-full text-left"
-                  >
-                    + Add details (optional)
-                  </button>
-                )}
-              </div>
-
-              {/* Location */}
-              {showLocation && (
-                <div className="px-4 pb-3">
-                  <div className="flex items-center gap-2 bg-[var(--bg-subtle)] rounded-lg px-3 py-2">
-                    <MapPin className="w-3.5 h-3.5 text-[var(--text-3)] shrink-0" />
-                    <input
-                      value={location}
-                      onChange={e => setLocation(e.target.value)}
-                      placeholder="e.g. Harare, Gweru, Matabeleland North…"
-                      className="flex-1 bg-transparent text-[var(--text-1)] text-[12px] placeholder-[var(--text-3)] focus:outline-none"
-                      autoFocus
-                    />
-                    <button type="button" onClick={() => { setShowLocation(false); setLocation(""); }}>
-                      <X className="w-3.5 h-3.5 text-[var(--text-3)]" />
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {visibleCommunities.map(c => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setCommunityId(c.id)}
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[12px] font-bold border transition-all ${
+                        communityId === c.id
+                          ? "bg-[#22c55e]/15 border-[#22c55e]/60 text-[#22c55e]"
+                          : "bg-[var(--bg-subtle)] border-[var(--border-color)] text-[var(--text-2)] hover:border-[var(--text-2)]/50 hover:text-[var(--text-1)]"
+                      }`}
+                    >
+                      <span>{COMMUNITY_ICONS[c.slug] ?? "🌱"}</span>
+                      <span>r/{c.slug}</span>
                     </button>
-                  </div>
+                  ))}
+
+                  {communities.length > 12 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllCommunities(o => !o)}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[12px] font-bold border border-[var(--border-color)] text-[var(--text-3)] hover:text-[var(--text-2)] bg-[var(--bg-subtle)] transition-all"
+                    >
+                      {showAllCommunities ? "Show less" : `+${communities.length - 12} more`}
+                      <ChevronDown className={`w-3 h-3 transition-transform ${showAllCommunities ? "rotate-180" : ""}`} />
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateCommunity(true)}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[12px] font-bold border border-dashed border-[#22c55e]/40 text-[#22c55e] hover:border-[#22c55e]/70 hover:bg-[#22c55e]/5 transition-all"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    New
+                  </button>
                 </div>
               )}
+            </div>
 
-              <div className="border-t border-[var(--border-color)]" />
+            {/* ── Title ── */}
+            <div className="px-4 pt-4 pb-2">
+              <textarea
+                ref={titleRef}
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                maxLength={300}
+                rows={2}
+                placeholder="What's on your mind? *"
+                className="w-full bg-transparent text-[var(--text-1)] text-[15px] font-semibold placeholder-[var(--text-3)] focus:outline-none resize-none leading-snug"
+              />
+            </div>
 
-              {/* Bottom actions */}
-              <div className="flex items-center justify-between px-4 py-3 shrink-0">
+            {/* ── Post type chips ── */}
+            <div className="px-4 pb-3 flex flex-wrap gap-1.5">
+              {POST_TYPES.map(pt => (
                 <button
-                  type="button"
-                  onClick={() => setShowLocation(l => !l)}
-                  className={`flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-full border transition-colors ${
-                    showLocation
-                      ? "border-[#22c55e]/50 text-[#22c55e] bg-[#22c55e]/10"
-                      : "border-[var(--border-color)] text-[var(--text-2)] hover:bg-[var(--bg-subtle)]"
+                  key={pt.value} type="button"
+                  onClick={() => setType(pt.value)}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all ${
+                    type === pt.value
+                      ? "border-[#22c55e]/60 bg-[#22c55e]/15 text-[#22c55e]"
+                      : "border-[var(--border-color)] bg-[var(--bg-subtle)] text-[var(--text-2)] hover:border-[var(--text-2)]/40 hover:text-[var(--text-1)]"
                   }`}
                 >
-                  <MapPin className="w-3.5 h-3.5" />
-                  {location || "Add location"}
+                  {pt.icon} {pt.label}
                 </button>
-                <div className="flex gap-2">
-                  <button type="button" onClick={resetAndClose}
-                    className="px-4 py-2 rounded-full text-[var(--text-2)] text-[13px] font-bold hover:bg-[var(--bg-subtle)] transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting || !title.trim() || !communityId}
-                    className="flex items-center gap-1.5 px-5 py-2 bg-[#22c55e] hover:bg-[#16a34a] disabled:opacity-40 rounded-full text-white text-[13px] font-bold transition-colors"
-                  >
-                    {submitting ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Posting…</> : "Post"}
+              ))}
+            </div>
+
+            <div className="border-t border-[var(--border-color)]" />
+
+            {/* ── Details ── */}
+            <div className="px-4 py-3 min-h-[56px]">
+              {showDetails ? (
+                <textarea
+                  value={content}
+                  onChange={e => setContent(e.target.value)}
+                  rows={4}
+                  placeholder="Share the details…"
+                  className="w-full bg-transparent text-[var(--text-1)] text-[13px] placeholder-[var(--text-3)] focus:outline-none resize-none"
+                  autoFocus
+                />
+              ) : (
+                <button type="button" onClick={() => setShowDetails(true)}
+                  className="text-[var(--text-3)] text-[13px] hover:text-[var(--text-2)] transition-colors w-full text-left"
+                >
+                  + Add details (optional)
+                </button>
+              )}
+            </div>
+
+            {/* ── Location ── */}
+            {showLocation && (
+              <div className="px-4 pb-3">
+                <div className="flex items-center gap-2 bg-[var(--bg-subtle)] rounded-lg px-3 py-2">
+                  <MapPin className="w-3.5 h-3.5 text-[var(--text-3)] shrink-0" />
+                  <input
+                    value={location}
+                    onChange={e => setLocation(e.target.value)}
+                    placeholder="e.g. Harare, Gweru, Matabeleland North…"
+                    className="flex-1 bg-transparent text-[var(--text-1)] text-[12px] placeholder-[var(--text-3)] focus:outline-none"
+                    autoFocus
+                  />
+                  <button type="button" onClick={() => { setShowLocation(false); setLocation(""); }}>
+                    <X className="w-3.5 h-3.5 text-[var(--text-3)]" />
                   </button>
                 </div>
               </div>
-            </form>
-          </>
-        )}
+            )}
+
+            <div className="border-t border-[var(--border-color)]" />
+
+            {/* ── Actions ── */}
+            <div className="flex items-center justify-between px-4 py-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowLocation(l => !l)}
+                className={`flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-full border transition-colors ${
+                  showLocation
+                    ? "border-[#22c55e]/50 text-[#22c55e] bg-[#22c55e]/10"
+                    : "border-[var(--border-color)] text-[var(--text-2)] hover:bg-[var(--bg-subtle)]"
+                }`}
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                {location || "Add location"}
+              </button>
+              <div className="flex gap-2">
+                <button type="button" onClick={resetAndClose}
+                  className="px-4 py-2 rounded-full text-[var(--text-2)] text-[13px] font-bold hover:bg-[var(--bg-subtle)] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting || !title.trim() || !communityId}
+                  className="flex items-center gap-1.5 px-5 py-2 bg-[#22c55e] hover:bg-[#16a34a] disabled:opacity-40 rounded-full text-white text-[13px] font-bold transition-colors"
+                >
+                  {submitting ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Posting…</> : "Post"}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
 
       <CreateCommunityModal
@@ -326,8 +279,6 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
           setCommunities(prev => [...prev, c]);
           setCommunityId(c.id);
           setShowCreateCommunity(false);
-          setShowPicker(false);
-          setSearch("");
         }}
       />
     </div>

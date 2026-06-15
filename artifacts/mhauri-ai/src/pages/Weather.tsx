@@ -100,7 +100,6 @@ export default function Weather() {
         <div className="flex items-center justify-between mb-5">
           <div>
             <h1 className="text-[#d7dadc] font-black text-[22px]">Zimbabwe Weather</h1>
-            <p className="text-[#818384] text-[12px] mt-0.5">Agricultural weather intelligence — powered by Open-Meteo</p>
           </div>
           <button
             onClick={() => fetchWeather(city.lat, city.lng)}
