@@ -299,7 +299,7 @@ function AboutCard() {
         </div>
         <h2 className="font-bold text-[#E7E9EA] text-[13px] mb-1">About Mshauri</h2>
         <p className="text-[#71767B] text-[11px] leading-relaxed mb-3">
-          AI-powered agricultural intelligence for Zimbabwean farmers. Ask in English, Shona or Ndebele.
+          Explore markets, climate, policy, nutrition, trade, food security, investment and emerging trends.
         </p>
         <div className="grid grid-cols-2 gap-2 mb-3">
           <div>
@@ -346,7 +346,7 @@ function AskMshauriCTA({ compact = false }: { compact?: boolean }) {
       >
         <div className="flex items-center gap-2.5">
           <img src="/mshauri-logo.png?v=2" alt="Mshauri" className="w-7 h-7 object-contain shrink-0" />
-          <span className="text-[#E7E9EA] text-[13px] font-semibold">Have a farming question?</span>
+          <span className="text-[#E7E9EA] text-[13px] font-semibold">Explore markets, climate, policy, nutrition, trade and more</span>
         </div>
         <span className="text-[#22c55e] text-[12px] font-bold group-hover:translate-x-0.5 transition-transform">
           Ask Mshauri →
@@ -358,10 +358,10 @@ function AskMshauriCTA({ compact = false }: { compact?: boolean }) {
     <div className="bg-[#16181C] border border-[#22c55e]/30 rounded-2xl p-4 mb-3">
       <div className="flex items-center gap-2 mb-2">
         <img src="/mshauri-logo.png?v=2" alt="Mshauri" className="w-7 h-7 object-contain shrink-0" />
-        <span className="text-[#E7E9EA] text-[13px] font-semibold">Have a farming question?</span>
+        <span className="text-[#E7E9EA] text-[13px] font-semibold">Ask Mshauri AI</span>
       </div>
-      <p className="text-[#71767B] text-[11px] leading-relaxed mb-3 pl-8">
-        Ask in English, Shona, or Ndebele. Upload a photo of your crop or pest.
+      <p className="text-[#71767B] text-[11px] leading-relaxed mb-3">
+        Explore markets, climate, policy, nutrition, trade, food security, investment and emerging trends.
       </p>
       <button
         onClick={() => nav("/ask")}

@@ -214,7 +214,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <img src="/mshauri-logo.png?v=2" alt="Mshauri" className="w-10 h-10 object-contain shrink-0" />
           <div>
             <div className="font-black text-[#c8a84b] text-[15px] tracking-tight leading-none">mshauri</div>
-            <div className="text-[#5a4020] text-[9px] font-semibold uppercase tracking-wide mt-0.5">Agriculture & Climate Intelligence</div>
+            <div className="text-[#5a4020] text-[9px] font-semibold uppercase tracking-wide mt-0.5">The Global Food Systems Intelligence OS</div>
           </div>
         </div>
       </Link>

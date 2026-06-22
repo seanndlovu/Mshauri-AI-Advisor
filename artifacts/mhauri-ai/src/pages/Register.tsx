@@ -45,9 +45,9 @@ export default function Register() {
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <Sprout className="w-10 h-10 text-[#22c55e] mb-3" />
+          <img src="/mshauri-logo.png?v=2" alt="Mshauri" className="w-16 h-16 object-contain mb-3" />
           <h1 className="text-[#E7E9EA] text-2xl font-black">Join Mshauri</h1>
-          <p className="text-[#71767B] text-sm mt-1">Community-powered agricultural intelligence</p>
+          <p className="text-[#71767B] text-sm mt-1">The Global Food Systems Intelligence OS</p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -58,7 +58,7 @@ export default function Register() {
           )}
 
           {[
-            { field: "name", label: "Full Name", type: "text", placeholder: "John Moyo" },
+            { field: "name", label: "Username", type: "text", placeholder: "e.g. john_moyo" },
             { field: "email", label: "Email", type: "email", placeholder: "you@example.com" },
             { field: "password", label: "Password (min 6 chars)", type: "password", placeholder: "••••••••" },
           ].map(({ field, label, type, placeholder }) => (

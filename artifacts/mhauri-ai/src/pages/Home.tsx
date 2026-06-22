@@ -116,14 +116,12 @@ export default function Home() {
 
         {/* Hero */}
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-[#22c55e]/15 border border-[#22c55e]/20 flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">🌿</span>
-          </div>
-          <h1 className="text-[#E7E9EA] font-black text-[28px] leading-tight mb-2">
+          <img src="/mshauri-logo.png?v=2" alt="Mshauri" className="w-20 h-20 object-contain mx-auto mb-5" />
+          <h1 className="text-[#E7E9EA] font-black text-[28px] leading-tight mb-3">
             What can Mshauri help<br className="hidden sm:block" /> you with today?
           </h1>
-          <p className="text-[#71767B] text-[14px]">
-            Ask in English, Shona, or Ndebele. Upload a photo of your crop or pest.
+          <p className="text-[#71767B] text-[15px] leading-relaxed max-w-md mx-auto">
+            Explore markets, climate, policy, nutrition, trade, food security, investment and emerging trends.
           </p>
         </div>
 
