@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, sql } from "drizzle-orm";
-import { db, conversationsTable, messagesTable, farmersTable, analyticsEventsTable, communitiesTable, postsTable } from "@workspace/db";
+import { eq, desc, sql, and } from "drizzle-orm";
+import { db, conversationsTable, messagesTable, farmersTable, analyticsEventsTable, communitiesTable, postsTable, whatsappSubscriptionsTable } from "@workspace/db";
 import type { Farmer } from "@workspace/db";
 import OpenAI from "openai";
 import { logger } from "../lib/logger";
@@ -27,6 +27,73 @@ interface PostingState {
   expiresAt: number;
 }
 const postingStates = new Map<string, PostingState>();
+
+// ── Onboarding state machine ────────────────────────────────────────────────
+type OnboardingStep = "awaiting_name" | "awaiting_location" | "awaiting_crops";
+interface OnboardingState {
+  step: OnboardingStep;
+  name?: string;
+  location?: string;
+  expiresAt: number;
+}
+const onboardingStates = new Map<string, OnboardingState>();
+
+function getOnboardingState(phone: string): OnboardingState | null {
+  const s = onboardingStates.get(phone);
+  if (!s) return null;
+  if (Date.now() > s.expiresAt) { onboardingStates.delete(phone); return null; }
+  return s;
+}
+function setOnboardingState(phone: string, state: Omit<OnboardingState, "expiresAt">) {
+  onboardingStates.set(phone, { ...state, expiresAt: Date.now() + 20 * 60 * 1000 });
+}
+function clearOnboardingState(phone: string) { onboardingStates.delete(phone); }
+
+// ── Community subscription helpers ──────────────────────────────────────────
+const COMMUNITY_DISPLAY: Record<string, string> = {
+  maize: "🌽 Maize Farming", livestock: "🐄 Livestock", vegetables: "🥦 Vegetables",
+  poultry: "🐓 Poultry", tobacco: "🌿 Tobacco", pests: "🐛 Pest Control",
+  irrigation: "💧 Irrigation", agribusiness: "💼 Agribusiness",
+  climate: "🌦️ Climate & Weather", soils: "🪱 Soils & Fertilisers",
+};
+
+async function subscribeToComm(phone: string, slug: string): Promise<"subscribed" | "already" | "not_found"> {
+  if (!COMMUNITY_SLUGS.includes(slug)) return "not_found";
+  try {
+    await db.insert(whatsappSubscriptionsTable).values({ phone, communitySlug: slug }).onConflictDoNothing();
+    return "subscribed";
+  } catch { return "already"; }
+}
+
+async function unsubscribeFromComm(phone: string, slug: string): Promise<"removed" | "not_found"> {
+  if (!COMMUNITY_SLUGS.includes(slug)) return "not_found";
+  const result = await db.delete(whatsappSubscriptionsTable)
+    .where(and(eq(whatsappSubscriptionsTable.phone, phone), eq(whatsappSubscriptionsTable.communitySlug, slug)));
+  return result.rowCount && result.rowCount > 0 ? "removed" : "not_found";
+}
+
+async function getMySubscriptions(phone: string): Promise<string[]> {
+  const rows = await db.select().from(whatsappSubscriptionsTable)
+    .where(eq(whatsappSubscriptionsTable.phone, phone));
+  return rows.map(r => r.communitySlug);
+}
+
+function parseCommunityCommand(text: string): { action: "join" | "leave"; slug: string } | null {
+  const t = text.trim().toLowerCase();
+  const joinMatch = t.match(/^join\s+(\w+)/);
+  if (joinMatch) {
+    const slug = joinMatch[1]!;
+    const matched = COMMUNITY_SLUGS.find(s => s.startsWith(slug) || slug.startsWith(s));
+    return matched ? { action: "join", slug: matched } : null;
+  }
+  const leaveMatch = t.match(/^leave\s+(\w+)/);
+  if (leaveMatch) {
+    const slug = leaveMatch[1]!;
+    const matched = COMMUNITY_SLUGS.find(s => s.startsWith(slug) || slug.startsWith(s));
+    return matched ? { action: "leave", slug: matched } : null;
+  }
+  return null;
+}
 
 function getPostingState(phone: string): PostingState | null {
   const s = postingStates.get(phone);
@@ -139,10 +206,14 @@ What farming question can I help you with today?`;
 const HELP_MENU = `Mshauri AI Commands:
 
 PRICES — today's market prices
-WEATHER — weather & farming tips
+COMMUNITIES — browse all communities
+MY COMMUNITIES — your subscriptions
+JOIN MAIZE — join a community (e.g. maize, livestock, pests)
+LEAVE MAIZE — leave a community
+REGISTER — set up your farmer profile
 HELP — show this menu
 
-Or just describe your problem in your own words — I'll understand and help you.
+Or just describe your problem in your own words!
 
 Examples:
 • "My cattle are not eating"
@@ -167,12 +238,15 @@ async function getMarketPricesWhatsApp(): Promise<string> {
   }
 }
 
-function detectKeyword(text: string): "welcome" | "help" | "prices" | "weather" | null {
+function detectKeyword(text: string): "welcome" | "help" | "prices" | "weather" | "communities" | "my_communities" | "register" | null {
   const t = text.trim().toLowerCase();
   if (["hi", "hello", "hey", "start", "hie", "mhoro", "sawubona", "ndeipi"].includes(t)) return "welcome";
   if (["help", "menu", "commands", "?", "info"].includes(t)) return "help";
   if (t === "prices" || t === "price" || t === "market" || t === "markets" || t === "mutengo" || t.startsWith("price") || t.startsWith("market")) return "prices";
   if (t === "weather" || t === "mvura" || t === "rain" || t === "forecast" || t.startsWith("weather")) return "weather";
+  if (t === "communities" || t === "community list" || t === "join" || t === "all communities") return "communities";
+  if (t === "my communities" || t === "my community" || t === "subscriptions" || t === "my subs") return "my_communities";
+  if (t === "register" || t === "registration" || t === "sign up" || t === "profile" || t === "my profile") return "register";
   return null;
 }
 
@@ -352,31 +426,144 @@ async function handleIncomingMessage(
   const isNewUser = historyRows.length === 0;
   const history = historyRows.reverse();
 
+  const langPref = farmer?.languagePref ?? "en";
+
+  // ── Onboarding state machine (runs before everything else) ─────────────
+  const onboarding = getOnboardingState(phone);
+  if (onboarding) {
+    const answer = userText.trim();
+    const skip = /^skip$/i.test(answer);
+
+    if (onboarding.step === "awaiting_name") {
+      const name = skip ? undefined : answer.slice(0, 80);
+      if (name) {
+        await db.update(farmersTable).set({ name }).where(eq(farmersTable.phone, phone)).catch(() => {});
+      }
+      setOnboardingState(phone, { step: "awaiting_location", name });
+      await sendWhatsAppMessage(phone,
+        `${name ? `Great, ${name}!` : "No problem!"} Which province are you in?\n\n1. Harare\n2. Bulawayo\n3. Manicaland\n4. Mashonaland Central\n5. Mashonaland East\n6. Mashonaland West\n7. Masvingo\n8. Matabeleland North\n9. Matabeleland South\n10. Midlands\n\n(Type the name or number, or SKIP)`
+      );
+      return;
+    }
+
+    if (onboarding.step === "awaiting_location") {
+      const PROVINCES = ["Harare","Bulawayo","Manicaland","Mashonaland Central","Mashonaland East","Mashonaland West","Masvingo","Matabeleland North","Matabeleland South","Midlands"];
+      let location: string | undefined;
+      if (!skip) {
+        const num = parseInt(answer, 10);
+        location = (!isNaN(num) && num >= 1 && num <= 10) ? PROVINCES[num - 1] : answer.slice(0, 80);
+      }
+      if (location) {
+        await db.update(farmersTable).set({ location }).where(eq(farmersTable.phone, phone)).catch(() => {});
+      }
+      setOnboardingState(phone, { step: "awaiting_crops", name: onboarding.name, location });
+      await sendWhatsAppMessage(phone,
+        `${location ? `${location} — great farming region!` : "Understood!"} What do you mainly farm?\n\nExamples: maize, cattle, vegetables, tobacco, poultry, mixed farming\n\n(Describe your farm or type SKIP)`
+      );
+      return;
+    }
+
+    if (onboarding.step === "awaiting_crops") {
+      const crops = skip ? [] : answer.split(/[,\s]+/).map(c => c.trim()).filter(Boolean).slice(0, 10);
+      if (crops.length > 0) {
+        await db.update(farmersTable).set({ crops }).where(eq(farmersTable.phone, phone)).catch(() => {});
+      }
+      clearOnboardingState(phone);
+      const name = onboarding.name ?? farmer?.name;
+      await sendWhatsAppMessage(phone,
+        `${name ? `You're all set, ${name}!` : "Profile complete!"} 🎉\n\nI'll personalise my advice for ${onboarding.location ?? "your area"}${crops.length ? ` — ${crops.slice(0, 3).join(", ")}` : ""}.\n\nNow ask me anything about farming — or type COMMUNITIES to join a farming group!`
+      );
+      return;
+    }
+  }
+
   // ── Keyword shortcuts — bypass AI for common commands ──────────────────
   if (!imageDataUrl) {
     const keyword = detectKeyword(userText);
+    const communityCmd = parseCommunityCommand(userText);
 
-    if (isNewUser && !keyword) {
-      // New user sending their first real message — greet first, then answer
+    // Community join/leave commands
+    if (communityCmd) {
+      if (communityCmd.action === "join") {
+        const result = await subscribeToComm(phone, communityCmd.slug);
+        const display = COMMUNITY_DISPLAY[communityCmd.slug] ?? communityCmd.slug;
+        if (result === "subscribed") {
+          await sendWhatsAppMessage(phone, `✅ You've joined ${display}!\n\nYou'll see community updates from this group. Type MY COMMUNITIES to see all your subscriptions, or type LEAVE ${communityCmd.slug.toUpperCase()} to unsubscribe.`);
+        } else {
+          await sendWhatsAppMessage(phone, `You're already in ${display}. Type MY COMMUNITIES to see all your subscriptions.`);
+        }
+      } else {
+        const result = await unsubscribeFromComm(phone, communityCmd.slug);
+        const display = COMMUNITY_DISPLAY[communityCmd.slug] ?? communityCmd.slug;
+        await sendWhatsAppMessage(phone, result === "removed"
+          ? `👋 You've left ${display}. Type COMMUNITIES anytime to rejoin.`
+          : `You weren't subscribed to ${display}.`
+        );
+      }
+      void logAnalyticsEvent(eventType, phone, langPref, userText);
+      return;
+    }
+
+    if (keyword === "communities") {
+      const mySlug = await getMySubscriptions(phone);
+      const lines = COMMUNITY_SLUGS.map(s => {
+        const joined = mySlug.includes(s) ? " ✅" : "";
+        return `${COMMUNITY_DISPLAY[s] ?? s}${joined}\n  → JOIN ${s.toUpperCase()}`;
+      });
+      await sendWhatsAppMessage(phone, `Mshauri Communities:\n\n${lines.join("\n\n")}\n\nType JOIN followed by the community name to subscribe.`);
+      void logAnalyticsEvent(eventType, phone, langPref, userText);
+      return;
+    }
+
+    if (keyword === "my_communities") {
+      const subs = await getMySubscriptions(phone);
+      if (subs.length === 0) {
+        await sendWhatsAppMessage(phone, `You haven't joined any communities yet.\n\nType COMMUNITIES to see what's available, then JOIN <name> to subscribe.`);
+      } else {
+        const lines = subs.map(s => `• ${COMMUNITY_DISPLAY[s] ?? s} — LEAVE ${s.toUpperCase()} to unsubscribe`);
+        await sendWhatsAppMessage(phone, `Your Communities:\n\n${lines.join("\n")}\n\nType COMMUNITIES to browse more.`);
+      }
+      void logAnalyticsEvent(eventType, phone, langPref, userText);
+      return;
+    }
+
+    if (keyword === "register") {
+      setOnboardingState(phone, { step: "awaiting_name" });
+      const name = farmer?.name;
+      await sendWhatsAppMessage(phone,
+        `Let's set up your farmer profile! 🌾\n\nThis helps me give you personalised advice.\n\nWhat's your name?${name ? ` (Currently: ${name})` : ""}\n\n(Type SKIP to keep as is)`
+      );
+      void logAnalyticsEvent(eventType, phone, langPref, userText);
+      return;
+    }
+
+    if (keyword === "welcome" || (isNewUser && !keyword)) {
+      const hasProfile = !!(farmer?.name);
+      if (isNewUser && !hasProfile) {
+        // Start onboarding after welcome
+        await sendWhatsAppMessage(phone, WELCOME_MESSAGE);
+        setOnboardingState(phone, { step: "awaiting_name" });
+        await sendWhatsAppMessage(phone, "First, let's set up your profile so I can personalise my advice.\n\nWhat's your name? (or type SKIP)");
+        void logAnalyticsEvent(eventType, phone, langPref, userText);
+        return;
+      }
       await sendWhatsAppMessage(phone, WELCOME_MESSAGE);
-    } else if (keyword === "welcome" || (isNewUser && keyword === null)) {
-      await sendWhatsAppMessage(phone, WELCOME_MESSAGE);
-      void logAnalyticsEvent(eventType, phone, farmer?.languagePref ?? "en", userText);
+      void logAnalyticsEvent(eventType, phone, langPref, userText);
       return;
     } else if (keyword === "help") {
       await sendWhatsAppMessage(phone, HELP_MENU);
-      void logAnalyticsEvent(eventType, phone, farmer?.languagePref ?? "en", userText);
+      void logAnalyticsEvent(eventType, phone, langPref, userText);
       return;
     } else if (keyword === "prices") {
       const pricesMsg = await getMarketPricesWhatsApp();
       await sendWhatsAppMessage(phone, pricesMsg);
-      void logAnalyticsEvent(eventType, phone, farmer?.languagePref ?? "en", userText);
+      void logAnalyticsEvent(eventType, phone, langPref, userText);
       return;
     } else if (keyword === "weather") {
       const primaryDomain = (process.env.REPLIT_DOMAINS ?? "").split(",")[0].trim();
       const weatherMsg = `Zimbabwe Farming Weather Tips:\n\n• June-August: dry season — ideal for land prep, irrigation crops, winter wheat\n• September-November: pre-season — prepare soil, order inputs early\n• November-April: rainy season — main crop planting, watch for pests\n\nFor your local 7-day forecast, check the Mshauri app:${primaryDomain ? `\nhttps://${primaryDomain}/weather` : ""}\n\nOr ask me: "When should I plant maize in [your area]?"`;
       await sendWhatsAppMessage(phone, weatherMsg);
-      void logAnalyticsEvent(eventType, phone, farmer?.languagePref ?? "en", userText);
+      void logAnalyticsEvent(eventType, phone, langPref, userText);
       return;
     }
   }
@@ -416,9 +603,6 @@ async function handleIncomingMessage(
   await db.update(conversationsTable)
     .set({ updatedAt: new Date() })
     .where(eq(conversationsTable.id, conversationId));
-
-  // Detect language from recent messages for analytics
-  const langPref = farmer?.languagePref ?? "en";
 
   void logAnalyticsEvent(eventType, phone, langPref, userText);
 
