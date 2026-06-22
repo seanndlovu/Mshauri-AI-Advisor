@@ -61,6 +61,11 @@ const MARICHO_RESOURCES = [
   },
 ];
 
+interface SiteStats {
+  userCount: number;
+  postsToday: number;
+}
+
 type SortMode = "helpful" | "recent";
 
 /* ─── Market signal (same logic as MarketPrices page) ─────── */
@@ -98,13 +103,14 @@ function weatherAdvice(code: number, precip: number): string {
 
 /** Horizontal situational awareness strip */
 function AwarenessStrip({
-  weather, topMover, pulseCount, loadingWeather, loadingMover,
+  weather, topMover, pulseCount, loadingWeather, loadingMover, stats,
 }: {
   weather: WeatherData | null;
   topMover: { item: string; priceUsd: number; pct: number } | null;
   pulseCount: number;
   loadingWeather: boolean;
   loadingMover: boolean;
+  stats: SiteStats | null;
 }) {
   const cards = [
     /* Weather */
@@ -166,15 +172,15 @@ function AwarenessStrip({
       <div>
         <div className="text-[#71767B] text-[10px] uppercase tracking-wider font-bold mb-0.5">Community Pulse</div>
         <div className="text-[#E7E9EA] font-black text-[18px] leading-none">
-          {pulseCount > 0 ? pulseCount : "—"}
+          {stats ? (stats.postsToday > 0 ? stats.postsToday : pulseCount || "—") : (pulseCount || "—")}
         </div>
-        <div className="text-[#71767B] text-[11px] mt-0.5">
-          {pulseCount > 0 ? "new discussions today" : "discussions active"}
-        </div>
+        <div className="text-[#71767B] text-[11px] mt-0.5">new discussions today</div>
       </div>
       <div className="flex items-center gap-1.5">
         <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
-        <span className="text-[#22c55e] text-[10px] font-semibold">1,204 farmers active</span>
+        <span className="text-[#22c55e] text-[10px] font-semibold">
+          {stats ? `${stats.userCount.toLocaleString()} members` : "members active"}
+        </span>
       </div>
     </div>,
   ];
@@ -288,7 +294,7 @@ function PostSkeleton() {
   );
 }
 
-function AboutCard() {
+function AboutCard({ stats }: { stats: SiteStats | null }) {
   const [, nav] = useLocation();
   return (
     <div className="bg-[#16181C] border border-[#2F3336] rounded-2xl overflow-hidden mb-3">
@@ -303,8 +309,8 @@ function AboutCard() {
         </p>
         <div className="grid grid-cols-2 gap-2 mb-3">
           <div>
-            <div className="font-black text-[#E7E9EA] text-[14px]">1,204</div>
-            <div className="text-[#71767B] text-[10px]">Farmers</div>
+            <div className="font-black text-[#E7E9EA] text-[14px]">{stats ? stats.userCount.toLocaleString() : "—"}</div>
+            <div className="text-[#71767B] text-[10px]">Members</div>
           </div>
           <div>
             <div className="font-black text-[#22c55e] text-[14px]">Online</div>
@@ -323,12 +329,14 @@ function AboutCard() {
   );
 }
 
-function FarmersOnline() {
+function FarmersOnline({ stats }: { stats: SiteStats | null }) {
   return (
     <div className="bg-[#16181C] border border-[#2F3336] rounded-2xl p-4 mb-3">
       <div className="flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse shrink-0" />
-        <span className="text-[#E7E9EA] text-[12px] font-semibold">1,204 farmers active today</span>
+        <span className="text-[#E7E9EA] text-[12px] font-semibold">
+          {stats ? `${stats.userCount.toLocaleString()} members registered` : "Members active today"}
+        </span>
       </div>
       <p className="text-[#71767B] text-[11px] mt-1 pl-4">Across Zimbabwe — Harare, Bulawayo, Mutare and more</p>
     </div>
@@ -384,6 +392,7 @@ export default function Feed() {
   const [loadingWeather, setLoadingWeather] = useState(true);
   const [topMover, setTopMover]         = useState<{ item: string; priceUsd: number; pct: number } | null>(null);
   const [loadingMover, setLoadingMover] = useState(true);
+  const [stats, setStats]               = useState<SiteStats | null>(null);
 
   /* fetch posts */
   useEffect(() => {
@@ -406,6 +415,14 @@ export default function Feed() {
       })
       .catch(() => {})
       .finally(() => setLoadingWeather(false));
+  }, []);
+
+  /* fetch site stats */
+  useEffect(() => {
+    fetch("/api/stats")
+      .then(r => r.json())
+      .then((d: SiteStats) => { if (d?.userCount !== undefined) setStats(d); })
+      .catch(() => {});
   }, []);
 
   /* fetch top market mover */
@@ -457,6 +474,7 @@ export default function Feed() {
           pulseCount={pulseCount}
           loadingWeather={loadingWeather}
           loadingMover={loadingMover}
+          stats={stats}
         />
 
         <div className="flex gap-6">
@@ -486,8 +504,8 @@ export default function Feed() {
           {/* ── Right panel (desktop) ── */}
           <div className="hidden lg:block w-[300px] shrink-0">
             <div className="sticky top-5">
-              <AboutCard />
-              <FarmersOnline />
+              <AboutCard stats={stats} />
+              <FarmersOnline stats={stats} />
               <AskMshauriCTA />
             </div>
           </div>

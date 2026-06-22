@@ -155,7 +155,7 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
         }),
       });
       if (!res.ok) throw new Error("Failed");
-      toast({ title: "Posted! 🌱", description: "Your post is live." });
+      toast({ title: "Posted!", description: "Your post is live." });
       resetAndClose();
       onCreated();
     } catch {

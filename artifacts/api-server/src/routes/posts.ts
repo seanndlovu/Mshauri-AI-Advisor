@@ -133,4 +133,18 @@ router.post("/posts/:id/comments", async (req, res): Promise<void> => {
   res.status(201).json(formatComment(comment));
 });
 
+router.get("/stats", async (_req, res): Promise<void> => {
+  const [{ userCount }] = await db
+    .select({ userCount: sql<number>`count(*)::int` })
+    .from(usersTable);
+
+  const yesterday = new Date(Date.now() - 86_400_000);
+  const [{ postsToday }] = await db
+    .select({ postsToday: sql<number>`count(*)::int` })
+    .from(postsTable)
+    .where(sql`${postsTable.createdAt} >= ${yesterday}`);
+
+  res.json({ userCount, postsToday });
+});
+
 export { router as postsRouter };
