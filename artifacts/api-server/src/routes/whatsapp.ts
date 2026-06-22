@@ -9,6 +9,10 @@ import { getMarketPricesContext } from "../lib/market-prices-context";
 
 const router: IRouter = Router();
 
+// In-memory diagnostic state
+let lastWebhookReceivedAt: Date | null = null;
+let webhookHitCount = 0;
+
 function getWhatsAppConfig() {
   return {
     accessToken: process.env.WHATSAPP_ACCESS_TOKEN!,
@@ -276,8 +280,73 @@ router.get("/whatsapp/webhook", (req, res): void => {
   }
 });
 
+// GET /api/whatsapp/status — diagnostic endpoint
+router.get("/whatsapp/status", async (req, res): Promise<void> => {
+  const { accessToken, phoneNumberId, verifyToken } = getWhatsAppConfig();
+  const domains = process.env.REPLIT_DOMAINS ?? "unknown";
+  const webhookUrl = `https://${domains}/api/whatsapp/webhook`;
+
+  const status: Record<string, unknown> = {
+    webhookUrl,
+    verifyTokenSet: !!verifyToken,
+    phoneNumberIdSet: !!phoneNumberId,
+    accessTokenPrefix: accessToken ? accessToken.slice(0, 10) + "…" : "NOT SET",
+    lastWebhookReceivedAt: lastWebhookReceivedAt?.toISOString() ?? "never",
+    webhookHitCount,
+    instructions: {
+      step1: "In Meta Business Platform → WhatsApp → Configuration → Webhook",
+      step2: `Set Callback URL to: ${webhookUrl}`,
+      step3: "Set Verify Token to the value of your WHATSAPP_VERIFY_TOKEN secret",
+      step4: "Click Verify and Save",
+      step5: "Under Webhook Fields, subscribe to: messages",
+    },
+  };
+
+  // Test if token is still valid
+  try {
+    const r = await fetch(
+      `https://graph.facebook.com/v23.0/${phoneNumberId}?fields=display_phone_number,verified_name`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const data = await r.json() as Record<string, unknown>;
+    if (r.ok) {
+      status.tokenValid = true;
+      status.phoneNumber = data.display_phone_number;
+      status.displayName = data.verified_name;
+    } else {
+      status.tokenValid = false;
+      status.tokenError = data.error;
+    }
+  } catch (err) {
+    status.tokenValid = false;
+    status.tokenError = String(err);
+  }
+
+  res.json(status);
+});
+
+// POST /api/whatsapp/test-send — send a test message outbound
+router.post("/whatsapp/test-send", async (req, res): Promise<void> => {
+  const { to, message } = req.body as { to?: string; message?: string };
+  if (!to || !message) {
+    res.status(400).json({ error: "to and message are required" });
+    return;
+  }
+  try {
+    await sendWhatsAppMessage(to.replace(/\D/g, ""), message);
+    res.json({ success: true, to, message });
+  } catch (err) {
+    req.log.error({ err }, "test-send failed");
+    res.status(502).json({ error: String(err) });
+  }
+});
+
 // POST /api/whatsapp/webhook — incoming messages
 router.post("/whatsapp/webhook", async (req, res): Promise<void> => {
+  // Track hits for diagnostics
+  lastWebhookReceivedAt = new Date();
+  webhookHitCount++;
+
   // Respond immediately so Meta doesn't retry
   res.sendStatus(200);
 
