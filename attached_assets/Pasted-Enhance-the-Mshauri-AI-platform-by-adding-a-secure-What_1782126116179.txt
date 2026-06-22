@@ -1,0 +1,44 @@
+Enhance the Mshauri AI platform by adding a secure WhatsApp integration with the following workflow and requirements:
+
+1. WhatsApp Access
+Add a "Chat on WhatsApp" button linked to the official Mshauri AI WhatsApp number.
+When users click the button, WhatsApp should automatically open on their device (mobile app or WhatsApp Web).
+The actual WhatsApp number must never be displayed publicly on the platform to prevent spam and abuse.
+2. Message Synchronization
+Messages sent by users through WhatsApp should be synchronized and displayed within the Mshauri AI platform.
+Keep the experience simple and easy to use for elderly and rural users.
+Users should be able to see their WhatsApp messages on the platform without any complicated steps.
+3. WhatsApp-Based Community Posting
+Create a WhatsApp chatbot flow that allows users to:
+Browse available categories and communities.
+Select a community they want to join or post in.
+Submit issues, questions, or posts directly through WhatsApp.
+The chatbot should feel like a natural WhatsApp conversation with minimal clicks and choices. Instead of forcing users through multiple menus, it should understand simple text messages, suggest relevant categories automatically, and use quick replies only when necessary. Users should be able to describe their issue in their own words, and the system should intelligently route the post to the appropriate community while keeping the experience fast, intuitive, and conversational.
+4. WhatsApp User Registration
+Allow new users to sign up directly from WhatsApp without visiting the website.
+The registration flow should collect essential user information and create a platform account.
+Existing users should be able to log in and link their WhatsApp number to their platform account.
+5. Seamless User Experience
+The entire experience should happen within WhatsApp whenever possible.
+Users should not be forced to leave WhatsApp to:
+Sign up
+Authenticate
+Join communities
+Select categories
+Create posts
+Chat with Mshauri AI
+Design conversational workflows that mirror the functionality available on the Mshauri AI platform.
+6. Security & Privacy
+Hide the Mshauri AI WhatsApp number from public view.
+Since community posts and discussions are public, allow users to respond to posts through WhatsApp while keeping personal phone numbers hidden. When a user replies to a post, the original poster should receive the message through the platform and/or WhatsApp via a secure relay system that masks both users' phone numbers. Private conversations should only be accessible to the participants involved.
+Implement secure user verification and account linking.
+Ensure compliance with WhatsApp Business API best practices.
+Protect users from spam, abuse, and data exposure.
+7. Technical Recommendation
+Use the WhatsApp Business API (or Meta Cloud API) for messaging.
+Build a middleware service to synchronize messages between WhatsApp and the Mshauri AI platform.
+Implement webhook-based real-time updates.
+Create chatbot flows for onboarding, category selection, posting, and support.
+Expected Outcome
+
+A fully integrated WhatsApp experience that replicates the core functionality of the Mshauri AI platform, allowing users to chat, sign up, join communities, select categories, and submit issues directly within WhatsApp while maintaining security, privacy, and a seamless user experience.

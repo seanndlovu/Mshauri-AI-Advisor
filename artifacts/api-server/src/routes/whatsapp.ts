@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { eq, desc } from "drizzle-orm";
-import { db, conversationsTable, messagesTable, farmersTable, analyticsEventsTable } from "@workspace/db";
+import { eq, desc, sql } from "drizzle-orm";
+import { db, conversationsTable, messagesTable, farmersTable, analyticsEventsTable, communitiesTable, postsTable } from "@workspace/db";
 import type { Farmer } from "@workspace/db";
 import OpenAI from "openai";
 import { logger } from "../lib/logger";
@@ -12,6 +12,105 @@ const router: IRouter = Router();
 // In-memory diagnostic state
 let lastWebhookReceivedAt: Date | null = null;
 let webhookHitCount = 0;
+
+// ── Community posting state machine ────────────────────────────────────────
+type PostType = "question" | "disease_report" | "market_price" | "opportunity" | "success_story" | "weather";
+interface PostingState {
+  step: "awaiting_confirm" | "awaiting_title";
+  originalMessage: string;
+  aiAnswer: string;
+  communityId: number;
+  communityName: string;
+  communitySlug: string;
+  postType: PostType;
+  suggestedTitle: string;
+  expiresAt: number;
+}
+const postingStates = new Map<string, PostingState>();
+
+function getPostingState(phone: string): PostingState | null {
+  const s = postingStates.get(phone);
+  if (!s) return null;
+  if (Date.now() > s.expiresAt) { postingStates.delete(phone); return null; }
+  return s;
+}
+function setPostingState(phone: string, state: Omit<PostingState, "expiresAt">) {
+  postingStates.set(phone, { ...state, expiresAt: Date.now() + 10 * 60 * 1000 }); // 10 min TTL
+}
+function clearPostingState(phone: string) { postingStates.delete(phone); }
+
+// Classify whether a message is worth posting to community
+interface PostClassification {
+  worthPosting: boolean;
+  communitySlug: string;
+  postType: PostType;
+  suggestedTitle: string;
+}
+
+const COMMUNITY_SLUGS = ["maize","livestock","vegetables","poultry","tobacco","pests","irrigation","agribusiness","climate","soils"];
+
+async function classifyForCommunity(userMessage: string): Promise<PostClassification | null> {
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      max_tokens: 200,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: `You are a classifier for a Zimbabwean farming community platform. Given a WhatsApp message from a farmer, decide if it is worth sharing as a community post so other farmers can benefit.
+
+Worth posting if: it describes a crop/livestock problem, disease, pest, market question, weather concern, or farming challenge others could learn from or help with.
+NOT worth posting if: it's a simple greeting, off-topic, already answered trivially, or too personal.
+
+Available communities: ${COMMUNITY_SLUGS.join(", ")}
+Post types: question, disease_report, market_price, opportunity, success_story, weather
+
+Return JSON: { "worthPosting": boolean, "communitySlug": string, "postType": string, "suggestedTitle": string }
+suggestedTitle should be a clear, concise post title under 80 characters.`,
+        },
+        { role: "user", content: userMessage },
+      ],
+    });
+    const raw = completion.choices[0]?.message?.content ?? "{}";
+    const parsed = JSON.parse(raw) as Partial<PostClassification>;
+    if (!parsed.worthPosting) return null;
+    if (!COMMUNITY_SLUGS.includes(parsed.communitySlug ?? "")) return null;
+    return {
+      worthPosting: true,
+      communitySlug: parsed.communitySlug!,
+      postType: (parsed.postType as PostType) ?? "question",
+      suggestedTitle: parsed.suggestedTitle ?? userMessage.slice(0, 80),
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function createCommunityPost(
+  communityId: number,
+  title: string,
+  content: string,
+  postType: PostType,
+  aiAnswer: string,
+): Promise<number> {
+  const fullContent = `${content}\n\nMshauri AI answer: ${aiAnswer}`;
+  const [post] = await db.insert(postsTable).values({
+    communityId,
+    userId: null,
+    type: postType,
+    title,
+    content: fullContent,
+    imageUrl: null,
+    videoUrl: null,
+    linkUrl: null,
+  }).returning({ id: postsTable.id });
+  await db.update(communitiesTable)
+    .set({ postCount: sql`post_count + 1` })
+    .where(eq(communitiesTable.id, communityId))
+    .catch(() => {});
+  return post!.id;
+}
 
 function getWhatsAppConfig() {
   return {
@@ -263,6 +362,51 @@ async function handleIncomingMessage(
     .where(eq(conversationsTable.id, conversationId));
 
   await sendWhatsAppMessage(phone, reply);
+
+  // After answering, check if this message is worth posting to the community
+  // Run classification in background — don't delay the reply
+  void (async () => {
+    try {
+      const classification = await classifyForCommunity(userText);
+      if (!classification) return;
+
+      // Look up the community in DB
+      const [community] = await db
+        .select()
+        .from(communitiesTable)
+        .where(eq(communitiesTable.slug, classification.communitySlug))
+        .limit(1);
+      if (!community) return;
+
+      // Save posting state and ask the user
+      setPostingState(phone, {
+        step: "awaiting_confirm",
+        originalMessage: userText,
+        aiAnswer: reply,
+        communityId: community.id,
+        communityName: community.name,
+        communitySlug: community.slug,
+        postType: classification.postType,
+        suggestedTitle: classification.suggestedTitle,
+      });
+
+      const typeLabel: Record<PostType, string> = {
+        question: "Question",
+        disease_report: "Disease Report",
+        market_price: "Market Price",
+        opportunity: "Opportunity",
+        success_story: "Success Story",
+        weather: "Weather",
+      };
+
+      await sendWhatsAppMessage(
+        phone,
+        `Other farmers may have this same issue.\n\nShare to community: ${community.name}?\nPost: "${classification.suggestedTitle}"\nType: ${typeLabel[classification.postType]}\n\nReply YES to post it, or NO to skip.`
+      );
+    } catch (err) {
+      logger.warn({ err, phone }, "Community classification failed silently");
+    }
+  })();
 }
 
 // GET /api/whatsapp/webhook — Meta verification
@@ -387,6 +531,47 @@ router.post("/whatsapp/webhook", async (req, res): Promise<void> => {
           const text = msg.text?.body;
           if (!text) continue;
           req.log.info({ phone, textLength: text.length }, "WhatsApp text message received");
+
+          // Check for active posting state — intercept YES/NO before normal AI handling
+          const postingState = getPostingState(phone);
+          if (postingState) {
+            const normalized = text.trim().toLowerCase();
+
+            if (postingState.step === "awaiting_confirm") {
+              if (normalized === "yes" || normalized === "y" || normalized.startsWith("yes")) {
+                // User confirmed — create the post
+                clearPostingState(phone);
+                try {
+                  const postId = await createCommunityPost(
+                    postingState.communityId,
+                    postingState.suggestedTitle,
+                    postingState.originalMessage,
+                    postingState.postType,
+                    postingState.aiAnswer,
+                  );
+                  const primaryDomain = (process.env.REPLIT_DOMAINS ?? "").split(",")[0].trim();
+                  const postUrl = primaryDomain
+                    ? `https://${primaryDomain}/communities/${postingState.communitySlug}`
+                    : "";
+                  const confirmMsg = `Posted to ${postingState.communityName}!\n"${postingState.suggestedTitle}"\n\nOther farmers can now see it and share their experience.${postUrl ? `\n\nView: ${postUrl}` : ""}\n\nAny other questions?`;
+                  req.log.info({ phone, postId, community: postingState.communitySlug }, "Community post created from WhatsApp");
+                  await sendWhatsAppMessage(phone, confirmMsg);
+                } catch (err) {
+                  req.log.error({ err, phone }, "Failed to create community post");
+                  await sendWhatsAppMessage(phone, "Sorry, I could not create the post right now. Please try again later.");
+                }
+              } else if (normalized === "no" || normalized === "n" || normalized.startsWith("no")) {
+                clearPostingState(phone);
+                await sendWhatsAppMessage(phone, "No problem. What else can I help you with?");
+              } else {
+                // Not a YES/NO — treat as a new message, clear state
+                clearPostingState(phone);
+                await handleIncomingMessage(phone, text, undefined, "message_received");
+              }
+              continue;
+            }
+          }
+
           await handleIncomingMessage(phone, text, undefined, "message_received");
 
         } else if (msg.type === "image") {
