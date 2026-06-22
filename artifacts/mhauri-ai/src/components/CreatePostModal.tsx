@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { X, Loader2, Plus, Search, ChevronDown, Users, Image, Video, FileText, Link2 } from "lucide-react";
+import { X, Loader2, Plus, Search, ChevronDown, Users, Image, Video, FileText, Link2, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { CreateCommunityModal } from "./CreateCommunityModal";
@@ -60,6 +60,9 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const [communityError, setCommunityError] = useState(false);
+  const [loadingMyComm, setLoadingMyComm] = useState(false);
+
   const [showPicker, setShowPicker] = useState(false);
   const [showCreateCommunity, setShowCreateCommunity] = useState(false);
   const [search, setSearch] = useState("");
@@ -91,13 +94,31 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
     setTitle(""); setContent(""); setCommunityId(""); setType("question");
     setActiveTab("text"); setLinkUrl(""); setMediaFile(null); setMediaPreview(null);
     setShowPicker(false); setSearch(""); setShowCreateCommunity(false);
+    setCommunityError(false); setLoadingMyComm(false);
     onClose();
   }
 
   function pickCommunity(id: number) {
     setCommunityId(id);
+    setCommunityError(false);
     setShowPicker(false);
     setSearch("");
+  }
+
+  async function handlePickMyCommunity() {
+    if (loadingMyComm) return;
+    setLoadingMyComm(true);
+    try {
+      const r = await fetch("/api/communities/my", { method: "POST", credentials: "include" });
+      if (!r.ok) throw new Error();
+      const comm: Community = await r.json();
+      setCommunities(prev => prev.some(c => c.id === comm.id) ? prev : [...prev, comm]);
+      pickCommunity(comm.id);
+    } catch {
+      toast({ title: "Error", description: "Could not set up your community.", variant: "destructive" });
+    } finally {
+      setLoadingMyComm(false);
+    }
   }
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>, kind: "image" | "video") {
@@ -124,8 +145,12 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!communityId || !title.trim()) {
-      toast({ title: "Missing fields", description: "Choose a community and add a title.", variant: "destructive" });
+    if (!communityId) {
+      setCommunityError(true);
+      return;
+    }
+    if (!title.trim()) {
+      toast({ title: "Add a title", description: "Give your post a title.", variant: "destructive" });
       return;
     }
     setSubmitting(true);
@@ -231,6 +256,12 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
                   </>
                 )}
               </button>
+            {communityError && !selectedCommunity && (
+              <p className="flex items-center gap-1.5 mt-2 text-red-400 text-[12px]">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                Please select a community before posting.
+              </p>
+            )}
             </div>
 
             {/* Title */}
@@ -435,6 +466,30 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
             </div>
 
             <div className="overflow-y-auto flex-1">
+              {/* My Corner — personal community for the logged-in user */}
+              {user && (
+                <button
+                  type="button"
+                  onClick={handlePickMyCommunity}
+                  disabled={loadingMyComm}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-white/5 transition-colors border-b-2 border-[#22c55e]/20 disabled:opacity-60"
+                >
+                  <div className="w-10 h-10 rounded-full bg-[#22c55e]/20 border border-[#22c55e]/30 flex items-center justify-center shrink-0 text-[#22c55e] font-black text-[11px]">
+                    {user.name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[#E7E9EA] font-bold text-[13px]">My Corner</span>
+                      {loadingMyComm && <Loader2 className="w-3 h-3 animate-spin text-[#71767B]" />}
+                    </div>
+                    <div className="text-[#71767B] text-[11px] mt-0.5">Post to your personal community</div>
+                  </div>
+                  {!loadingMyComm && (
+                    <span className="text-[10px] bg-[#22c55e]/15 text-[#22c55e] font-bold px-2 py-0.5 rounded-full shrink-0">Mine</span>
+                  )}
+                </button>
+              )}
+
               {loadingCommunities ? (
                 <div className="flex items-center justify-center py-10 text-[#71767B]">
                   <Loader2 className="w-5 h-5 animate-spin mr-2" />

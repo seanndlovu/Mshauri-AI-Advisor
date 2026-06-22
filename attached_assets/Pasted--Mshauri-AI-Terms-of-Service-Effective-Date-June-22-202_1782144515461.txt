@@ -1,0 +1,281 @@
+# Mshauri AI Terms of Service
+
+**Effective Date:** June 22, 2026
+
+## 1. Acceptance of Terms
+
+Welcome to Mshauri AI, a service operated by Five Talents (Pvt) Ltd. By accessing or using Mshauri AI, Maricho Media websites, mobile applications, WhatsApp services, APIs, and related products and services (collectively, the "Services"), you agree to be bound by these Terms of Service.
+
+If you do not agree to these Terms, you must not access or use the Services.
+
+## 2. Description of Services
+
+Mshauri AI provides artificial intelligence-powered information, educational content, and advisory assistance relating to:
+
+* Crop production and management
+* Livestock production and management
+* Weather information and forecasts
+* Agricultural best practices
+* Educational content
+* Business and entrepreneurship information
+* Media and information services
+* Research and knowledge-sharing services
+
+The Services may be delivered through websites, WhatsApp, mobile applications, APIs, social media channels, and other digital platforms operated by Maricho Media.
+
+## 3. User Accounts
+
+Certain features may require users to create an account.
+
+Users agree to:
+
+* Provide accurate and current information;
+* Maintain the confidentiality of account credentials;
+* Take reasonable steps to secure their accounts;
+* Notify us immediately of any unauthorized use of their accounts.
+
+Users are responsible for all activities occurring under their accounts.
+
+## 4. User Content
+
+Users may submit content including:
+
+* Messages and conversations;
+* Images and photographs;
+* Videos;
+* Audio recordings and voice notes;
+* Documents and files;
+* Feedback and survey responses;
+* Questions, comments, and other communications.
+
+Users retain ownership of their content subject to the licenses granted under these Terms.
+
+## 5. Content Ownership and Permissions
+
+Users confirm and warrant that they own, control, or have obtained all necessary rights, permissions, licenses, and consents to upload, submit, share, transmit, or otherwise make available any images, photographs, videos, audio recordings, voice notes, documents, text, data, or other content through Mshauri AI and related services.
+
+Users are solely responsible for ensuring that submitted content:
+
+* Does not infringe any copyright, trademark, patent, trade secret, or other intellectual property rights;
+* Does not violate privacy, publicity, confidentiality, or data protection rights of any individual or organization;
+* Does not contain unlawful, defamatory, fraudulent, misleading, harmful, or deceptive material;
+* Complies with all applicable laws, regulations, and third-party terms and conditions.
+
+By uploading content, users grant Five Talents (Pvt) Ltd., Maricho Media, and Mshauri AI a worldwide, non-exclusive, royalty-free, transferable license to host, store, process, analyze, reproduce, modify, adapt, publish, transmit, display, distribute, and otherwise use such content solely for the purpose of operating, maintaining, securing, improving, developing, and providing the Services.
+
+Users acknowledge and agree that they remain solely liable for any claims, disputes, losses, damages, penalties, costs, or legal actions arising from content they submit to the Services.
+
+Five Talents (Pvt) Ltd. reserves the right, but is not obligated, to review, remove, restrict, suspend, or delete any content that it reasonably believes violates these Terms, applicable law, or the rights of any third party.
+
+## 6. AI Training and Platform Improvement
+
+Users acknowledge and agree that content submitted to Mshauri AI, including conversations, uploaded images, audio recordings, voice notes, documents, feedback, survey responses, and other interactions, may be used to improve, train, evaluate, test, develop, and enhance Mshauri AI and related products and services.
+
+Maricho Media may use submitted content for:
+
+* AI model training and improvement;
+* Agricultural knowledge enhancement;
+* Quality assurance and system testing;
+* Research and development;
+* Analytics and reporting;
+* Safety, security, and fraud prevention;
+* Product and service optimization.
+
+Where practical and appropriate, Maricho Media may aggregate, anonymize, pseudonymize, or de-identify information before using it for research, analytics, and AI improvement activities.
+
+Users may request information regarding the use of their personal information by contacting [privacy@marichomedia.com](mailto:privacy@marichomedia.com).
+
+## 7. User-Generated Content
+
+Users are solely responsible for all content submitted through the Services.
+
+Mshauri AI does not endorse, verify, guarantee, or assume responsibility for the accuracy, legality, reliability, or appropriateness of user-generated content.
+
+Users agree not to upload, transmit, store, or share content that:
+
+* Is unlawful or fraudulent;
+* Infringes intellectual property rights;
+* Violates privacy or data protection laws;
+* Contains malware, viruses, or harmful code;
+* Promotes violence, hate speech, discrimination, or harassment;
+* Contains false, misleading, or deceptive information;
+* Violates the rights of any individual, organization, or third party.
+
+## 8. Indemnification
+
+Users agree to defend, indemnify, and hold harmless Five Talents (Pvt) Ltd., Maricho Media, Mshauri AI, its directors, officers, employees, contractors, affiliates, partners, licensors, and service providers from and against any claims, liabilities, damages, judgments, losses, costs, expenses, and legal fees arising from:
+
+* User content;
+* Violation of these Terms;
+* Misuse of the Services;
+* Violation of applicable laws or regulations;
+* Infringement of intellectual property rights;
+* Violation of privacy or data protection rights.
+
+## 9. Agricultural and Livestock Risk Acknowledgement
+
+Users acknowledge that farming, livestock production, veterinary care, pest management, and agricultural decision-making involve inherent risks that cannot be fully predicted or controlled.
+
+Mshauri AI provides informational assistance only and does not guarantee:
+
+* Crop yields;
+* Livestock performance;
+* Disease prevention;
+* Weather outcomes;
+* Market prices;
+* Financial results;
+* Business success.
+
+Users remain solely responsible for all farming, livestock, veterinary, operational, financial, and business decisions made using information provided by the Services.
+
+## 10. Electronic Communications
+
+By using the Services, users consent to receive electronic communications from Maricho Media, including:
+
+* Service notifications;
+* Security alerts;
+* Account updates;
+* Transaction confirmations;
+* Product announcements;
+* Customer support communications.
+
+Such communications may be delivered via email, WhatsApp, SMS, mobile applications, or other electronic means.
+
+## 11. Force Majeure
+
+Five Talents (Pvt) Ltd. shall not be liable for any delay, interruption, or failure to perform resulting from events beyond its reasonable control, including:
+
+* Internet outages;
+* Telecommunications failures;
+* Power interruptions;
+* Natural disasters;
+* Floods, droughts, or severe weather events;
+* Epidemics or pandemics;
+* Government actions;
+* Civil unrest;
+* Cybersecurity incidents;
+* Third-party service failures.
+
+## 12. Acceptable Use
+
+Users may not:
+
+* Violate any applicable law or regulation;
+* Upload malicious software, viruses, or harmful code;
+* Attempt unauthorized access to systems, accounts, or data;
+* Interfere with platform operations or security;
+* Use the Services to distribute spam, misinformation, or fraudulent content;
+* Harass, threaten, abuse, or harm others;
+* Use automated tools to scrape, copy, or exploit the Services without authorization;
+* Reverse engineer, decompile, or attempt to discover source code or proprietary technology.
+
+Maricho Media reserves the right to suspend or terminate accounts that violate these Terms.
+
+## 13. Payments and Subscriptions
+
+Certain features of the Services may require payment or subscription.
+
+Payments may be processed through approved payment providers, including:
+
+* EcoCash;
+* OneMoney;
+* ZIPIT;
+* Paynow;
+* Bank transfers;
+* Debit and credit cards;
+* Other approved payment methods.
+
+Users are responsible for ensuring that payment information provided is accurate and current.
+
+Unless otherwise required by law, fees paid for subscriptions or services are non-refundable.
+
+Maricho Media reserves the right to modify pricing, subscription plans, or billing arrangements at any time.
+
+## 14. Intellectual Property
+
+The Services, including software, databases, AI systems, branding, trademarks, logos, text, graphics, designs, documentation, and other proprietary materials, are owned by or licensed to Five Talents (Pvt) Ltd.
+
+Except as expressly permitted, users may not copy, reproduce, modify, distribute, sell, license, commercialize, or create derivative works from any part of the Services without prior written permission.
+
+## 15. Third-Party Services
+
+The Services may integrate with or rely upon third-party platforms and providers, including cloud providers, payment processors, analytics services, messaging platforms, artificial intelligence providers, and social media services.
+
+Maricho Media is not responsible for the availability, security, accuracy, content, policies, or practices of third-party services.
+
+Use of third-party services may be subject to separate terms and privacy policies.
+
+## 16. Service Availability
+
+Maricho Media does not guarantee that the Services will be uninterrupted, error-free, secure, or continuously available.
+
+We may modify, suspend, restrict, discontinue, or update any feature of the Services at any time without liability or prior notice.
+
+## 17. Disclaimer of Warranties
+
+The Services are provided on an "as is" and "as available" basis.
+
+To the fullest extent permitted by law, Five Talents (Pvt) Ltd. disclaims all warranties, whether express, implied, statutory, or otherwise, including warranties relating to:
+
+* Accuracy;
+* Reliability;
+* Availability;
+* Merchantability;
+* Fitness for a particular purpose;
+* Non-infringement.
+
+No information or advice provided through the Services shall create any warranty not expressly stated in these Terms.
+
+## 18. Limitation of Liability
+
+To the maximum extent permitted by law, Five Talents (Pvt) Ltd., Maricho Media, Mshauri AI, their directors, officers, employees, contractors, affiliates, licensors, and partners shall not be liable for:
+
+* Direct or indirect damages;
+* Loss of profits;
+* Loss of crops;
+* Livestock losses;
+* Business interruption;
+* Loss of revenue;
+* Data loss;
+* Reputational harm;
+* Consequential or incidental damages;
+* Decisions made based on AI-generated content.
+
+Use of the Services is entirely at the user's own risk.
+
+## 19. Suspension and Termination
+
+Maricho Media may suspend, restrict, or terminate access to the Services at any time where:
+
+* Users violate these Terms;
+* Fraudulent or unlawful activity is suspected;
+* Security concerns arise;
+* Regulatory or legal requirements necessitate action;
+* Continued access could expose Maricho Media to risk.
+
+Termination may occur without prior notice where reasonably necessary.
+
+## 20. Governing Law and Dispute Resolution
+
+These Terms shall be governed by and interpreted in accordance with the laws of Zimbabwe.
+
+Any dispute arising from or relating to these Terms or the Services shall be subject to the exclusive jurisdiction of the courts of Zimbabwe.
+
+Where appropriate, the parties may first attempt to resolve disputes through good-faith negotiation or mediation before commencing legal proceedings.
+
+## 21. Changes to These Terms
+
+Maricho Media may modify these Terms from time to time.
+
+Updated versions will be published on the Services and will become effective upon publication unless otherwise stated.
+
+Continued use of the Services after changes become effective constitutes acceptance of the revised Terms.
+
+## 22. Contact Information
+
+Five Talents (Pvt) Ltd.
+Zimbabwe
+
+Email: [privacy@marichomedia.com](mailto:privacy@marichomedia.com)
+
+Website: mshauri.marichomedia.com

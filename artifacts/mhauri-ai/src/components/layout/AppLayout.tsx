@@ -9,7 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Home, Bot, TrendingUp, UserCircle,
   Trash2, Menu, PenSquare, Sun, Moon,
-  ChevronUp, ChevronDown, Star, Settings,
+  ChevronUp, ChevronDown, Star, Settings, Clock,
 } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import {
@@ -131,6 +131,16 @@ function ThemeToggle() {
   );
 }
 
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
 // Deterministic avatar colour from community slug
 const AVATAR_COLORS = [
   "#22c55e","#3b82f6","#f59e0b","#ef4444","#8b5cf6",
@@ -207,6 +217,55 @@ function CommunitiesSidebar({ onNavigate }: { onNavigate?: () => void }) {
           })}
         </div>
       )}
+    </>
+  );
+}
+
+interface RecentPost {
+  id: number; title: string; upvotes: number; commentCount: number; createdAt: string;
+}
+
+function RecentPostsSidebar({ onNavigate }: { onNavigate?: () => void }) {
+  const [posts, setPosts] = useState<RecentPost[]>([]);
+  const [dismissed, setDismissed] = useState(() => {
+    try { return sessionStorage.getItem("rp_dismissed") === "1"; } catch { return false; }
+  });
+
+  useEffect(() => {
+    fetch("/api/posts?sort=new&limit=5")
+      .then(r => r.json())
+      .then(d => Array.isArray(d) && setPosts(d))
+      .catch(() => {});
+  }, []);
+
+  if (dismissed || posts.length === 0) return null;
+
+  return (
+    <>
+      <div className="mx-3 border-t border-[#343536] my-2" />
+      <div className="flex items-center justify-between px-3 mb-1">
+        <span className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Recent Posts</span>
+        <button
+          onClick={() => { setDismissed(true); try { sessionStorage.setItem("rp_dismissed", "1"); } catch {} }}
+          className="text-[10px] text-blue-400 hover:text-blue-300 font-semibold transition-colors"
+        >
+          Clear
+        </button>
+      </div>
+      <div className="px-2 flex flex-col gap-0.5 overflow-y-auto max-h-44">
+        {posts.map(p => (
+          <Link key={p.id} href={`/posts/${p.id}`} onClick={onNavigate}>
+            <div className="px-3 py-2 rounded-lg hover:bg-[#272729] transition-colors cursor-pointer">
+              <div className="flex items-center gap-1 text-[#818384] text-[10px] mb-0.5">
+                <Clock className="w-2.5 h-2.5 shrink-0" />
+                {timeAgo(p.createdAt)}
+              </div>
+              <div className="text-[#d7dadc] text-[11px] font-semibold leading-snug line-clamp-2">{p.title}</div>
+              <div className="text-[#818384] text-[10px] mt-0.5">▲ {p.upvotes} · 💬 {p.commentCount}</div>
+            </div>
+          </Link>
+        ))}
+      </div>
     </>
   );
 }
@@ -303,10 +362,25 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       {/* Communities list */}
       <CommunitiesSidebar onNavigate={onNavigate} />
 
+      {/* Recent Posts */}
+      <RecentPostsSidebar onNavigate={onNavigate} />
+
       <div className="flex-1" />
 
+      {/* Legal links */}
+      <div className="mx-3 mb-1">
+        <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 px-3 pt-2 pb-1">
+          {([["Rules", "/rules"], ["Privacy", "/privacy"], ["AI Use", "/ai-disclaimer"], ["Cookies", "/cookies"]] as [string, string][]).map(([label, href]) => (
+            <Link key={href} href={href} onClick={onNavigate}>
+              <span className="text-[10px] text-[#818384] hover:text-[#d7dadc] cursor-pointer transition-colors">{label}</span>
+            </Link>
+          ))}
+          <span className="text-[10px] text-[#818384] w-full mt-0.5">© 2026 Maricho Media</span>
+        </div>
+      </div>
+
       {/* Theme + user card */}
-      <div className="mx-3 border-t border-[#343536] pt-2 mt-2">
+      <div className="mx-3 border-t border-[#343536] pt-2 mt-1">
         <ThemeToggle />
       </div>
 

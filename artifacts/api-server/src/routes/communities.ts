@@ -69,6 +69,34 @@ router.post("/communities", async (req, res): Promise<void> => {
   }
 });
 
+router.post("/communities/my", async (req, res): Promise<void> => {
+  const userId = (req.session as any)?.userId;
+  if (!userId) { res.status(401).json({ error: "Unauthorised" }); return; }
+
+  const [user] = await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+  if (!user) { res.status(404).json({ error: "User not found" }); return; }
+
+  const slug = ("u-" + user.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")).slice(0, 25);
+  const name = `${user.name}'s Corner`;
+
+  let [comm] = await db.select().from(communitiesTable).where(eq(communitiesTable.slug, slug)).limit(1);
+  if (!comm) {
+    const inserted = await db
+      .insert(communitiesTable)
+      .values({ slug, name, description: `${user.name}'s personal community on Mshauri` })
+      .onConflictDoNothing()
+      .returning();
+    if (inserted.length) {
+      comm = inserted[0];
+    } else {
+      [comm] = await db.select().from(communitiesTable).where(eq(communitiesTable.slug, slug)).limit(1);
+    }
+  }
+
+  if (!comm) { res.status(500).json({ error: "Could not find or create community" }); return; }
+  res.json(comm);
+});
+
 function formatPost(p: typeof postsTable.$inferSelect) {
   return { ...p, createdAt: p.createdAt.toISOString(), updatedAt: p.updatedAt.toISOString() };
 }

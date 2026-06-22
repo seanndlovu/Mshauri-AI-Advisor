@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useLocation, Link } from "wouter";
 import {
   MessageCircle, Share2, ExternalLink,
@@ -62,6 +62,8 @@ interface SiteStats {
   userCount: number;
   postsToday: number;
 }
+
+interface NewsItem { title: string; link: string; description: string; pubDate: string; image: string; }
 
 type SortMode = "helpful" | "recent";
 
@@ -361,6 +363,66 @@ function WhatsAppCard() {
   );
 }
 
+/* ─── Right-panel widgets ────────────────────────────────── */
+
+function PopularPostsWidget({ posts }: { posts: Post[] }) {
+  if (!posts.length) return null;
+  return (
+    <div className="bg-[#16181C] border border-[#2F3336] rounded-xl overflow-hidden">
+      <div className="px-4 py-3 border-b border-[#2F3336]">
+        <h3 className="text-[#E7E9EA] font-bold text-[12px] uppercase tracking-wide">🔥 Popular Posts</h3>
+      </div>
+      <div className="divide-y divide-[#2F3336]/60">
+        {posts.map((p, i) => (
+          <Link key={p.id} href={`/posts/${p.id}`}>
+            <div className="flex gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors cursor-pointer">
+              <span className="text-[#71767B] font-black text-[14px] w-4 shrink-0">{i + 1}</span>
+              <div className="min-w-0">
+                <p className="text-[#E7E9EA] text-[12px] font-semibold leading-snug line-clamp-2">{p.title}</p>
+                <div className="text-[#71767B] text-[10px] mt-1">▲ {p.upvotes} · 💬 {p.commentCount}</div>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function NewsWidget({ items }: { items: NewsItem[] }) {
+  if (!items.length) return null;
+  return (
+    <div className="bg-[#16181C] border border-[#2F3336] rounded-xl overflow-hidden">
+      <div className="px-4 py-3 border-b border-[#2F3336] flex items-center justify-between">
+        <h3 className="text-[#E7E9EA] font-bold text-[12px] uppercase tracking-wide">📰 Maricho News</h3>
+        <a href="https://marichomedia.com" target="_blank" rel="noreferrer"
+          className="text-[#22c55e] text-[10px] font-semibold hover:underline">
+          View all →
+        </a>
+      </div>
+      <div className="divide-y divide-[#2F3336]/60">
+        {items.map((item, i) => (
+          <a key={i} href={item.link} target="_blank" rel="noreferrer"
+            className="flex gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors"
+          >
+            {item.image ? (
+              <img src={item.image} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0 bg-[#272729]" />
+            ) : (
+              <div className="w-12 h-12 rounded-lg bg-[#272729] flex items-center justify-center shrink-0 text-xl">📰</div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="text-[#E7E9EA] text-[12px] font-semibold leading-snug line-clamp-2">{item.title}</p>
+              {item.description && (
+                <p className="text-[#71767B] text-[10px] mt-0.5 line-clamp-2">{item.description}</p>
+              )}
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main Feed ──────────────────────────────────────────── */
 export default function Feed() {
   const [posts, setPosts]               = useState<Post[]>([]);
@@ -402,6 +464,21 @@ export default function Feed() {
       .catch(() => {})
       .finally(() => setLoadingMover(false));
   }, []);
+
+  /* news from Maricho Media */
+  const [news, setNews] = useState<NewsItem[]>([]);
+  useEffect(() => {
+    fetch("/api/news")
+      .then(r => r.json())
+      .then(d => Array.isArray(d) && setNews(d))
+      .catch(() => {});
+  }, []);
+
+  /* top posts for right panel */
+  const popularPosts = useMemo(
+    () => [...posts].sort((a, b) => b.upvotes - a.upvotes).slice(0, 5),
+    [posts]
+  );
 
   /* pulse = posts from last 24 h */
   const pulseCount = posts.filter(
@@ -464,8 +541,10 @@ export default function Feed() {
 
           {/* ── Right panel (desktop) ── */}
           <div className="hidden lg:block w-[300px] shrink-0">
-            <div className="sticky top-5">
+            <div className="sticky top-5 flex flex-col gap-4 max-h-[calc(100dvh-80px)] overflow-y-auto pr-0.5">
               <AboutCard stats={stats} />
+              <PopularPostsWidget posts={popularPosts} />
+              {news.length > 0 && <NewsWidget items={news} />}
             </div>
           </div>
         </div>

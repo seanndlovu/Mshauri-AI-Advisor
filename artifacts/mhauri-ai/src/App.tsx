@@ -19,6 +19,10 @@ import Register from "@/pages/Register";
 import Profile from "@/pages/Profile";
 import Weather from "@/pages/Weather";
 import WhatsApp from "@/pages/WhatsApp";
+import Rules from "@/pages/Rules";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import AiDisclaimer from "@/pages/AiDisclaimer";
+import CookiePolicy from "@/pages/CookiePolicy";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +45,10 @@ function Router() {
             <Route path="/whatsapp" component={WhatsApp} />
             <Route path="/profile" component={Profile} />
             <Route path="/me" component={Profile} />
+            <Route path="/rules" component={Rules} />
+            <Route path="/privacy" component={PrivacyPolicy} />
+            <Route path="/ai-disclaimer" component={AiDisclaimer} />
+            <Route path="/cookies" component={CookiePolicy} />
             <Route path="/farmers" component={Farmers} />
             <Route path="/market-prices" component={MarketPrices} />
             <Route path="/broadcasts" component={Broadcasts} />
