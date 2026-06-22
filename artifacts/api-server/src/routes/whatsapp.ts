@@ -122,6 +122,60 @@ function getWhatsAppConfig() {
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+const WELCOME_MESSAGE = `Welcome to Mshauri AI! 🌾
+
+I'm your personal farming assistant for Zimbabwe. Here's what I can do:
+
+Ask me anything:
+• "My maize leaves are yellow" → diagnosis + fix
+• "Prices" → today's market prices
+• "Weather" → farming weather tips
+• "Help" → see all commands
+
+I understand English, Shona and Ndebele.
+
+What farming question can I help you with today?`;
+
+const HELP_MENU = `Mshauri AI Commands:
+
+PRICES — today's market prices
+WEATHER — weather & farming tips
+HELP — show this menu
+
+Or just describe your problem in your own words — I'll understand and help you.
+
+Examples:
+• "My cattle are not eating"
+• "Best time to plant maize in Mashonaland"
+• "How do I treat fall armyworm"
+
+Powered by Maricho Media 🌾`;
+
+async function getMarketPricesWhatsApp(): Promise<string> {
+  try {
+    const { marketPricesTable } = await import("@workspace/db");
+    const prices = await db
+      .select()
+      .from(marketPricesTable)
+      .orderBy(desc(marketPricesTable.priceDate))
+      .limit(10);
+    if (prices.length === 0) return "No market prices available right now. Check back soon.";
+    const lines = prices.map(p => `• ${p.commodity}: $${p.priceUsd}/${p.unit} (${p.market})`);
+    return `Zimbabwe Market Prices\n\n${lines.join("\n")}\n\nPrices updated regularly. Ask me about any specific crop!`;
+  } catch {
+    return "Market prices are temporarily unavailable. Please try again shortly.";
+  }
+}
+
+function detectKeyword(text: string): "welcome" | "help" | "prices" | "weather" | null {
+  const t = text.trim().toLowerCase();
+  if (["hi", "hello", "hey", "start", "hie", "mhoro", "sawubona", "ndeipi"].includes(t)) return "welcome";
+  if (["help", "menu", "commands", "?", "info"].includes(t)) return "help";
+  if (t === "prices" || t === "price" || t === "market" || t === "markets" || t === "mutengo" || t.startsWith("price") || t.startsWith("market")) return "prices";
+  if (t === "weather" || t === "mvura" || t === "rain" || t === "forecast" || t.startsWith("weather")) return "weather";
+  return null;
+}
+
 const MHAURI_SYSTEM_PROMPT = `You are Mhauri AI, an expert Zimbabwean agricultural extension officer.
 Your role is to provide practical, accurate, farmer-friendly agricultural advice for Zimbabwe and Southern Africa.
 
@@ -295,7 +349,37 @@ async function handleIncomingMessage(
   ]);
 
   const historyRows = await getRecentHistory(conversationId);
+  const isNewUser = historyRows.length === 0;
   const history = historyRows.reverse();
+
+  // ── Keyword shortcuts — bypass AI for common commands ──────────────────
+  if (!imageDataUrl) {
+    const keyword = detectKeyword(userText);
+
+    if (isNewUser && !keyword) {
+      // New user sending their first real message — greet first, then answer
+      await sendWhatsAppMessage(phone, WELCOME_MESSAGE);
+    } else if (keyword === "welcome" || (isNewUser && keyword === null)) {
+      await sendWhatsAppMessage(phone, WELCOME_MESSAGE);
+      void logAnalyticsEvent(eventType, phone, farmer?.languagePref ?? "en", userText);
+      return;
+    } else if (keyword === "help") {
+      await sendWhatsAppMessage(phone, HELP_MENU);
+      void logAnalyticsEvent(eventType, phone, farmer?.languagePref ?? "en", userText);
+      return;
+    } else if (keyword === "prices") {
+      const pricesMsg = await getMarketPricesWhatsApp();
+      await sendWhatsAppMessage(phone, pricesMsg);
+      void logAnalyticsEvent(eventType, phone, farmer?.languagePref ?? "en", userText);
+      return;
+    } else if (keyword === "weather") {
+      const primaryDomain = (process.env.REPLIT_DOMAINS ?? "").split(",")[0].trim();
+      const weatherMsg = `Zimbabwe Farming Weather Tips:\n\n• June-August: dry season — ideal for land prep, irrigation crops, winter wheat\n• September-November: pre-season — prepare soil, order inputs early\n• November-April: rainy season — main crop planting, watch for pests\n\nFor your local 7-day forecast, check the Mshauri app:${primaryDomain ? `\nhttps://${primaryDomain}/weather` : ""}\n\nOr ask me: "When should I plant maize in [your area]?"`;
+      await sendWhatsAppMessage(phone, weatherMsg);
+      void logAnalyticsEvent(eventType, phone, farmer?.languagePref ?? "en", userText);
+      return;
+    }
+  }
 
   // Build context in parallel
   const [knowledgeContext, marketContext] = await Promise.all([
