@@ -7,6 +7,9 @@ interface Post {
   id: number; communityId: number; type: string; title: string;
   content: string; location: string | null; upvotes: number;
   commentCount: number; authorName: string | null; createdAt: string;
+  imageUrl?: string | null;
+  videoUrl?: string | null;
+  linkUrl?: string | null;
 }
 
 interface Comment {
@@ -120,7 +123,29 @@ export default function PostDetail() {
           <h1 className="text-[#E7E9EA] font-bold text-[20px] leading-tight mb-3">{post.title}</h1>
 
           {/* Content */}
-          <p className="text-[#E7E9EA] text-[15px] leading-relaxed whitespace-pre-wrap">{post.content}</p>
+          <p className="text-[#E7E9EA] text-[15px] leading-relaxed whitespace-pre-wrap mb-4">{post.content}</p>
+
+          {/* Media */}
+          {post.imageUrl && (
+            <div className="rounded-2xl overflow-hidden mb-4 bg-black border border-[#2F3336]">
+              <img src={post.imageUrl} alt="Post image" className="w-full max-h-[500px] object-contain" />
+            </div>
+          )}
+          {post.videoUrl && (
+            <div className="rounded-2xl overflow-hidden mb-4 bg-black border border-[#2F3336]">
+              <video src={post.videoUrl} className="w-full max-h-[500px]" controls />
+            </div>
+          )}
+          {post.linkUrl && (
+            <a href={post.linkUrl} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-3 mb-4 bg-[#1a1a1b] border border-[#2F3336] hover:border-[#22c55e]/40 rounded-2xl px-4 py-3 transition-colors group">
+              <span className="text-2xl shrink-0">🔗</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-[#22c55e] text-[13px] font-semibold truncate group-hover:underline">{post.linkUrl}</p>
+                <p className="text-[#71767B] text-[11px]">External link</p>
+              </div>
+            </a>
+          )}
 
           {/* Footer */}
           <div className="flex items-center gap-4 mt-4 pt-4 border-t border-[#2F3336] flex-wrap">

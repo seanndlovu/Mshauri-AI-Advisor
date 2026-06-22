@@ -12,6 +12,9 @@ interface Post {
   id: number; communityId: number; type: string; title: string;
   content: string; location: string | null; upvotes: number;
   commentCount: number; authorName: string | null; createdAt: string;
+  imageUrl?: string | null;
+  videoUrl?: string | null;
+  linkUrl?: string | null;
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -179,7 +182,27 @@ export default function CommunityFeed() {
                   <h3 className="text-[#E7E9EA] font-bold text-[15px] leading-snug mb-1.5 group-hover:text-white transition-colors">
                     {post.title}
                   </h3>
-                  <p className="text-[#71767B] text-[13px] leading-relaxed line-clamp-2 mb-3">{post.content}</p>
+
+                  {/* Media preview */}
+                  {post.imageUrl && (
+                    <div className="rounded-xl overflow-hidden mb-2 bg-black border border-[#2F3336]">
+                      <img src={post.imageUrl} alt="Post image" className="w-full max-h-52 object-cover" />
+                    </div>
+                  )}
+                  {post.videoUrl && (
+                    <div className="rounded-xl overflow-hidden mb-2 bg-black border border-[#2F3336]">
+                      <video src={post.videoUrl} className="w-full max-h-52" controls preload="metadata" onClick={e => e.preventDefault()} />
+                    </div>
+                  )}
+                  {post.linkUrl && !post.imageUrl && !post.videoUrl && (
+                    <div className="flex items-center gap-2 mb-2 bg-[#1a1a1b] border border-[#2F3336] rounded-xl px-3 py-2">
+                      <span className="text-[11px]">🔗</span>
+                      <span className="text-[#22c55e] text-[11px] truncate">{post.linkUrl}</span>
+                    </div>
+                  )}
+                  {!post.imageUrl && !post.videoUrl && (
+                    <p className="text-[#71767B] text-[13px] leading-relaxed line-clamp-2 mb-3">{post.content}</p>
+                  )}
                   {/* Footer */}
                   <div className="flex items-center gap-3 pt-3 border-t border-[#2F3336] text-[#71767B] text-[11px]">
                     <span>👍 {post.upvotes} helpful</span>

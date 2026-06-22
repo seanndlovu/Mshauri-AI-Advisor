@@ -130,17 +130,20 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
     }
     setSubmitting(true);
     try {
-      let imageUrl: string | undefined;
-
-      // Convert image to base64 for storage
-      if (mediaFile && activeTab === "image") {
-        imageUrl = await new Promise<string>((resolve, reject) => {
+      function toBase64(file: File): Promise<string> {
+        return new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => resolve(reader.result as string);
           reader.onerror = reject;
-          reader.readAsDataURL(mediaFile);
+          reader.readAsDataURL(file);
         });
       }
+
+      let imageUrl: string | undefined;
+      let videoUrl: string | undefined;
+
+      if (mediaFile && activeTab === "image") imageUrl = await toBase64(mediaFile);
+      if (mediaFile && activeTab === "video") videoUrl = await toBase64(mediaFile);
 
       const res = await fetch("/api/posts", {
         method: "POST",
@@ -150,7 +153,8 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
           communityId, type,
           title: title.trim(),
           content: content.trim() || title.trim(),
-          imageUrl,
+          ...(imageUrl ? { imageUrl } : {}),
+          ...(videoUrl ? { videoUrl } : {}),
           ...(activeTab === "link" && linkUrl.trim() ? { linkUrl: linkUrl.trim() } : {}),
         }),
       });

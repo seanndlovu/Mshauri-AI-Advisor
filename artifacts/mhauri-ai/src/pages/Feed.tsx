@@ -11,6 +11,9 @@ interface Post {
   id: number; communityId: number; type: string; title: string;
   content: string; location: string | null; upvotes: number;
   commentCount: number; authorName: string | null; createdAt: string;
+  imageUrl?: string | null;
+  videoUrl?: string | null;
+  linkUrl?: string | null;
 }
 
 interface WeatherData {
@@ -261,9 +264,31 @@ function PostCard({ post }: { post: Post }) {
         {post.title}
       </h3>
 
-      <p className="text-[#71767B] text-[13px] leading-relaxed line-clamp-2 mb-3">
-        {post.content}
-      </p>
+      {/* Media preview */}
+      {post.imageUrl && (
+        <div className="rounded-xl overflow-hidden mb-2.5 bg-black border border-[#2F3336]">
+          <img src={post.imageUrl} alt="Post image" className="w-full max-h-64 object-cover" />
+        </div>
+      )}
+      {post.videoUrl && (
+        <div className="rounded-xl overflow-hidden mb-2.5 bg-black border border-[#2F3336]">
+          <video src={post.videoUrl} className="w-full max-h-64" controls preload="metadata" />
+        </div>
+      )}
+      {post.linkUrl && !post.imageUrl && !post.videoUrl && (
+        <div className="flex items-center gap-2 mb-2.5 bg-[#1a1a1b] border border-[#2F3336] rounded-xl px-3 py-2.5">
+          <span className="text-[#71767B] text-[12px]">🔗</span>
+          <a href={post.linkUrl} target="_blank" rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            className="text-[#22c55e] text-[12px] truncate hover:underline">{post.linkUrl}</a>
+        </div>
+      )}
+
+      {!post.imageUrl && !post.videoUrl && (
+        <p className="text-[#71767B] text-[13px] leading-relaxed line-clamp-2 mb-3">
+          {post.content}
+        </p>
+      )}
 
       <div className="flex items-center gap-0.5 pt-3 border-t border-[#2F3336]">
         <span className="flex items-center gap-1.5 text-[#71767B] text-[11px] font-medium px-2 py-1">

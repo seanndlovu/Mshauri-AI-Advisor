@@ -36,13 +36,15 @@ router.get("/posts", async (req, res): Promise<void> => {
 
 router.post("/posts", async (req, res): Promise<void> => {
   const userId = req.session?.userId ?? null;
-  const { communityId, type, title, content, location, imageUrl } = req.body as {
+  const { communityId, type, title, content, location, imageUrl, videoUrl, linkUrl } = req.body as {
     communityId: number;
     type: string;
     title: string;
     content: string;
     location?: string;
     imageUrl?: string;
+    videoUrl?: string;
+    linkUrl?: string;
   };
 
   if (!communityId || !title || !content) {
@@ -63,6 +65,8 @@ router.post("/posts", async (req, res): Promise<void> => {
     content,
     location: location ?? null,
     imageUrl: imageUrl ?? null,
+    videoUrl: videoUrl ?? null,
+    linkUrl: linkUrl ?? null,
     authorName,
   }).returning();
 

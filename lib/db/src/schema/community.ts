@@ -30,6 +30,8 @@ export const postsTable = pgTable("posts", {
   commentCount: integer("comment_count").notNull().default(0),
   authorName: text("author_name"),
   imageUrl: text("image_url"),
+  videoUrl: text("video_url"),
+  linkUrl: text("link_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
