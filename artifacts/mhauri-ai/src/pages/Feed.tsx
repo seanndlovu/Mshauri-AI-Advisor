@@ -16,12 +16,6 @@ interface Post {
   linkUrl?: string | null;
 }
 
-interface WeatherData {
-  temp: number;
-  precip: number;
-  code: number;
-}
-
 interface MarketItem {
   item: string;
   priceUsd: number;
@@ -78,68 +72,20 @@ function deterministicChange(name: string): number {
   return (h % 41) - 20;
 }
 
-/* ─── Weather helpers ────────────────────────────────────── */
-function weatherEmoji(code: number): string {
-  if (code === 0)          return "☀️";
-  if (code <= 3)           return "🌤️";
-  if (code <= 48)          return "🌫️";
-  if (code <= 55)          return "🌦️";
-  if (code <= 65)          return "🌧️";
-  if (code <= 82)          return "🌧️";
-  if (code <= 86)          return "🌨️";
-  return "⛈️";
-}
-
-function weatherAdvice(code: number, precip: number): string {
-  if (code >= 95)          return "Thunderstorm — stay safe";
-  if (code >= 80)          return "Rain showers — check drainage";
-  if (code >= 61)          return "Rain today — avoid field work";
-  if (code >= 51)          return "Light drizzle — monitor fields";
-  if (precip >= 60)        return "Rain likely — protect harvested crops";
-  if (precip >= 30)        return "Some rain possible — stay prepared";
-  if (code === 0)          return "Clear sky — good planting conditions";
-  if (code <= 2)           return "Good farming conditions today";
-  return "Partly cloudy — check soil moisture";
-}
-
 /* ─── Subcomponents ──────────────────────────────────────── */
+
+const WA_LINK = "https://wa.me/263714280244?text=Hi%2C%20I%20want%20to%20connect%20with%20Mshauri";
 
 /** Horizontal situational awareness strip */
 function AwarenessStrip({
-  weather, topMover, pulseCount, loadingWeather, loadingMover, stats,
+  topMover, pulseCount, loadingMover, stats,
 }: {
-  weather: WeatherData | null;
   topMover: { item: string; priceUsd: number; pct: number } | null;
   pulseCount: number;
-  loadingWeather: boolean;
   loadingMover: boolean;
   stats: SiteStats | null;
 }) {
   const cards = [
-    /* Weather */
-    <div key="weather" className="shrink-0 w-52 bg-[#16181C] border border-[#2F3336] border-l-2 border-l-[#22c55e] rounded-2xl p-3.5 flex flex-col justify-between h-[90px]">
-      {loadingWeather ? (
-        <div className="flex items-center gap-2 text-[#71767B] text-[12px]">
-          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading weather…
-        </div>
-      ) : weather ? (
-        <>
-          <div className="flex items-center gap-2">
-            <span className="text-[22px] leading-none">{weatherEmoji(weather.code)}</span>
-            <div>
-              <div className="text-[#E7E9EA] font-black text-[16px] leading-none">{weather.temp.toFixed(0)}°C</div>
-              <div className="text-[#71767B] text-[10px]">{weather.precip}% rain chance</div>
-            </div>
-          </div>
-          <div className="text-[#22c55e] text-[10px] font-semibold leading-tight">
-            {weatherAdvice(weather.code, weather.precip)}
-          </div>
-        </>
-      ) : (
-        <div className="text-[#71767B] text-[11px]">Weather unavailable</div>
-      )}
-    </div>,
-
     /* Top market mover */
     <Link key="mover" href="/prices">
       <div className="shrink-0 w-52 bg-[#16181C] border border-[#2F3336] border-l-2 border-l-[#22c55e] rounded-2xl p-3.5 flex flex-col justify-between h-[90px] cursor-pointer hover:border-[#3F4448] transition-colors">
@@ -368,41 +314,33 @@ function FarmersOnline({ stats }: { stats: SiteStats | null }) {
   );
 }
 
-/** Ask Mshauri CTA block — used in right panel (desktop) and sticky bar (mobile) */
-function AskMshauriCTA({ compact = false }: { compact?: boolean }) {
-  const [, nav] = useLocation();
-  if (compact) {
-    return (
-      <button
-        onClick={() => nav("/ask")}
-        className="flex items-center justify-between w-full bg-[#16181C] border border-[#22c55e]/30 rounded-2xl px-4 py-3 hover:bg-[#22c55e]/5 transition-colors group"
-      >
-        <div className="flex items-center gap-2.5">
-          <img src="/mshauri-logo.png?v=2" alt="Mshauri" className="w-7 h-7 object-contain shrink-0" />
-          <span className="text-[#E7E9EA] text-[13px] font-semibold">Explore markets, climate, policy, nutrition, trade and more</span>
-        </div>
-        <span className="text-[#22c55e] text-[12px] font-bold group-hover:translate-x-0.5 transition-transform">
-          Ask Mshauri →
-        </span>
-      </button>
-    );
-  }
+/** WhatsApp "Ask Mshauri" card for right sidebar */
+function WhatsAppCard() {
   return (
-    <div className="bg-[#16181C] border border-[#22c55e]/30 rounded-2xl p-4 mb-3">
-      <div className="flex items-center gap-2 mb-2">
-        <img src="/mshauri-logo.png?v=2" alt="Mshauri" className="w-7 h-7 object-contain shrink-0" />
-        <span className="text-[#E7E9EA] text-[13px] font-semibold">Ask Mshauri AI</span>
+    <a
+      href={WA_LINK}
+      target="_blank"
+      rel="noreferrer"
+      className="block bg-[#16181C] border border-[#25d366]/30 rounded-2xl p-4 mb-3 hover:bg-[#25d366]/5 transition-colors group"
+    >
+      <div className="flex items-center gap-2.5 mb-2.5">
+        <div className="w-8 h-8 rounded-full bg-[#25d366] flex items-center justify-center shrink-0">
+          <svg viewBox="0 0 24 24" className="w-4.5 h-4.5 fill-white" xmlns="http://www.w3.org/2000/svg" style={{width:"18px",height:"18px"}}>
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+        </div>
+        <span className="text-[#E7E9EA] text-[13px] font-semibold">Ask Mshauri on WhatsApp</span>
       </div>
       <p className="text-[#71767B] text-[11px] leading-relaxed mb-3">
-        Explore markets, climate, policy, nutrition, trade, food security, investment and emerging trends.
+        Get instant farming advice on WhatsApp. Ask about crops, pests, prices and more — in English, Shona or Ndebele.
       </p>
-      <button
-        onClick={() => nav("/ask")}
-        className="w-full bg-[#22c55e] hover:bg-[#16a34a] text-white text-[12px] font-bold py-2.5 rounded-full transition-colors"
-      >
-        Ask Mshauri AI →
-      </button>
-    </div>
+      <div className="w-full bg-[#25d366] hover:bg-[#1fbd57] text-white text-[12px] font-bold py-2.5 rounded-full transition-colors flex items-center justify-center gap-2">
+        <svg viewBox="0 0 24 24" className="fill-white" xmlns="http://www.w3.org/2000/svg" style={{width:"13px",height:"13px"}}>
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+        </svg>
+        Chat on WhatsApp →
+      </div>
+    </a>
   );
 }
 
@@ -413,8 +351,6 @@ export default function Feed() {
   const [sort, setSort]                 = useState<SortMode>("helpful");
 
   /* awareness strip state */
-  const [weather, setWeather]           = useState<WeatherData | null>(null);
-  const [loadingWeather, setLoadingWeather] = useState(true);
   const [topMover, setTopMover]         = useState<{ item: string; priceUsd: number; pct: number } | null>(null);
   const [loadingMover, setLoadingMover] = useState(true);
   const [stats, setStats]               = useState<SiteStats | null>(null);
@@ -425,21 +361,6 @@ export default function Feed() {
       .then(r => r.json())
       .then(d => { if (Array.isArray(d)) setPosts(d); setLoading(false); })
       .catch(() => setLoading(false));
-  }, []);
-
-  /* fetch weather */
-  useEffect(() => {
-    fetch(
-      "https://api.open-meteo.com/v1/forecast?latitude=-17.83&longitude=31.05" +
-      "&current=temperature_2m,precipitation_probability,weather_code&timezone=Africa%2FHarare"
-    )
-      .then(r => r.json())
-      .then(json => {
-        const c = json?.current;
-        if (c) setWeather({ temp: c.temperature_2m, precip: c.precipitation_probability, code: c.weather_code });
-      })
-      .catch(() => {})
-      .finally(() => setLoadingWeather(false));
   }, []);
 
   /* fetch site stats */
@@ -494,10 +415,8 @@ export default function Feed() {
 
         {/* Situational Awareness Strip */}
         <AwarenessStrip
-          weather={weather}
           topMover={topMover}
           pulseCount={pulseCount}
-          loadingWeather={loadingWeather}
           loadingMover={loadingMover}
           stats={stats}
         />
@@ -531,16 +450,9 @@ export default function Feed() {
             <div className="sticky top-5">
               <AboutCard stats={stats} />
               <FarmersOnline stats={stats} />
-              <AskMshauriCTA />
+              <WhatsAppCard />
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* ── Sticky Ask Mshauri CTA (mobile) ── */}
-      <div className="lg:hidden fixed bottom-16 left-0 right-0 px-4 pb-2 pointer-events-none">
-        <div className="pointer-events-auto">
-          <AskMshauriCTA compact />
         </div>
       </div>
     </div>

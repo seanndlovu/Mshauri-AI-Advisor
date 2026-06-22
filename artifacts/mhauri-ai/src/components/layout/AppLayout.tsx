@@ -24,7 +24,6 @@ import { CreatePostModal } from "@/components/CreatePostModal";
 
 const MAIN_NAV = [
   { path: "/",       label: "Home",    icon: Home,        exact: true  },
-  { path: "/ask",    label: "Mshauri", icon: Bot                       },
   { path: "/prices", label: "Markets", icon: TrendingUp                },
   { path: "/me",     label: "Me",      icon: UserCircle                },
 ];
