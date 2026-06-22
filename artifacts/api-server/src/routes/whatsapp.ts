@@ -283,8 +283,8 @@ router.get("/whatsapp/webhook", (req, res): void => {
 // GET /api/whatsapp/status — diagnostic endpoint
 router.get("/whatsapp/status", async (req, res): Promise<void> => {
   const { accessToken, phoneNumberId, verifyToken } = getWhatsAppConfig();
-  const domains = process.env.REPLIT_DOMAINS ?? "unknown";
-  const webhookUrl = `https://${domains}/api/whatsapp/webhook`;
+  const primaryDomain = (process.env.REPLIT_DOMAINS ?? "unknown").split(",")[0].trim();
+  const webhookUrl = `https://${primaryDomain}/api/whatsapp/webhook`;
 
   const status: Record<string, unknown> = {
     webhookUrl,
