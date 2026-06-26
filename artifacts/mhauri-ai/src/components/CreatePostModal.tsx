@@ -62,6 +62,10 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
 
   const [communityError, setCommunityError] = useState(false);
   const [loadingMyComm, setLoadingMyComm] = useState(false);
+  const [joinedIds, setJoinedIds] = useState<number[]>(() => {
+    try { return JSON.parse(localStorage.getItem("mshauri_joined") || "[]"); }
+    catch { return []; }
+  });
 
   const [showPicker, setShowPicker] = useState(false);
   const [showCreateCommunity, setShowCreateCommunity] = useState(false);
@@ -69,6 +73,9 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
 
   useEffect(() => {
     if (open) {
+      // Refresh joined IDs from localStorage each time modal opens
+      try { setJoinedIds(JSON.parse(localStorage.getItem("mshauri_joined") || "[]")); }
+      catch { setJoinedIds([]); }
       setLoadingCommunities(true);
       fetch("/api/communities")
         .then(r => r.json())
@@ -84,11 +91,15 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
   }, [showPicker, open]);
 
   const selectedCommunity = communities.find(c => c.id === communityId);
+  // Only show communities the user has joined in the picker
+  const joinedCommunities = communities.filter(c => joinedIds.includes(c.id));
   const filtered = search.trim()
-    ? communities.filter(c =>
+    ? joinedCommunities.filter(c =>
         c.name.toLowerCase().includes(search.toLowerCase()) ||
         c.slug.toLowerCase().includes(search.toLowerCase()))
-    : communities;
+    : joinedCommunities;
+  // Gate: logged-in user has not joined any community yet
+  const showJoinGate = !!user && joinedIds.length === 0;
 
   function resetAndClose() {
     setTitle(""); setContent(""); setCommunityId(""); setType("question");
@@ -219,7 +230,28 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
         </div>
 
         <div className="overflow-y-auto flex-1">
-          <form onSubmit={handleSubmit}>
+          {/* Join gate — shown when user hasn't joined any community yet */}
+          {showJoinGate && (
+            <div className="flex flex-col items-center justify-center gap-4 px-6 py-10 text-center">
+              <div className="w-16 h-16 rounded-full bg-[#22c55e]/10 border border-[#22c55e]/30 flex items-center justify-center text-3xl">🌾</div>
+              <div>
+                <p className="text-[#E7E9EA] font-bold text-[15px] mb-1">Join a Community First</p>
+                <p className="text-[#71767B] text-[13px] leading-relaxed">
+                  You need to join at least one farming community before you can post.<br />
+                  Browse communities and hit <span className="text-[#22c55e] font-semibold">Join</span> to get started.
+                </p>
+              </div>
+              <a
+                href="/communities"
+                onClick={resetAndClose}
+                className="inline-flex items-center gap-2 bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold text-[13px] px-5 py-2.5 rounded-full transition-colors"
+              >
+                Browse Communities →
+              </a>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className={showJoinGate ? "hidden" : ""}>
 
             {/* Community selector */}
             <div className="px-4 pt-3 pb-3 border-b border-[#2F3336]">

@@ -1,7 +1,12 @@
 import { useState, useEffect, FormEvent } from "react";
 import { useRoute, Link } from "wouter";
-import { ArrowLeft, MessageCircle, MapPin, Clock, Send } from "lucide-react";
+import { ArrowLeft, MessageCircle, MapPin, Clock, Send, Check, UserPlus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+
+function getJoined(): number[] {
+  try { return JSON.parse(localStorage.getItem("mshauri_joined") || "[]"); }
+  catch { return []; }
+}
 
 interface Community {
   id: number; slug: string; name: string;
@@ -44,10 +49,25 @@ export default function CommunityFeed() {
   const [showCompose, setShowCompose] = useState(false);
   const [form, setForm] = useState({ type: "question", title: "", content: "", location: "" });
   const [posting, setPosting] = useState(false);
+  const [joined, setJoined] = useState(false);
 
   useEffect(() => {
     fetch(`/api/communities/${slug}`).then(r => r.json()).then(setCommunity).catch(() => {});
   }, [slug]);
+
+  useEffect(() => {
+    if (community) setJoined(getJoined().includes(community.id));
+  }, [community?.id]);
+
+  function toggleJoin() {
+    if (!community) return;
+    const ids = getJoined();
+    const nowJoined = !joined;
+    const next = nowJoined ? [...ids, community.id] : ids.filter(i => i !== community.id);
+    try { localStorage.setItem("mshauri_joined", JSON.stringify(next)); } catch {}
+    setJoined(nowJoined);
+    setCommunity(c => c ? { ...c, memberCount: c.memberCount + (nowJoined ? 1 : -1) } : c);
+  }
 
   useEffect(() => {
     setLoading(true);
@@ -94,7 +114,22 @@ export default function CommunityFeed() {
             {community && <p className="text-[#71767B] text-xs truncate">{community.description}</p>}
           </div>
           {community && (
-            <span className="text-[#71767B] text-[11px] shrink-0">{community.memberCount.toLocaleString()} members</span>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[#71767B] text-[11px]">{community.memberCount.toLocaleString()} members</span>
+              <button
+                onClick={toggleJoin}
+                className={`flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-bold transition-all border ${
+                  joined
+                    ? "bg-[#22c55e]/10 text-[#22c55e] border-[#22c55e]/40 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/40"
+                    : "bg-[#22c55e] text-white border-[#22c55e] hover:bg-[#16a34a]"
+                }`}
+              >
+                {joined
+                  ? <><Check className="w-3 h-3" /> Joined</>
+                  : <><UserPlus className="w-3 h-3" /> Join</>
+                }
+              </button>
+            </div>
           )}
         </div>
 

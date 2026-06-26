@@ -7,9 +7,9 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  Home, Bot, TrendingUp, UserCircle,
+  Bot, TrendingUp, UserCircle,
   Trash2, Menu, PenSquare, Sun, Moon,
-  ChevronUp, ChevronDown, Star, Settings, Clock,
+  ChevronUp, ChevronDown, Star, Settings, Clock, Users,
 } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import {
@@ -23,9 +23,10 @@ import { useAuth } from "@/hooks/use-auth";
 import { CreatePostModal } from "@/components/CreatePostModal";
 
 const MAIN_NAV = [
-  { path: "/",       label: "Home",    icon: Home,        exact: true  },
-  { path: "/prices", label: "Markets", icon: TrendingUp                },
-  { path: "/me",     label: "Me",      icon: UserCircle                },
+  { path: "/",       label: "Ask AI",    icon: Bot,         exact: true  },
+  { path: "/feed",   label: "Community", icon: Users                     },
+  { path: "/prices", label: "Markets",   icon: TrendingUp                },
+  { path: "/me",     label: "Me",        icon: UserCircle                },
 ];
 
 const WA_LINK = "https://wa.me/263714280244?text=Hi%2C%20I%20want%20to%20connect%20with%20Mshauri";

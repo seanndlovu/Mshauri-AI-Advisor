@@ -34,8 +34,9 @@ function Router() {
       <Route>
         <AppLayout>
           <Switch>
-            <Route path="/" component={Feed} />
+            <Route path="/" component={Home} />
             <Route path="/ask" component={Home} />
+            <Route path="/feed" component={Feed} />
             <Route path="/conversations/:id" component={Conversation} />
             <Route path="/communities" component={Communities} />
             <Route path="/communities/:slug" component={CommunityFeed} />
