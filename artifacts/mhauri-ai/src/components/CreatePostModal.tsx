@@ -91,15 +91,12 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
   }, [showPicker, open]);
 
   const selectedCommunity = communities.find(c => c.id === communityId);
-  // Only show communities the user has joined in the picker
-  const joinedCommunities = communities.filter(c => joinedIds.includes(c.id));
+  // Show ALL communities in picker — filter by search term only
   const filtered = search.trim()
-    ? joinedCommunities.filter(c =>
+    ? communities.filter(c =>
         c.name.toLowerCase().includes(search.toLowerCase()) ||
         c.slug.toLowerCase().includes(search.toLowerCase()))
-    : joinedCommunities;
-  // Gate: logged-in user has not joined any community yet
-  const showJoinGate = !!user && joinedIds.length === 0;
+    : communities;
 
   function resetAndClose() {
     setTitle(""); setContent(""); setCommunityId(""); setType("question");
@@ -110,6 +107,12 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
   }
 
   function pickCommunity(id: number) {
+    // Auto-join community in localStorage when selected
+    if (!joinedIds.includes(id)) {
+      const next = [...joinedIds, id];
+      try { localStorage.setItem("mshauri_joined", JSON.stringify(next)); } catch {}
+      setJoinedIds(next);
+    }
     setCommunityId(id);
     setCommunityError(false);
     setShowPicker(false);
@@ -230,28 +233,7 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
         </div>
 
         <div className="overflow-y-auto flex-1">
-          {/* Join gate — shown when user hasn't joined any community yet */}
-          {showJoinGate && (
-            <div className="flex flex-col items-center justify-center gap-4 px-6 py-10 text-center">
-              <div className="w-16 h-16 rounded-full bg-[#22c55e]/10 border border-[#22c55e]/30 flex items-center justify-center text-3xl">🌾</div>
-              <div>
-                <p className="text-[#E7E9EA] font-bold text-[15px] mb-1">Join a Community First</p>
-                <p className="text-[#71767B] text-[13px] leading-relaxed">
-                  You need to join at least one food systems community before you can post.<br />
-                  Browse communities and hit <span className="text-[#22c55e] font-semibold">Join</span> to get started.
-                </p>
-              </div>
-              <a
-                href="/communities"
-                onClick={resetAndClose}
-                className="inline-flex items-center gap-2 bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold text-[13px] px-5 py-2.5 rounded-full transition-colors"
-              >
-                Browse Communities →
-              </a>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className={showJoinGate ? "hidden" : ""}>
+          <form onSubmit={handleSubmit}>
 
             {/* Community selector */}
             <div className="px-4 pt-3 pb-3 border-b border-[#2F3336]">
@@ -546,6 +528,9 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
                       <div className="flex items-center gap-1.5">
                         <span className="text-[#E7E9EA] font-bold text-[13px]">r/{c.slug}</span>
                         {communityId === c.id && <span className="text-[10px] text-[#22c55e] font-bold">✓</span>}
+                        {joinedIds.includes(c.id) && communityId !== c.id && (
+                          <span className="text-[9px] bg-[#22c55e]/15 text-[#22c55e] font-bold px-1.5 py-0.5 rounded-full">Joined</span>
+                        )}
                       </div>
                       <div className="text-[#71767B] text-[11px] mt-0.5">
                         {c.memberCount.toLocaleString()} members
