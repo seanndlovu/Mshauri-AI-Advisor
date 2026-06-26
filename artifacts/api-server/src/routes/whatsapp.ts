@@ -9,6 +9,20 @@ import { getMarketPricesContext } from "../lib/market-prices-context";
 
 const router: IRouter = Router();
 
+// ── URL shortener (TinyURL — no API key required) ───────────────────────────
+async function shortenUrl(url: string): Promise<string> {
+  try {
+    const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`, {
+      signal: AbortSignal.timeout(4000),
+    });
+    if (res.ok) {
+      const short = (await res.text()).trim();
+      if (short.startsWith("http")) return short;
+    }
+  } catch { /* fall back to original */ }
+  return url;
+}
+
 // In-memory diagnostic state
 let lastWebhookReceivedAt: Date | null = null;
 let webhookHitCount = 0;
@@ -561,7 +575,8 @@ async function handleIncomingMessage(
       return;
     } else if (keyword === "weather") {
       const primaryDomain = (process.env.REPLIT_DOMAINS ?? "").split(",")[0].trim();
-      const weatherMsg = `Zimbabwe Farming Weather Tips:\n\n• June-August: dry season — ideal for land prep, irrigation crops, winter wheat\n• September-November: pre-season — prepare soil, order inputs early\n• November-April: rainy season — main crop planting, watch for pests\n\nFor your local 7-day forecast, check the Mshauri app:${primaryDomain ? `\nhttps://${primaryDomain}/weather` : ""}\n\nOr ask me: "When should I plant maize in [your area]?"`;
+      const weatherAppUrl = primaryDomain ? await shortenUrl(`https://${primaryDomain}/weather`) : "";
+      const weatherMsg = `Zimbabwe Farming Weather Tips:\n\n• June-August: dry season — ideal for land prep, irrigation crops, winter wheat\n• September-November: pre-season — prepare soil, order inputs early\n• November-April: rainy season — main crop planting, watch for pests\n\nFor your local 7-day forecast, check the Mshauri app:${weatherAppUrl ? `\n${weatherAppUrl}` : ""}\n\nOr ask me: "When should I plant maize in [your area]?"`;
       await sendWhatsAppMessage(phone, weatherMsg);
       void logAnalyticsEvent(eventType, phone, langPref, userText);
       return;
@@ -818,9 +833,10 @@ router.post("/whatsapp/webhook", async (req, res): Promise<void> => {
                     postingState.aiAnswer,
                   );
                   const primaryDomain = (process.env.REPLIT_DOMAINS ?? "").split(",")[0].trim();
-                  const postUrl = primaryDomain
+                  const rawPostUrl = primaryDomain
                     ? `https://${primaryDomain}/communities/${postingState.communitySlug}`
                     : "";
+                  const postUrl = rawPostUrl ? await shortenUrl(rawPostUrl) : "";
                   const confirmMsg = `Posted to ${postingState.communityName}!\n"${postingState.suggestedTitle}"\n\nOther farmers can now see it and share their experience.${postUrl ? `\n\nView: ${postUrl}` : ""}\n\nAny other questions?`;
                   req.log.info({ phone, postId, community: postingState.communitySlug }, "Community post created from WhatsApp");
                   await sendWhatsAppMessage(phone, confirmMsg);
