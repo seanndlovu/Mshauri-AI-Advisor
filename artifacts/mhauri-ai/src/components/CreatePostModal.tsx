@@ -270,8 +270,8 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
                   </>
                 )}
               </button>
-            {communityError && !selectedCommunity && (
-              <p className="flex items-center gap-1.5 mt-2 text-red-400 text-[12px]">
+            {!selectedCommunity && (
+              <p className={`flex items-center gap-1.5 mt-2 text-[12px] ${communityError ? "text-red-400" : "text-[#71767B]"}`}>
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                 Please select a community before posting.
               </p>
