@@ -207,7 +207,7 @@ export default function Weather() {
 
             {/* Agricultural indices */}
             <div className="bg-[#1e2025] border border-[#343536] rounded-xl p-4">
-              <h3 className="text-[#d7dadc] font-bold text-[12px] uppercase tracking-wider mb-3">Agricultural Indices</h3>
+              <h3 className="text-[#d7dadc] font-bold text-[12px] uppercase tracking-wider mb-3">Food Systems Indices</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="bg-[#272729] rounded-lg p-3">
                   <div className="text-[#818384] text-[10px] font-bold uppercase tracking-wider mb-1">Evapotranspiration (ET₀)</div>

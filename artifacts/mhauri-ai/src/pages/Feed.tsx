@@ -96,7 +96,7 @@ function AwarenessStrip({
         <img src="/mshauri-logo.png?v=2" alt="Mshauri" className="w-6 h-6 rounded-lg object-contain bg-black shrink-0" />
         <div className="text-[#E7E9EA] font-bold text-[13px] leading-tight">Ask Mshauri AI</div>
       </div>
-      <div className="text-[#71767B] text-[10px] leading-snug">Crops, pests, markets & farming advice</div>
+      <div className="text-[#71767B] text-[10px] leading-snug">Crops, markets, climate & food systems intelligence</div>
       <div className="text-[#22c55e] text-[10px] font-semibold">Ask now →</div>
     </button>,
 
@@ -351,7 +351,7 @@ function WhatsAppCard() {
         <span className="text-[#E7E9EA] text-[13px] font-semibold">Ask Mshauri on WhatsApp</span>
       </div>
       <p className="text-[#71767B] text-[11px] leading-relaxed mb-3">
-        Get instant farming advice on WhatsApp. Ask about crops, pests, prices and more — in English, Shona or Ndebele.
+        Get instant food systems intelligence on WhatsApp. Ask about crops, pests, prices and more — in English, Shona or Ndebele.
       </p>
       <div className="w-full bg-[#25d366] hover:bg-[#1fbd57] text-white text-[12px] font-bold py-2.5 rounded-full transition-colors flex items-center justify-center gap-2">
         <svg viewBox="0 0 24 24" className="fill-white" xmlns="http://www.w3.org/2000/svg" style={{width:"13px",height:"13px"}}>

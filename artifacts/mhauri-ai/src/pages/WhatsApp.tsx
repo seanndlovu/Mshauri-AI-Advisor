@@ -6,14 +6,14 @@ const FEATURES = [
   { icon: "🤖", title: "AI Farm Advisor",  desc: "Ask Mshauri anything in Shona, Ndebele or English — instant expert answers." },
   { icon: "🚨", title: "Disease Alerts",   desc: "Early warnings for pest outbreaks and plant diseases near your area." },
   { icon: "📈", title: "Market Prices",    desc: "Daily commodity prices — maize, tobacco, cotton and more — every morning." },
-  { icon: "🌧️", title: "Weather Updates",  desc: "Localised 7-day forecasts and rainfall warnings for your farming area." },
+  { icon: "🌧️", title: "Weather Updates",  desc: "Localised 7-day forecasts and rainfall warnings for your area." },
   { icon: "💡", title: "Opportunities",    desc: "Grants, input subsidies, and buyer opportunities sent direct to you." },
 ];
 
 const HOW_IT_WORKS = [
   { step: "1", text: 'Tap "Start chatting" — it opens WhatsApp automatically' },
   { step: "2", text: 'Send "Hi" to activate your Mshauri session' },
-  { step: "3", text: 'Ask any farming question or say "alerts" for daily updates' },
+  { step: "3", text: 'Ask any food systems question or say "alerts" for daily updates' },
   { step: "4", text: "Get instant answers in English, Shona or Ndebele" },
 ];
 
@@ -107,7 +107,7 @@ export default function WhatsApp() {
               </div>
             </div>
             <p className="text-white/80 text-[13px] leading-relaxed mb-4">
-              Get AI-powered farming advice, market prices, disease alerts and weather updates directly on WhatsApp — no app needed.
+              Get AI-powered food systems intelligence, market prices, disease alerts and weather updates directly on WhatsApp — no app needed.
             </p>
 
             {/* Primary CTA */}

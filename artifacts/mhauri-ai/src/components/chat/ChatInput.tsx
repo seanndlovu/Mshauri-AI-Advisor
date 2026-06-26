@@ -110,7 +110,7 @@ export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
         </div>
 
         <p className="text-[10px] text-center text-[#71767B]">
-          Mshauri AI can make mistakes. Always verify important farming advice.
+          Mshauri AI can make mistakes. Always verify important food systems advice.
         </p>
       </div>
     </div>

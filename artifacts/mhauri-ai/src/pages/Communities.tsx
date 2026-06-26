@@ -34,7 +34,7 @@ export default function Communities() {
       <div className="max-w-2xl mx-auto px-4 py-4">
         <div className="mb-6">
           <h1 className="text-[#E7E9EA] text-xl font-bold">Communities</h1>
-          <p className="text-[#71767B] text-sm mt-0.5">Join discussions with Zimbabwe's farming community</p>
+          <p className="text-[#71767B] text-sm mt-0.5">Join discussions with Zimbabwe's food systems community</p>
         </div>
 
         {loading ? (

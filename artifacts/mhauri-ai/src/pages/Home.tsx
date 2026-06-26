@@ -146,7 +146,7 @@ export default function Home() {
             value={askText}
             onChange={handleTextChange}
             onKeyDown={handleKeyDown}
-            placeholder="Describe your farming situation…"
+            placeholder="Describe your food systems question…"
             rows={3}
             className="w-full bg-transparent text-[#E7E9EA] placeholder:text-[#71767B] text-[16px] leading-relaxed resize-none focus:outline-none min-h-[80px]"
           />

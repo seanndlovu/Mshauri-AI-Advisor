@@ -237,7 +237,7 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
               <div>
                 <p className="text-[#E7E9EA] font-bold text-[15px] mb-1">Join a Community First</p>
                 <p className="text-[#71767B] text-[13px] leading-relaxed">
-                  You need to join at least one farming community before you can post.<br />
+                  You need to join at least one food systems community before you can post.<br />
                   Browse communities and hit <span className="text-[#22c55e] font-semibold">Join</span> to get started.
                 </p>
               </div>
@@ -566,7 +566,7 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
                   </div>
                   <div>
                     <div className="text-[#22c55e] font-bold text-[13px]">Start a community</div>
-                    <div className="text-[#71767B] text-[11px] mt-0.5">Create your own farming community</div>
+                    <div className="text-[#71767B] text-[11px] mt-0.5">Create your own food systems community</div>
                   </div>
                 </button>
               ) : (

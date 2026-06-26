@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 const SECTIONS = [
   {
     title: "What Mshauri AI Is",
-    body: `Mshauri AI is an artificial intelligence-powered information and advisory tool designed to support farmers, agribusinesses, and agricultural professionals across Zimbabwe and Africa. It provides informational assistance on crop production, livestock management, weather patterns, pest control, market prices, and general farming practices.`,
+    body: `Mshauri AI is an artificial intelligence-powered information and advisory tool designed to support food systems actors — farmers, agribusinesses, traders, policymakers, and professionals — across Zimbabwe and Africa. It provides informational assistance on crop production, livestock management, weather patterns, pest control, market prices, and food systems practices.`,
   },
   {
     title: "AI Does Not Replace Professional Advice",
@@ -15,8 +15,8 @@ const SECTIONS = [
     body: `Mshauri AI is powered by large language models that can produce incorrect, incomplete, or outdated information. The system may:\n• Provide advice unsuitable for your specific soil, climate, or crop variety\n• Generate recommendations based on general knowledge that may not apply locally\n• Occasionally "hallucinate" — produce plausible-sounding but factually incorrect information\n• Reflect outdated data on prices, regulations, or best practices\n\nAlways independently verify important information before acting upon it.`,
   },
   {
-    title: "Agricultural Risk Acknowledgement",
-    body: `Farming, livestock production, veterinary care, pest management, and agricultural decision-making involve inherent risks that cannot be fully predicted or controlled. Mshauri AI does not guarantee:\n• Crop yields or livestock performance\n• Disease prevention or pest control outcomes\n• Weather forecasts or climate predictions\n• Market prices or financial results\n• Business success or profitability\n\nYou remain solely responsible for all farming, livestock, veterinary, operational, financial, and business decisions made using information provided by Mshauri AI.`,
+    title: "Food Systems Risk Acknowledgement",
+    body: `Food production, livestock, veterinary care, pest management, and food systems decision-making involve inherent risks that cannot be fully predicted or controlled. Mshauri AI does not guarantee:\n• Crop yields or livestock performance\n• Disease prevention or pest control outcomes\n• Weather forecasts or climate predictions\n• Market prices or financial results\n• Business success or profitability\n\nYou remain solely responsible for all farming, livestock, veterinary, operational, financial, and business decisions made using information provided by Mshauri AI.`,
   },
   {
     title: "Your Data and AI Training",
@@ -57,7 +57,7 @@ export default function AiDisclaimer() {
           </div>
           <div className="mt-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-3">
             <p className="text-yellow-400 text-[13px] font-semibold">⚠️ Important</p>
-            <p className="text-[#71767B] text-[12px] mt-1">Mshauri AI provides informational assistance only. Always verify recommendations with qualified professionals before making important farming or business decisions.</p>
+            <p className="text-[#71767B] text-[12px] mt-1">Mshauri AI provides informational assistance only. Always verify recommendations with qualified professionals before making important food systems or business decisions.</p>
           </div>
         </div>
 
