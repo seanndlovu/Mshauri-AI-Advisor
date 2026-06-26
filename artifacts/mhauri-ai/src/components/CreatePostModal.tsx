@@ -271,7 +271,11 @@ export function CreatePostModal({ open, onClose, onCreated }: Props) {
                 )}
               </button>
             {!selectedCommunity && (
-              <p className={`flex items-center gap-1.5 mt-2 text-[12px] ${communityError ? "text-red-400" : "text-[#71767B]"}`}>
+              <p className={`flex items-center gap-1.5 mt-2 text-[12px] font-bold px-2 py-1 rounded-lg w-fit ${
+                communityError
+                  ? "text-red-400 drop-shadow-[0_0_6px_rgba(248,113,113,0.8)]"
+                  : "text-[#22c55e] drop-shadow-[0_0_8px_rgba(34,197,94,0.9)]"
+              }`}>
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                 Please select a community before posting.
               </p>
