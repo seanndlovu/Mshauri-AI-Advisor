@@ -9,7 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Bot, TrendingUp, UserCircle,
   Trash2, Menu, PenSquare, Sun, Moon,
-  ChevronUp, ChevronDown, Star, Settings, Clock, Users,
+  ChevronUp, ChevronDown, Star, Settings, Users,
 } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import {
@@ -223,50 +223,19 @@ function CommunitiesSidebar({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-interface RecentPost {
-  id: number; title: string; upvotes: number; commentCount: number; createdAt: string;
-}
-
-function RecentPostsSidebar({ onNavigate }: { onNavigate?: () => void }) {
-  const [posts, setPosts] = useState<RecentPost[]>([]);
-  const [dismissed, setDismissed] = useState(() => {
-    try { return sessionStorage.getItem("rp_dismissed") === "1"; } catch { return false; }
-  });
-
-  useEffect(() => {
-    fetch("/api/posts?sort=new&limit=5")
-      .then(r => r.json())
-      .then(d => Array.isArray(d) && setPosts(d))
-      .catch(() => {});
-  }, []);
-
-  if (dismissed || posts.length === 0) return null;
-
+function AdPlaceholder() {
   return (
     <>
       <div className="mx-3 border-t border-[#343536] my-2" />
-      <div className="flex items-center justify-between px-3 mb-1">
-        <span className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Recent Posts</span>
-        <button
-          onClick={() => { setDismissed(true); try { sessionStorage.setItem("rp_dismissed", "1"); } catch {} }}
-          className="text-[10px] text-blue-400 hover:text-blue-300 font-semibold transition-colors"
-        >
-          Clear
-        </button>
+      <div className="px-3 mb-1">
+        <span className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Sponsored</span>
       </div>
-      <div className="px-2 flex flex-col gap-0.5 overflow-y-auto max-h-44">
-        {posts.map(p => (
-          <Link key={p.id} href={`/posts/${p.id}`} onClick={onNavigate}>
-            <div className="px-3 py-2 rounded-lg hover:bg-[#272729] transition-colors cursor-pointer">
-              <div className="flex items-center gap-1 text-[#818384] text-[10px] mb-0.5">
-                <Clock className="w-2.5 h-2.5 shrink-0" />
-                {timeAgo(p.createdAt)}
-              </div>
-              <div className="text-[#d7dadc] text-[11px] font-semibold leading-snug line-clamp-2">{p.title}</div>
-              <div className="text-[#818384] text-[10px] mt-0.5">▲ {p.upvotes} · 💬 {p.commentCount}</div>
-            </div>
-          </Link>
-        ))}
+      <div className="mx-3 rounded-xl border border-dashed border-[#2F3336] bg-[#1a1c1f] flex flex-col items-center justify-center gap-1.5 py-5 px-3 text-center">
+        <div className="w-8 h-8 rounded-lg bg-[#22c55e]/10 flex items-center justify-center mb-0.5">
+          <Star className="w-4 h-4 text-[#22c55e]/60" />
+        </div>
+        <p className="text-[#818384] text-[11px] font-semibold leading-snug">Your ad here</p>
+        <p className="text-[#4a5260] text-[10px] leading-snug">Reach Zimbabwe's food systems community</p>
       </div>
     </>
   );
@@ -364,8 +333,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       {/* Communities list */}
       <CommunitiesSidebar onNavigate={onNavigate} />
 
-      {/* Recent Posts */}
-      <RecentPostsSidebar onNavigate={onNavigate} />
+      {/* Ad placeholder */}
+      <AdPlaceholder />
 
       <div className="flex-1" />
 
