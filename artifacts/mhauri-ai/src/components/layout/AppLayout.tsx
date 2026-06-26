@@ -21,6 +21,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { CreatePostModal } from "@/components/CreatePostModal";
+import { maskSensitive } from "@/lib/mask-sensitive";
 
 const MAIN_NAV = [
   { path: "/",       label: "Ask AI",    icon: Bot,         exact: true  },
@@ -331,7 +332,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                   <div className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors text-[12px] ${
                     active ? "bg-[#272729] text-[#d7dadc]" : "text-[#818384] hover:bg-[#272729] hover:text-[#d7dadc]"
                   }`}>
-                    <span className="truncate flex-1">🤖 {conv.title || "Chat"}</span>
+                    <span className="truncate flex-1">🤖 {maskSensitive(conv.title || "Chat")}</span>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="icon"
