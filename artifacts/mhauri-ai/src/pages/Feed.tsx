@@ -542,7 +542,6 @@ export default function Feed() {
           {/* ── Right panel (desktop) ── */}
           <div className="hidden lg:block w-[300px] shrink-0">
             <div className="sticky top-5 flex flex-col gap-4 max-h-[calc(100dvh-80px)] overflow-y-auto pr-0.5">
-              <AboutCard stats={stats} />
               <PopularPostsWidget posts={popularPosts} />
               {/* Ad */}
               <div className="bg-[#16181C] border border-[#2F3336] rounded-2xl overflow-hidden">
