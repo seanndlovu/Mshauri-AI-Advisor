@@ -25,7 +25,7 @@ export default function Conversation() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#0f1011] relative">
+    <div className="flex flex-col h-full bg-background relative ms-theme-transition">
       <ChatArea
         messages={messages}
         localMessages={localMessages}

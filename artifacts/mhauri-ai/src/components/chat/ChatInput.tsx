@@ -44,11 +44,11 @@ export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
   };
 
   return (
-    <div className="bg-[#0f1011]/95 backdrop-blur-sm border-t border-[#2F3336] p-4 flex-shrink-0">
+    <div className="bg-background/95 backdrop-blur-sm border-t border-border p-4 flex-shrink-0 ms-theme-transition">
       <div className="max-w-3xl mx-auto flex flex-col gap-2">
         {/* Image preview */}
         {imageBase64 && (
-          <div className="relative inline-block w-20 h-20 rounded-xl overflow-hidden border border-[#2F3336] group">
+          <div className="relative inline-block w-20 h-20 rounded-xl overflow-hidden border border-border group">
             <img src={imageBase64} alt="Upload preview" className="w-full h-full object-cover" />
             <button
               onClick={() => setImageBase64(null)}
@@ -61,11 +61,11 @@ export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
         )}
 
         {/* Input row */}
-        <div className="relative flex items-end gap-2 bg-[#16181C] border border-[#2F3336] rounded-2xl pr-2 focus-within:border-[#22c55e]/40 transition-colors">
+        <div className="relative flex items-end gap-2 bg-card border border-border rounded-2xl pr-2 focus-within:border-[#22c55e]/50 transition-colors shadow-sm">
           {/* Camera */}
           <button
             type="button"
-            className="mb-1.5 ml-2 p-1.5 text-[#71767B] hover:text-[#22c55e] hover:bg-[#22c55e]/10 rounded-full transition-colors flex-shrink-0"
+            className="mb-1.5 ml-2 p-1.5 text-muted-foreground hover:text-[#22c55e] hover:bg-[#22c55e]/10 rounded-full transition-colors flex-shrink-0"
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled}
             title="Upload photo of crop or pest"
@@ -88,7 +88,7 @@ export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask about your crops, livestock, or soil…"
-            className="flex-1 min-h-[44px] max-h-[150px] resize-none bg-transparent text-[#E7E9EA] placeholder:text-[#71767B] text-[14px] py-3 px-1 focus:outline-none leading-relaxed"
+            className="flex-1 min-h-[44px] max-h-[150px] resize-none bg-transparent text-foreground placeholder:text-muted-foreground text-[14px] py-3 px-1 focus:outline-none leading-relaxed"
             disabled={disabled}
             data-testid="input-chat"
           />
@@ -99,7 +99,7 @@ export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
             className={`mb-1.5 p-2 rounded-xl flex-shrink-0 transition-colors ${
               (message.trim() || imageBase64) && !disabled
                 ? "bg-[#22c55e] text-white hover:bg-[#16a34a]"
-                : "bg-[#2F3336] text-[#71767B]"
+                : "bg-muted text-muted-foreground"
             }`}
             onClick={handleSubmit}
             disabled={(!message.trim() && !imageBase64) || disabled}
@@ -109,7 +109,7 @@ export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
           </button>
         </div>
 
-        <p className="text-[10px] text-center text-[#71767B]">
+        <p className="text-[10px] text-center text-muted-foreground">
           Mshauri AI can make mistakes. Always verify important food systems advice.
         </p>
       </div>

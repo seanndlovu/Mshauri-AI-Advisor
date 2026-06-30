@@ -13,11 +13,11 @@ export function MessageBubble({ message }: { message: CombinedMessage }) {
     const paragraphs = content.split('\n');
     return paragraphs.map((p, pIdx) => {
       let formatted = p;
-      formatted = formatted.replace(/^\*\*(.*?)\*\*:/g, '<strong class="font-semibold text-[#E7E9EA]">$1:</strong>');
+      formatted = formatted.replace(/^\*\*(.*?)\*\*:/g, '<strong class="font-semibold">$1:</strong>');
       if (!formatted.includes('<strong')) {
-        formatted = formatted.replace(/^([^:]+):/g, '<strong class="font-semibold text-[#E7E9EA]">$1:</strong>');
+        formatted = formatted.replace(/^([^:]+):/g, '<strong class="font-semibold">$1:</strong>');
       }
-      formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-[#E7E9EA]">$1</strong>');
+      formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>');
       if (p.trim() === '') return <div key={pIdx} className="h-2" />;
       return (
         <p key={pIdx} className="mb-2 last:mb-0 leading-relaxed text-sm md:text-[15px]"
@@ -39,10 +39,10 @@ export function MessageBubble({ message }: { message: CombinedMessage }) {
 
         {/* Bubble */}
         <div className={`flex flex-col gap-1.5 ${isUser ? 'items-end' : 'items-start'}`}>
-          <div className={`px-4 py-3 rounded-2xl ${
+          <div className={`px-4 py-3 rounded-2xl ms-theme-transition ${
             isUser
               ? 'bg-[#22c55e] text-white rounded-tr-sm'
-              : 'bg-[#16181C] border border-[#2F3336] text-[#E7E9EA] rounded-tl-sm'
+              : 'bg-card border border-border text-card-foreground rounded-tl-sm shadow-sm'
           }`}>
             {message.imageUrl && (
               <img
@@ -62,7 +62,7 @@ export function MessageBubble({ message }: { message: CombinedMessage }) {
               )}
             </div>
           </div>
-          <div className="text-[10px] text-[#71767B] px-1">
+          <div className="text-[10px] text-muted-foreground px-1">
             {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </div>
         </div>
