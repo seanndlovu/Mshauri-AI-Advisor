@@ -183,6 +183,16 @@ export default function CommunityFeed() {
           </form>
         )}
 
+        {/* Ad */}
+        {!showCompose && (
+          <div className="mb-4 rounded-2xl overflow-hidden border border-[#2F3336] bg-[#16181C]">
+            <img src="/ad-1money.png" alt="1Money — A NetOne Product" className="w-full object-contain" />
+            <div className="px-3 py-1.5 text-center border-t border-[#2F3336]">
+              <p className="text-[#4a5260] text-[9px]">Sponsored · <a href="mailto:ads@maricho.media" className="text-[#22c55e]/70 hover:text-[#22c55e]">Advertise with us</a></p>
+            </div>
+          </div>
+        )}
+
         {/* Posts */}
         {loading ? (
           <div className="flex flex-col gap-3">

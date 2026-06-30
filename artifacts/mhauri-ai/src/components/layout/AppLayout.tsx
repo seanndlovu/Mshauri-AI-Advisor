@@ -230,12 +230,11 @@ function AdPlaceholder() {
       <div className="px-3 mb-1">
         <span className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Sponsored</span>
       </div>
-      <div className="mx-3 rounded-xl border border-dashed border-[#2F3336] bg-[#1a1c1f] flex flex-col items-center justify-center gap-1.5 py-5 px-3 text-center">
-        <div className="w-8 h-8 rounded-lg bg-[#22c55e]/10 flex items-center justify-center mb-0.5">
-          <Star className="w-4 h-4 text-[#22c55e]/60" />
+      <div className="mx-3 rounded-xl overflow-hidden border border-[#2F3336] bg-[#1a1c1f]">
+        <img src="/ad-1money.png" alt="1Money — A NetOne Product" className="w-full object-contain" />
+        <div className="px-3 py-2 text-center">
+          <p className="text-[#4a5260] text-[9px]">Sponsored · <a href="mailto:ads@maricho.media" className="text-[#22c55e]/70 hover:text-[#22c55e]">Advertise</a></p>
         </div>
-        <p className="text-[#818384] text-[11px] font-semibold leading-snug">Your ad here</p>
-        <p className="text-[#4a5260] text-[10px] leading-snug">Reach Zimbabwe's food systems community</p>
       </div>
     </>
   );

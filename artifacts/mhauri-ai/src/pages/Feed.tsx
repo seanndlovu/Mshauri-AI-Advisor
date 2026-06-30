@@ -544,23 +544,15 @@ export default function Feed() {
             <div className="sticky top-5 flex flex-col gap-4 max-h-[calc(100dvh-80px)] overflow-y-auto pr-0.5">
               <AboutCard stats={stats} />
               <PopularPostsWidget posts={popularPosts} />
-              {/* Ad placeholder */}
-              <div className="bg-[#16181C] border border-dashed border-[#2F3336] rounded-2xl p-4 flex flex-col items-center text-center gap-2">
-                <div className="text-[9px] font-bold text-[#4a5260] uppercase tracking-widest w-full text-left mb-1">Sponsored</div>
-                <div className="w-12 h-12 rounded-xl bg-[#22c55e]/10 border border-[#22c55e]/20 flex items-center justify-center">
-                  <svg viewBox="0 0 24 24" className="w-6 h-6 text-[#22c55e]/50" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <rect x="3" y="3" width="18" height="18" rx="3" />
-                    <path d="M3 9h18M9 21V9" />
-                  </svg>
+              {/* Ad */}
+              <div className="bg-[#16181C] border border-[#2F3336] rounded-2xl overflow-hidden">
+                <div className="px-3 pt-2 pb-1">
+                  <span className="text-[9px] font-bold text-[#4a5260] uppercase tracking-widest">Sponsored</span>
                 </div>
-                <p className="text-[#818384] text-[12px] font-semibold">Your ad here</p>
-                <p className="text-[#4a5260] text-[10px] leading-snug">Reach Zimbabwe's food systems community — farmers, traders & extension officers.</p>
-                <a
-                  href="mailto:ads@maricho.media"
-                  className="mt-1 w-full text-[11px] font-bold text-[#22c55e] border border-[#22c55e]/30 hover:border-[#22c55e]/60 hover:bg-[#22c55e]/5 rounded-full py-1.5 transition-colors"
-                >
-                  Advertise with us →
-                </a>
+                <img src="/ad-1money.png" alt="1Money — A NetOne Product" className="w-full object-contain" />
+                <div className="px-3 py-2 text-center border-t border-[#2F3336]">
+                  <a href="mailto:ads@maricho.media" className="text-[9px] text-[#22c55e]/70 hover:text-[#22c55e]">Advertise with us →</a>
+                </div>
               </div>
               {news.length > 0 && <NewsWidget items={news} />}
             </div>
