@@ -1,27 +1,14 @@
 import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import {
-  useListConversations,
-  useDeleteConversation,
-  getListConversationsQueryKey,
-} from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
-import {
   Bot, TrendingUp, UserCircle,
-  Trash2, Menu, PenSquare, Sun, Moon,
+  Menu, PenSquare, Sun, Moon,
   ChevronUp, ChevronDown, Star, Settings, Users,
 } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
-  AlertDialogTitle, AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { CreatePostModal } from "@/components/CreatePostModal";
-import { maskSensitive } from "@/lib/mask-sensitive";
 
 const MAIN_NAV = [
   { path: "/",       label: "Ask AI",    icon: Bot,         exact: true  },
@@ -241,19 +228,8 @@ function AdPlaceholder() {
 }
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
-  const [location, setLocation] = useLocation();
   const { user } = useAuth();
   const [createOpen, setCreateOpen] = useState(false);
-  const { data: conversations } = useListConversations();
-  const deleteConversation = useDeleteConversation();
-  const queryClient = useQueryClient();
-
-  const handleDelete = async (id: number, e: React.MouseEvent) => {
-    e.preventDefault(); e.stopPropagation();
-    await deleteConversation.mutateAsync({ id });
-    queryClient.invalidateQueries({ queryKey: getListConversationsQueryKey() });
-    if (location === `/conversations/${id}`) setLocation("/");
-  };
 
   return (
     <div className="flex flex-col h-full py-3">
@@ -284,50 +260,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <NavLink key={path} path={path} label={label} icon={icon} exact={exact} onClick={onNavigate} />
         ))}
       </nav>
-
-      {/* Recent AI chats */}
-      {conversations && conversations.length > 0 && (
-        <>
-          <div className="mx-3 border-t border-[#343536] my-2" />
-          <div className="px-3 mb-1.5">
-            <span className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Recent Chats</span>
-          </div>
-          <div className="px-2 flex flex-col gap-0.5 overflow-y-auto max-h-28">
-            {conversations.slice(0, 4).map(conv => {
-              const active = location === `/conversations/${conv.id}`;
-              return (
-                <Link key={conv.id} href={`/conversations/${conv.id}`} onClick={onNavigate}>
-                  <div className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors text-[12px] ${
-                    active ? "bg-[#272729] text-[#d7dadc]" : "text-[#818384] hover:bg-[#272729] hover:text-[#d7dadc]"
-                  }`}>
-                    <span className="truncate flex-1">🤖 {maskSensitive(conv.title || "Chat")}</span>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon"
-                          className="w-5 h-5 opacity-0 group-hover:opacity-100 hover:bg-red-900/30 hover:text-red-400 shrink-0"
-                          onClick={e => e.stopPropagation()}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent className="bg-[#272729] border border-[#343536] text-[#d7dadc]">
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
-                          <AlertDialogDescription className="text-[#818384]">This will permanently remove this conversation.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel className="bg-transparent border border-[#343536] text-[#d7dadc]" onClick={e => e.stopPropagation()}>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={e => handleDelete(conv.id, e as React.MouseEvent)} className="bg-red-500 hover:bg-red-600 text-white border-0">Delete</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </>
-      )}
 
       {/* Communities list */}
       <CommunitiesSidebar onNavigate={onNavigate} />
