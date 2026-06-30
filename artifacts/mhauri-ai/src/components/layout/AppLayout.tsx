@@ -111,11 +111,42 @@ function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-[#818384] hover:bg-[#272729] hover:text-[#d7dadc] transition-colors text-left"
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      className="relative flex items-center shrink-0 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22c55e]"
+      style={{
+        width: 52,
+        height: 28,
+        transition: "background 0.3s ease, border-color 0.3s ease",
+        background: isDark
+          ? "linear-gradient(135deg,#0f1e12,#1a2e1c)"
+          : "linear-gradient(135deg,#dcfce7,#bbf7d0)",
+        border: isDark ? "1.5px solid #2a4030" : "1.5px solid #86efac",
+        boxShadow: isDark
+          ? "0 0 0 0px rgba(34,197,94,0)"
+          : "0 0 10px rgba(34,197,94,0.18)",
+      }}
     >
-      {isDark
-        ? <><Sun className="w-[18px] h-[18px] shrink-0" /><span className="text-[13px]">Light Mode</span></>
-        : <><Moon className="w-[18px] h-[18px] shrink-0" /><span className="text-[13px]">Dark Mode</span></>}
+      {/* Sliding thumb */}
+      <span
+        className="absolute flex items-center justify-center rounded-full shadow-md"
+        style={{
+          width: 22,
+          height: 22,
+          top: 2,
+          left: 2,
+          transition: "transform 0.3s cubic-bezier(0.34,1.56,0.64,1), background 0.3s ease",
+          transform: isDark ? "translateX(24px)" : "translateX(0px)",
+          background: isDark
+            ? "linear-gradient(135deg,#22c55e,#16a34a)"
+            : "linear-gradient(135deg,#16a34a,#22c55e)",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
+        }}
+      >
+        {isDark
+          ? <Moon  className="w-[11px] h-[11px] text-white" />
+          : <Sun   className="w-[11px] h-[11px] text-white" />}
+      </span>
     </button>
   );
 }
@@ -233,16 +264,19 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="flex flex-col h-full py-3">
-      {/* Logo */}
-      <Link href="/">
-        <div onClick={onNavigate} className="flex items-center gap-2.5 px-4 py-2.5 mb-2 cursor-pointer hover:bg-[#272729] rounded-lg mx-2 transition-colors">
-          <img src="/mshauri-logo.png?v=2" alt="Mshauri" className="w-10 h-10 object-contain shrink-0" />
-          <div>
-            <div className="font-black text-[#c8a84b] text-[15px] tracking-tight leading-none">mshauri</div>
-            <div className="text-[#5a4020] text-[9px] font-semibold uppercase tracking-wide mt-0.5">The Global Food Systems Intelligence OS</div>
+      {/* Logo + theme toggle row */}
+      <div className="flex items-center justify-between gap-2 px-4 py-2.5 mb-2 mx-2">
+        <Link href="/" className="flex-1 min-w-0">
+          <div onClick={onNavigate} className="flex items-center gap-2.5 cursor-pointer hover:bg-[#272729] rounded-lg transition-colors">
+            <img src="/mshauri-logo.png?v=2" alt="Mshauri" className="w-10 h-10 object-contain shrink-0" />
+            <div className="min-w-0">
+              <div className="font-black text-[#c8a84b] text-[15px] tracking-tight leading-none">mshauri</div>
+              <div className="text-[#5a4020] text-[9px] font-semibold uppercase tracking-wide mt-0.5 leading-tight">The Global Food Systems<br/>Intelligence OS</div>
+            </div>
           </div>
-        </div>
-      </Link>
+        </Link>
+        <ThemeToggle />
+      </div>
 
       {/* Create Post CTA */}
       <div className="px-3 mb-3">
@@ -279,11 +313,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           ))}
           <span className="text-[10px] text-[#818384] w-full mt-0.5">© 2026 Maricho Media</span>
         </div>
-      </div>
-
-      {/* Theme + user card */}
-      <div className="mx-3 border-t border-[#343536] pt-2 mt-1">
-        <ThemeToggle />
       </div>
 
       <div className="mx-3 mt-2">
