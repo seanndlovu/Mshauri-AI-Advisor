@@ -4,7 +4,6 @@ import { useListConversations } from "@workspace/api-client-react";
 import { useChatStream } from "@/hooks/use-chat-stream";
 import { formatDistanceToNow } from "date-fns";
 import { Mic, MicOff, Camera, Send, X, MessageSquare } from "lucide-react";
-import { maskSensitive } from "@/lib/mask-sensitive";
 
 /* ─── example prompts ─────────────────────────────────── */
 const EXAMPLES = [
@@ -257,7 +256,7 @@ export default function Home() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[#E7E9EA] text-[13px] font-medium truncate group-hover:text-white transition-colors">
-                        {maskSensitive(conv.title || "New conversation")}
+                        {conv.title || "New conversation"}
                       </p>
                       <p className="text-[#71767B] text-[11px]">
                         {formatDistanceToNow(new Date(conv.updatedAt), { addSuffix: true })}
