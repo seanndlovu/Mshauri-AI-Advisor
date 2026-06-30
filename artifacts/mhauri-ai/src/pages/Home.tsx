@@ -112,12 +112,19 @@ export default function Home() {
     .slice(0, 8);
 
   return (
-    <div className="h-full overflow-y-auto bg-[#0f1011]">
-      <div className="max-w-[680px] mx-auto px-4 pt-12 pb-10">
+    <div className="h-full overflow-y-auto bg-[#0f1011] ms-theme-transition">
+      {/* Animated gradient blobs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="ms-blob ms-blob-1" style={{ top: "-80px", left: "30%" }} />
+        <div className="ms-blob ms-blob-2" style={{ top: "120px", right: "-60px" }} />
+        <div className="ms-blob ms-blob-3" style={{ bottom: "80px", left: "-40px" }} />
+      </div>
+
+      <div className="relative z-10 max-w-[680px] mx-auto px-4 pt-12 pb-10">
 
         {/* Hero */}
         <div className="text-center mb-8">
-          <img src="/mshauri-logo.png?v=2" alt="Mshauri" className="w-20 h-20 object-contain mx-auto mb-5" />
+          <img src="/mshauri-logo.png?v=2" alt="Mshauri" className="w-20 h-20 object-contain mx-auto mb-5 drop-shadow-lg" />
           <h1 className="text-[#E7E9EA] font-black text-[28px] leading-tight mb-3">
             What can Mshauri help<br className="hidden sm:block" /> you with today?
           </h1>

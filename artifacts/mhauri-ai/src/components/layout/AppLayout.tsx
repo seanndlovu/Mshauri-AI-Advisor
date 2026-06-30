@@ -39,26 +39,26 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex h-[100dvh] w-full bg-[#1a1a1b] text-[#d7dadc] overflow-hidden">
+    <div className="flex h-[100dvh] w-full bg-[#1a1a1b] text-[#d7dadc] overflow-hidden ms-theme-transition">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex flex-col w-[240px] bg-[#1a1a1b] border-r border-[#343536] shrink-0 h-full overflow-y-auto">
+      <aside className="hidden md:flex flex-col w-[240px] bg-[#1a1a1b] border-r border-[#343536] shrink-0 h-full overflow-y-auto ms-theme-transition">
         <SidebarContent />
       </aside>
 
       {/* Mobile hamburger */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetTrigger asChild>
-          <button className="md:hidden fixed top-3 left-3 z-50 w-9 h-9 bg-[#272729] rounded-full flex items-center justify-center border border-[#343536]">
+          <button className="md:hidden fixed top-3 left-3 z-50 w-9 h-9 bg-[#272729] rounded-full flex items-center justify-center border border-[#343536] ms-theme-transition">
             <Menu className="w-5 h-5 text-[#d7dadc]" />
           </button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-[240px] p-0 bg-[#1a1a1b] border-r border-[#343536]">
+        <SheetContent side="left" className="w-[240px] p-0 bg-[#1a1a1b] border-r border-[#343536] ms-theme-transition">
           <SidebarContent onNavigate={() => setMobileOpen(false)} />
         </SheetContent>
       </Sheet>
 
       {/* Mobile bottom nav — 4 tabs */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#1a1a1b] border-t border-[#343536] flex">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#1a1a1b] border-t border-[#343536] flex ms-theme-transition">
         {MAIN_NAV.map(({ path, label, icon: Icon, exact }) => (
           <MobileTab key={path} path={path} label={label} Icon={Icon} exact={exact} />
         ))}

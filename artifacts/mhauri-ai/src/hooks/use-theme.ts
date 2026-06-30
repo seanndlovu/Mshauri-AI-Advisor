@@ -4,15 +4,18 @@ type Theme = "dark" | "light";
 
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === "undefined") return "dark";
-    return (localStorage.getItem("mshauri-theme") as Theme) ?? "dark";
+    if (typeof window === "undefined") return "light";
+    return (localStorage.getItem("mshauri-theme") as Theme) ?? "light";
   });
 
   useEffect(() => {
-    if (theme === "light") {
-      document.documentElement.classList.add("light");
+    const root = document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark");
+      root.classList.remove("light");
     } else {
-      document.documentElement.classList.remove("light");
+      root.classList.remove("dark");
+      root.classList.add("light");
     }
     localStorage.setItem("mshauri-theme", theme);
   }, [theme]);
