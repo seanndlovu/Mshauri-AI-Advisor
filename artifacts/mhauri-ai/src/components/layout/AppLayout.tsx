@@ -5,6 +5,7 @@ import {
   Menu, Sun, Moon,
   ChevronUp, ChevronDown, Settings,
   Users, BookOpen, LayoutDashboard, Zap, Sparkles,
+  Bell, ChevronDown as ChevronDownIcon,
 } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -26,6 +27,105 @@ const MOBILE_NAV = [
 ];
 
 const WA_LINK = "https://wa.me/263714280244?text=Hi%2C%20I%20want%20to%20connect%20with%20Mshauri";
+
+function TopHeader({ onPlayQuiz }: { onPlayQuiz: () => void }) {
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
+
+  const initials = user?.name
+    ? user.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
+    : "";
+
+  return (
+    <div
+      style={{
+        display: "flex", alignItems: "center", justifyContent: "flex-end",
+        gap: 10, padding: "8px 16px",
+        borderBottom: "1px solid rgba(34,197,94,0.1)",
+        background: "transparent",
+        flexShrink: 0,
+      }}
+    >
+      {user ? (
+        <>
+          {/* Notification bell */}
+          <button
+            style={{
+              position: "relative", width: 36, height: 36, borderRadius: "50%",
+              background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.15)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", color: "#7aad80", transition: "all 0.2s",
+            }}
+            title="Notifications"
+            onMouseOver={e => (e.currentTarget.style.background = "rgba(34,197,94,0.14)")}
+            onMouseOut={e => (e.currentTarget.style.background = "rgba(34,197,94,0.07)")}
+          >
+            <Bell style={{ width: 16, height: 16 }} />
+          </button>
+
+          {/* Avatar + name */}
+          <button
+            onClick={() => setLocation("/me")}
+            style={{
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "5px 10px 5px 5px", borderRadius: 999,
+              background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.15)",
+              cursor: "pointer", transition: "all 0.2s", fontFamily: "inherit",
+            }}
+            onMouseOver={e => (e.currentTarget.style.background = "rgba(34,197,94,0.14)")}
+            onMouseOut={e => (e.currentTarget.style.background = "rgba(34,197,94,0.07)")}
+          >
+            {/* Avatar circle */}
+            <div style={{
+              width: 28, height: 28, borderRadius: "50%",
+              background: "linear-gradient(135deg, #16a34a, #22c55e)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#fff", fontWeight: 800, fontSize: 11, flexShrink: 0,
+              boxShadow: "0 0 0 2px rgba(34,197,94,0.3)",
+            }}>
+              {initials}
+            </div>
+            <span style={{ color: "#e8f5e9", fontSize: 13, fontWeight: 600, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {user.name}
+            </span>
+            <ChevronDownIcon style={{ width: 13, height: 13, color: "#7aad80", flexShrink: 0 }} />
+          </button>
+        </>
+      ) : (
+        /* Not logged in — show Log In + Sign Up */
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button
+            onClick={() => setLocation("/login")}
+            style={{
+              padding: "6px 14px", borderRadius: 999, border: "1px solid rgba(34,197,94,0.3)",
+              background: "transparent", color: "#7aad80", fontSize: 12, fontWeight: 600,
+              cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s",
+            }}
+            onMouseOver={e => (e.currentTarget.style.background = "rgba(34,197,94,0.08)")}
+            onMouseOut={e => (e.currentTarget.style.background = "transparent")}
+          >
+            Log In
+          </button>
+          <button
+            onClick={() => setLocation("/register")}
+            style={{
+              padding: "6px 14px", borderRadius: 999, border: "none",
+              background: "linear-gradient(135deg, #16a34a, #22c55e)",
+              color: "#fff", fontSize: 12, fontWeight: 700,
+              cursor: "pointer", fontFamily: "inherit",
+              boxShadow: "0 2px 8px rgba(34,197,94,0.3)",
+              transition: "all 0.2s",
+            }}
+            onMouseOver={e => (e.currentTarget.style.transform = "scale(1.03)")}
+            onMouseOut={e => (e.currentTarget.style.transform = "scale(1)")}
+          >
+            Sign Up
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function WhatsAppFAB() {
   return (
@@ -72,8 +172,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       <WhatsAppFAB />
 
-      <main className="flex-1 overflow-hidden min-w-0 pb-16 md:pb-0">
-        {children}
+      <main className="flex-1 overflow-hidden min-w-0 pb-16 md:pb-0 flex flex-col">
+        <TopHeader onPlayQuiz={() => setQuizOpen(true)} />
+        <div className="flex-1 overflow-hidden">
+          {children}
+        </div>
       </main>
 
       <DailyQuiz open={quizOpen} onClose={() => setQuizOpen(false)} />
