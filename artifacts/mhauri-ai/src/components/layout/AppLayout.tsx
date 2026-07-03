@@ -529,30 +529,6 @@ function SidebarContent({ onNavigate, onPlayQuiz }: { onNavigate?: () => void; o
         </div>
       </div>
 
-      <div className="mx-3 mt-2">
-        {user ? (
-          <Link href="/me" onClick={onNavigate}>
-            <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-[#272729] hover:bg-[#2d2e30] cursor-pointer transition-colors border border-[#343536]">
-              <div className="w-8 h-8 shrink-0 rounded-full bg-[#22c55e]/20 border border-[#22c55e]/30 flex items-center justify-center text-[#22c55e] font-black text-[11px]">
-                {user.name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[#d7dadc] text-[12px] font-semibold truncate">{user.name}</div>
-                <div className="text-[#818384] text-[10px]">Reputation: {user.reputationScore}</div>
-              </div>
-            </div>
-          </Link>
-        ) : (
-          <div className="flex flex-col gap-1.5">
-            <Link href="/register" onClick={onNavigate}>
-              <button className="w-full py-2 bg-[#22c55e] hover:bg-[#16a34a] rounded-full text-white text-[12px] font-bold transition-colors">Sign Up</button>
-            </Link>
-            <Link href="/login" onClick={onNavigate}>
-              <button className="w-full py-2 border border-[#343536] hover:bg-[#272729] rounded-full text-[#818384] text-[12px] transition-colors">Log In</button>
-            </Link>
-          </div>
-        )}
-      </div>
       <div className="h-3" />
     </div>
   );
