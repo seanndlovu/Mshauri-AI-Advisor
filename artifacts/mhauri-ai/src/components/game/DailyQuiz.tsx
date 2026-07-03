@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { X, Trophy, Zap, CheckCircle, XCircle, Flame } from "lucide-react";
+import { X, Trophy, Zap, Flame } from "lucide-react";
 
 interface Question {
   q: string;
@@ -12,131 +12,129 @@ const QUIZ_BANK: Question[] = [
   {
     q: "What is Zimbabwe's most important staple food crop?",
     options: ["Wheat", "Maize", "Rice", "Sorghum"], a: 1,
-    explanation: "Maize is the staple food for over 90% of Zimbabweans and is the base of sadza, the national dish. Zimbabwe targets production of 1.8–2.2 million tonnes annually to achieve food security.",
+    explanation: "🌽 Maize is the staple food for over 90% of Zimbabweans and is the base of sadza, the national dish. Zimbabwe targets 1.8–2.2 million tonnes annually for food security.",
   },
   {
     q: "Which pest causes the most widespread damage to maize in Zimbabwe?",
     options: ["Aphids", "Bollworm", "Fall Armyworm", "Stalk Borer"], a: 2,
-    explanation: "Fall Armyworm (Spodoptera frugiperda) was first detected in Zimbabwe in 2016 and rapidly became the number-one pest threat, capable of destroying entire maize fields if not controlled early with scouting and targeted insecticides.",
+    explanation: "🐛 Fall Armyworm (Spodoptera frugiperda) arrived in Zimbabwe in 2016 and became the #1 pest threat — capable of destroying entire maize fields if not controlled early.",
   },
   {
     q: "Which cash crop is Zimbabwe globally famous for?",
     options: ["Coffee", "Tobacco", "Cotton", "Tea"], a: 1,
-    explanation: "Zimbabwe is among the world's top producers of flue-cured tobacco, which has historically been the country's largest export earner. The Tobacco Industry Marketing Board (TIMB) regulates all tobacco sales.",
+    explanation: "🍃 Zimbabwe is among the world's top producers of flue-cured tobacco, historically the country's largest export earner. The TIMB regulates all tobacco sales.",
   },
   {
     q: "What does NPK stand for in fertilizer?",
     options: ["Natural Plant Kingdom", "Nitrogen-Phosphorus-Potassium", "Nitrogen-Protein-Kelp", "Net Plant Kilogram"], a: 1,
-    explanation: "NPK stands for Nitrogen (N), Phosphorus (P), and Potassium (K) — the three primary macronutrients plants need. Compound D (7:14:7 NPK) is widely used for basal dressing in Zimbabwe's maize farming.",
+    explanation: "🧪 NPK = Nitrogen (N), Phosphorus (P), Potassium (K) — the three primary macronutrients. Compound D (7:14:7 NPK) is widely used for basal dressing in Zimbabwe's maize farming.",
   },
   {
     q: "What soil pH range is ideal for most Zimbabwe crops?",
     options: ["4.0–5.0", "5.5–6.5", "7.0–8.0", "8.5–9.5"], a: 1,
-    explanation: "A pH of 5.5–6.5 is optimal for most crops in Zimbabwe. Many soils in the country are naturally acidic (pH 4.5–5.5), so lime application is recommended to raise pH and improve nutrient availability.",
+    explanation: "⚗️ A pH of 5.5–6.5 is optimal. Many Zimbabwean soils are naturally acidic (pH 4.5–5.5), so lime application is recommended to raise pH and unlock nutrients.",
   },
   {
     q: "What does 'conservation agriculture' primarily achieve?",
     options: ["Expands farmland", "Reduces chemical use only", "Improves soil health and retains moisture", "Increases mechanization"], a: 2,
-    explanation: "Conservation Agriculture (CA) has three principles: minimum soil disturbance (no-till or minimum tillage), permanent soil cover (mulch or cover crops), and crop rotations. CA improves soil health, reduces erosion, and retains moisture — crucial in Zimbabwe's variable rainfall.",
+    explanation: "🌿 CA has three principles: minimum soil disturbance (no-till), permanent soil cover (mulch/cover crops), and crop rotations. Critical in Zimbabwe's variable rainfall.",
   },
   {
     q: "When do most Zimbabwean farmers plant maize?",
     options: ["March–May", "June–August", "October–December", "January only"], a: 2,
-    explanation: "Zimbabwe's main rainy season runs from October to March. Most maize planting happens in October–December with the onset of rains. Early planting by 15 November is recommended to maximize yield potential.",
+    explanation: "🌧️ Zimbabwe's main rainy season runs October–March. Early planting by 15 November is recommended to maximise yield. Missing planting rains means a lost season.",
   },
   {
     q: "What is 'Dimba farming' in Zimbabwe?",
-    options: ["Farming on hillsides", "Wetland/streambank farming in the dry season", "Indoor greenhouse farming", "Organic certification"], a: 1,
-    explanation: "Dimba farming refers to cultivating plots along riverbanks and wetland areas during the dry season (April–September) using residual soil moisture. It enables year-round vegetable and grain production when rains have stopped.",
+    options: ["Farming on hillsides", "Wetland/streambank farming in dry season", "Indoor greenhouse farming", "Organic certification"], a: 1,
+    explanation: "💧 Dimba farming = cultivating riverbank/wetland plots in the dry season (April–September) using residual soil moisture, enabling year-round vegetable production.",
   },
   {
     q: "What does IPM stand for in crop protection?",
     options: ["International Plant Medicine", "Integrated Pest Management", "Intensive Planting Method", "Irrigation Pipe Management"], a: 1,
-    explanation: "Integrated Pest Management (IPM) combines biological control, cultural practices, resistant varieties, and judicious pesticide use. It reduces reliance on chemicals, protects beneficial insects like bees, and lowers production costs.",
+    explanation: "🛡️ Integrated Pest Management combines biological control, cultural practices, resistant varieties, and judicious pesticide use — protecting both crops and beneficial insects.",
   },
   {
     q: "What animal provides most draught power for smallholder farmers in Zimbabwe?",
     options: ["Donkey", "Ox", "Horse", "Tractor"], a: 1,
-    explanation: "Oxen (trained cattle) are the primary source of draught power for over 60% of Zimbabwe's smallholder farmers. They are used for ploughing, planting, and transportation. The decline in cattle numbers has been a major challenge for food security.",
+    explanation: "🐄 Oxen are the primary draught power source for over 60% of Zimbabwe's smallholder farmers — used for ploughing, planting, and transportation.",
   },
   {
     q: "Urea fertilizer primarily provides which plant nutrient?",
     options: ["Phosphorus", "Potassium", "Nitrogen", "Calcium"], a: 2,
-    explanation: "Urea (46-0-0) contains 46% Nitrogen and is widely used as a top-dressing fertilizer in Zimbabwe, applied about 4–6 weeks after maize emergence. Nitrogen drives leafy growth and is critical for grain filling.",
+    explanation: "🌱 Urea (46-0-0) contains 46% Nitrogen — applied as top-dressing 4–6 weeks after maize emergence. Nitrogen drives leafy growth and grain filling.",
   },
   {
     q: "What is the main purpose of contour ridges in Zimbabwean farming?",
     options: ["Mark property boundaries", "Prevent soil erosion and retain water", "Create planting rows", "Drain excess water"], a: 1,
-    explanation: "Contour ridges (constructed along contour lines across a slope) slow runoff, reduce soil erosion, and help water infiltrate the soil. AGRITEX promotes contour farming on slopes greater than 2% gradient across Zimbabwe.",
+    explanation: "⛰️ Contour ridges slow runoff, reduce soil erosion, and help water infiltrate the soil. AGRITEX promotes contour farming on slopes greater than 2% gradient.",
   },
   {
     q: "Maize smut disease replaces grain kernels with:",
     options: ["Yellow powder", "Black powdery masses (galls)", "White spots", "Brown hard lumps"], a: 1,
-    explanation: "Common smut (Ustilago maydis) causes abnormal growth of grey-white galls that burst to release black powdery teliospores. Affected cobs lose all grain value. Crop rotation and resistant varieties are the main controls.",
+    explanation: "🍄 Common smut (Ustilago maydis) causes grey-white galls that burst releasing black spores. Crop rotation and resistant varieties are the main controls.",
   },
   {
     q: "Which province is Zimbabwe's primary tobacco-growing region?",
     options: ["Mashonaland Central", "Matabeleland South", "Manicaland", "Midlands"], a: 0,
-    explanation: "Mashonaland Central (along with Mashonaland East and West) is Zimbabwe's tobacco heartland. The sandy loam soils and rainfall pattern in these provinces are ideal for flue-cured Virginia tobacco production.",
+    explanation: "📍 Mashonaland Central (along with Mashonaland East & West) is the tobacco heartland. Sandy loam soils and rainfall pattern are ideal for flue-cured Virginia tobacco.",
   },
   {
     q: "What does 'agroforestry' mean in farming practice?",
     options: ["Cutting trees for farmland", "Integrating trees with crops and/or livestock", "Farming inside forests", "Tree nursery management"], a: 1,
-    explanation: "Agroforestry deliberately combines trees with crops and/or livestock on the same land. In Zimbabwe, the Faidherbia albida tree (winter thorn) is famous for fertilizer trees — it fixes nitrogen and drops leaves during the rainy season, allowing sunlight through.",
+    explanation: "🌳 Agroforestry combines trees with crops and/or livestock. The Faidherbia albida (winter thorn) fixes nitrogen and drops leaves during rainy season — a natural fertilizer tree.",
   },
   {
     q: "What is the recommended in-row spacing for maize in Zimbabwe?",
     options: ["10 cm", "25–30 cm", "60 cm", "1 metre"], a: 1,
-    explanation: "The recommended plant spacing for maize in Zimbabwe is 90 cm between rows and 25–30 cm between plants in the row, giving about 37,000–44,000 plants per hectare. Proper spacing reduces competition for nutrients, water, and light.",
+    explanation: "📏 Recommended spacing: 90 cm between rows × 25–30 cm between plants = ~37,000–44,000 plants/ha. Proper spacing reduces competition for nutrients, water, and light.",
   },
   {
     q: "Which mineral deficiency is corrected by lime application?",
     options: ["Nitrogen deficiency", "Phosphorus deficiency", "Calcium deficiency and soil acidity", "Iron deficiency"], a: 2,
-    explanation: "Agricultural lime (calcium carbonate or dolomitic lime) raises soil pH and corrects calcium (and magnesium for dolomite) deficiency. At low pH, aluminium and manganese toxicity block root development. AGRITEX recommends 1–2 tonnes of lime/ha for acidic soils.",
+    explanation: "🪨 Agricultural lime raises soil pH and corrects calcium deficiency. At low pH, aluminium and manganese toxicity block root development. AGRITEX recommends 1–2 t/ha on acidic soils.",
   },
   {
     q: "What does 'side dressing' mean in maize farming?",
-    options: ["Growing maize beside other crops", "Applying top-dressing fertilizer alongside growing plants", "Planting on hillside slopes", "An irrigation technique"], a: 1,
-    explanation: "Side dressing means placing fertilizer (usually urea or AN) in a band 5–10 cm beside the plant stem at the 4–6 leaf stage (V4–V6). This delivers nitrogen when the crop needs it most for vegetative growth without burning the roots.",
+    options: ["Growing maize beside other crops", "Applying fertilizer alongside growing plants", "Planting on hillside slopes", "An irrigation technique"], a: 1,
+    explanation: "🌽 Side dressing = placing fertilizer (urea or AN) 5–10 cm beside the plant at the 4–6 leaf stage (V4–V6). Delivers nitrogen exactly when the crop needs it most.",
   },
   {
     q: "What is the primary cause of post-harvest maize losses in Zimbabwe?",
     options: ["Flooding during storage", "Weevils and moulds in storage", "Transport damage", "Market price drops"], a: 1,
-    explanation: "Post-harvest losses of 20–40% are common in Zimbabwe, mainly caused by grain weevils (Sitophilus zeamais) and moulds (Aspergillus, Fusarium) in improperly stored grain. Hermetic storage bags and PICS bags are promoted as low-cost solutions.",
+    explanation: "🐞 Post-harvest losses of 20–40% are common, mainly from grain weevils (Sitophilus zeamais) and moulds. Hermetic storage bags and PICS bags are promoted as low-cost solutions.",
   },
   {
     q: "Which body certifies and regulates seeds in Zimbabwe?",
     options: ["AREX (Agricultural Research Extension Services)", "ZESA", "Seed Co", "TIMB"], a: 0,
-    explanation: "AREX (now part of the Ministry of Lands, Agriculture, Fisheries, Water and Rural Development) regulates seed certification, field inspection, and testing in Zimbabwe under the Seeds Act. Seed Co is a private seed company, not the regulator.",
+    explanation: "📜 AREX regulates seed certification, field inspection, and testing under Zimbabwe's Seeds Act. Seed Co is a private seed company — not the regulator.",
   },
 ];
 
 const LEVELS = [
-  { min: 0,     title: "Seed Farmer"          },
-  { min: 500,   title: "Smallholder"           },
-  { min: 1500,  title: "Field Farmer"          },
-  { min: 3000,  title: "Crop Specialist"       },
-  { min: 5500,  title: "Agronomy Expert"       },
-  { min: 9000,  title: "Senior Grower"         },
-  { min: 14000, title: "Field Expert"          },
-  { min: 20000, title: "Master Farmer"         },
-  { min: 28000, title: "Agricultural Advisor"  },
-  { min: 38000, title: "Mshauri Champion"      },
+  { min: 0,     name: "Seed Farmer",          emoji: "🌱" },
+  { min: 500,   name: "Smallholder",           emoji: "🌿" },
+  { min: 1500,  name: "Field Farmer",          emoji: "🌽" },
+  { min: 3000,  name: "Crop Specialist",       emoji: "🧑‍🌾" },
+  { min: 5500,  name: "Agronomy Expert",       emoji: "📊" },
+  { min: 9000,  name: "Senior Grower",         emoji: "🌳" },
+  { min: 14000, name: "Field Expert",          emoji: "🏅" },
+  { min: 20000, name: "Master Farmer",         emoji: "🏆" },
+  { min: 28000, name: "Agricultural Advisor",  emoji: "🎓" },
+  { min: 38000, name: "Mshauri Champion",      emoji: "👑" },
 ];
 
-function getLevelTitle(xp: number) {
-  let t = LEVELS[0].title;
-  for (const l of LEVELS) { if (xp >= l.min) t = l.title; }
-  return t;
+function getLevel(xp: number) {
+  let lvl = LEVELS[0];
+  for (const l of LEVELS) { if (xp >= l.min) lvl = l; }
+  return lvl;
 }
 
 interface LocalStats { xp: number; streak: number; lastPlayedDate: string; }
-
 function loadStats(): LocalStats {
-  try { return { xp: 0, streak: 0, lastPlayedDate: "", ...JSON.parse(localStorage.getItem("mshauri_game") || "{}") }; }
+  try { return { xp: 0, streak: 0, lastPlayedDate: "", ...JSON.parse(localStorage.getItem("mshauri_game") ?? "{}") }; }
   catch { return { xp: 0, streak: 0, lastPlayedDate: "" }; }
 }
-
 function saveStats(s: LocalStats) {
   try { localStorage.setItem("mshauri_game", JSON.stringify(s)); } catch {}
 }
@@ -155,141 +153,187 @@ export function DailyQuiz({ open, onClose, onXpEarned }: Props) {
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [timeLeft, setTimeLeft] = useState(TIMER_SECS);
-  const [answerAnim, setAnswerAnim] = useState<"correct" | "wrong" | null>(null);
+  const [finalStats, setFinalStats] = useState<LocalStats | null>(null);
+  const [xpEarnedDisplay, setXpEarnedDisplay] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   function startSession() {
     const shuffled = [...QUIZ_BANK].sort(() => Math.random() - 0.5).slice(0, QUESTIONS_PER_SESSION);
     setQuestions(shuffled);
     setQi(0); setSelected(null); setAnswered(false);
-    setScore(0); setDone(false); setTimeLeft(TIMER_SECS); setAnswerAnim(null);
+    setScore(0); setDone(false); setTimeLeft(TIMER_SECS); setFinalStats(null);
   }
 
-  useEffect(() => {
-    if (open) startSession();
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [open]);
+  useEffect(() => { if (open) startSession(); }, [open]);
 
   useEffect(() => {
-    if (!open || done || answered) return;
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (!open || done || answered || questions.length === 0) return;
     timerRef.current = setInterval(() => {
       setTimeLeft(t => {
-        if (t <= 1) { handleTimeout(); return 0; }
+        if (t <= 1) {
+          clearInterval(timerRef.current!);
+          setAnswered(true); setSelected(-1);
+          return 0;
+        }
         return t - 1;
       });
     }, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [open, qi, answered, done]);
-
-  function handleTimeout() {
-    if (timerRef.current) clearInterval(timerRef.current);
-    setAnswered(true); setSelected(-1); setAnswerAnim("wrong");
-  }
+  }, [open, qi, answered, done, questions.length]);
 
   function handleAnswer(idx: number) {
     if (answered) return;
     if (timerRef.current) clearInterval(timerRef.current);
     setSelected(idx);
     setAnswered(true);
-    const correct = idx === questions[qi].a;
-    if (correct) { setScore(s => s + 1); setAnswerAnim("correct"); }
-    else { setAnswerAnim("wrong"); }
+    if (idx === questions[qi].a) setScore(s => s + 1);
   }
 
   function handleNext() {
-    if (qi + 1 >= questions.length) finishSession();
-    else { setQi(q => q + 1); setSelected(null); setAnswered(false); setTimeLeft(TIMER_SECS); setAnswerAnim(null); }
+    if (qi + 1 >= questions.length) {
+      finishSession(score);
+    } else {
+      setQi(q => q + 1);
+      setSelected(null);
+      setAnswered(false);
+      setTimeLeft(TIMER_SECS);
+    }
   }
 
-  function finishSession() {
-    const xpEarned = score * XP_PER_CORRECT;
+  function finishSession(finalScore: number) {
+    const xpGained = finalScore * XP_PER_CORRECT;
     const today = new Date().toISOString().split("T")[0];
     const prev = loadStats();
-    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
     const yd = yesterday.toISOString().split("T")[0];
     const alreadyToday = prev.lastPlayedDate === today;
-    const newXp = alreadyToday ? prev.xp : prev.xp + xpEarned;
-    const newStreak = alreadyToday ? prev.streak : prev.lastPlayedDate === yd ? prev.streak + 1 : 1;
-    saveStats({ xp: newXp, streak: newStreak, lastPlayedDate: today });
+    const newXp = alreadyToday ? prev.xp : prev.xp + xpGained;
+    const newStreak = alreadyToday ? prev.streak
+      : prev.lastPlayedDate === yd ? prev.streak + 1 : 1;
+    const updated: LocalStats = { xp: newXp, streak: newStreak, lastPlayedDate: today };
+    saveStats(updated);
+    setFinalStats(updated);
+    setXpEarnedDisplay(alreadyToday ? 0 : xpGained);
+    onXpEarned?.(alreadyToday ? 0 : xpGained);
     fetch("/api/game/complete", {
       method: "POST", credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ xpEarned }),
+      body: JSON.stringify({ xpEarned: xpGained }),
     }).catch(() => {});
-    onXpEarned?.(alreadyToday ? 0 : xpEarned);
     setDone(true);
   }
 
   if (!open) return null;
-  const q = questions[qi];
+
+  const q = questions[qi] ?? null;
+
+  function optionStyle(i: number): React.CSSProperties {
+    if (!answered) {
+      return { background: "rgba(255,255,255,0.04)", border: "1.5px solid #1a3020", color: "#e8f5e9" };
+    }
+    const isCorrect = i === q?.a;
+    const isSelected = i === selected;
+    if (isCorrect) return { background: "rgba(34,197,94,0.14)", border: "1.5px solid #22c55e", color: "#22c55e" };
+    if (isSelected) return { background: "rgba(239,68,68,0.12)", border: "1.5px solid #ef4444", color: "#ef4444" };
+    return { background: "rgba(255,255,255,0.02)", border: "1.5px solid #1a3020", color: "#4a7050", opacity: 0.55 };
+  }
+
+  const lvl = finalStats ? getLevel(finalStats.xp) : null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-md bg-[#0f1e0f] border border-[#1a3020] rounded-2xl shadow-2xl overflow-hidden animate-slide-up"
-           style={{ boxShadow: "0 0 40px rgba(34,197,94,0.15)" }}>
-
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#1a3020]">
-          <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-[#22c55e]" />
-            <span className="text-[#e8f5e9] font-bold text-[14px]">Daily Agri Quiz</span>
+    <div
+      style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center",
+               padding: 16, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)" }}
+      className="animate-fade-in"
+    >
+      <div
+        style={{ width: "100%", maxWidth: 440, background: "#0a1a0a", border: "1.5px solid #1a3020", borderRadius: 20,
+                 boxShadow: "0 0 50px rgba(34,197,94,0.18)", overflow: "hidden" }}
+        className="animate-slide-up"
+      >
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+                      padding: "14px 20px", borderBottom: "1px solid #1a3020" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Zap style={{ width: 16, height: 16, color: "#22c55e" }} />
+            <span style={{ color: "#e8f5e9", fontWeight: 700, fontSize: 14 }}>Daily Agri Quiz</span>
           </div>
-          {!done && q && (
-            <span className="text-[12px] text-[#7aad80] font-medium">
-              {qi + 1} / {questions.length}
-            </span>
-          )}
-          <button onClick={onClose} className="w-7 h-7 rounded-full hover:bg-[#1a3020] flex items-center justify-center transition-colors">
-            <X className="w-4 h-4 text-[#7aad80]" />
+          {!done && <span style={{ color: "#7aad80", fontSize: 13, fontWeight: 600 }}>{qi + 1} / {QUESTIONS_PER_SESSION}</span>}
+          <button
+            onClick={onClose}
+            style={{ width: 28, height: 28, borderRadius: "50%", border: "1px solid #1a3020",
+                     background: "transparent", display: "flex", alignItems: "center", justifyContent: "center",
+                     cursor: "pointer", color: "#7aad80" }}
+          >
+            <X style={{ width: 15, height: 15 }} />
           </button>
         </div>
 
+        {/* Question */}
         {!done && q && (
-          <div className="p-5">
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="flex gap-1">
-                {Array.from({ length: questions.length }).map((_, i) => (
-                  <div key={i} className={`h-1 rounded-full transition-all duration-300 ${
-                    i < qi ? "bg-[#22c55e] w-6" : i === qi ? "bg-[#22c55e] w-8" : "bg-[#1a3020] w-6"
-                  }`} />
+          <div style={{ padding: 20 }}>
+            {/* Progress dots + timer */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <div style={{ display: "flex", gap: 5 }}>
+                {Array.from({ length: QUESTIONS_PER_SESSION }).map((_, i) => (
+                  <div key={i} style={{
+                    height: 4, borderRadius: 2,
+                    width: i < qi ? 24 : i === qi ? 32 : 20,
+                    background: i <= qi ? "#22c55e" : "#1a3020",
+                    transition: "all 0.3s"
+                  }} />
                 ))}
               </div>
-              <span className={`text-[14px] font-black tabular-nums transition-colors ${timeLeft <= 5 ? "text-red-400 animate-pulse" : "text-[#22c55e]"}`}>
+              <span style={{ color: timeLeft <= 5 ? "#f87171" : "#22c55e", fontWeight: 800, fontSize: 15, minWidth: 30, textAlign: "right" }}>
                 {timeLeft}s
               </span>
             </div>
-            <div className="w-full bg-[#1a3020] rounded-full h-1 mb-5">
-              <div
-                className={`h-1 rounded-full transition-all duration-1000 ${timeLeft <= 5 ? "bg-red-400" : "bg-[#22c55e]"}`}
-                style={{ width: `${(timeLeft / TIMER_SECS) * 100}%` }}
-              />
+            {/* Timer bar */}
+            <div style={{ width: "100%", height: 4, background: "#1a3020", borderRadius: 2, marginBottom: 20 }}>
+              <div style={{
+                height: 4, borderRadius: 2,
+                background: timeLeft <= 5 ? "#f87171" : "#22c55e",
+                width: `${(timeLeft / TIMER_SECS) * 100}%`,
+                transition: "width 1s linear, background 0.3s"
+              }} />
             </div>
 
-            <p className="text-[#e8f5e9] font-bold text-[15px] leading-snug mb-5 min-h-[48px]">{q.q}</p>
+            {/* Question text */}
+            <p style={{ color: "#e8f5e9", fontWeight: 700, fontSize: 16, lineHeight: 1.5, marginBottom: 20 }}>
+              {q.q}
+            </p>
 
-            <div className="flex flex-col gap-2.5">
+            {/* Options */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {q.options.map((opt, i) => {
                 const isCorrect = i === q.a;
                 const isSelected = i === selected;
-                let cls = "border border-[#1a3020] bg-[#0d180d] text-[#e8f5e9] hover:border-[#22c55e]/50 hover:bg-[#22c55e]/5";
-                let extraAnim = "";
-                if (answered) {
-                  if (isCorrect) { cls = "border border-[#22c55e] bg-[#22c55e]/10 text-[#22c55e]"; if (isSelected) extraAnim = "animate-bounce-in"; }
-                  else if (isSelected) { cls = "border border-red-500 bg-red-500/10 text-red-400"; extraAnim = "animate-shake"; }
-                  else cls = "border border-[#1a3020] bg-[#0d180d] text-[#4a7050] opacity-50";
-                }
+                const optStyle = optionStyle(i);
+                const animClass = answered && isCorrect && isSelected ? "animate-bounce-in"
+                                : answered && isSelected && !isCorrect ? "animate-shake" : "";
                 return (
                   <button
                     key={i}
                     onClick={() => handleAnswer(i)}
                     disabled={answered}
-                    className={`w-full text-left rounded-xl px-4 py-3 text-[13px] font-medium transition-all flex items-center gap-3 ${cls} ${extraAnim}`}
+                    className={animClass}
+                    style={{
+                      ...optStyle,
+                      width: "100%", textAlign: "left", borderRadius: 14, padding: "13px 16px",
+                      fontSize: 14, fontWeight: 500, cursor: answered ? "default" : "pointer",
+                      display: "flex", alignItems: "center", gap: 12,
+                      transition: "all 0.2s", fontFamily: "inherit"
+                    }}
                   >
-                    <span className="shrink-0 w-6 h-6 rounded-full border border-current flex items-center justify-center text-[10px] font-bold">
-                      {answered && isCorrect
-                        ? <CheckCircle className="w-4 h-4" />
-                        : answered && isSelected && !isCorrect
-                        ? <XCircle className="w-4 h-4" />
-                        : String.fromCharCode(65 + i)}
+                    <span style={{
+                      width: 26, height: 26, borderRadius: "50%",
+                      border: `1.5px solid ${optStyle.color as string}`,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 11, fontWeight: 700, flexShrink: 0, color: optStyle.color as string
+                    }}>
+                      {answered && isCorrect ? "✓" : answered && isSelected && !isCorrect ? "✗" : String.fromCharCode(65 + i)}
                     </span>
                     {opt}
                   </button>
@@ -297,61 +341,98 @@ export function DailyQuiz({ open, onClose, onXpEarned }: Props) {
               })}
             </div>
 
+            {/* Explanation */}
             {answered && (
-              <div className={`mt-4 rounded-xl p-3.5 text-[12px] leading-relaxed animate-slide-up ${
-                selected === q.a
-                  ? "bg-[#22c55e]/10 border border-[#22c55e]/30"
-                  : "bg-[#1a1010] border border-red-500/20"
-              }`}>
-                <p className={`font-bold mb-1 ${selected === q.a ? "text-[#22c55e]" : "text-red-400"}`}>
-                  {selected === q.a
-                    ? "✅ Correct!"
-                    : `❌ Correct answer: ${q.options[q.a]}`}
+              <div
+                className="animate-slide-up"
+                style={{
+                  marginTop: 16, borderRadius: 14, padding: 14,
+                  background: selected === q.a ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.08)",
+                  border: `1px solid ${selected === q.a ? "rgba(34,197,94,0.35)" : "rgba(239,68,68,0.25)"}`
+                }}
+              >
+                <p style={{
+                  fontWeight: 700, fontSize: 13, marginBottom: 5,
+                  color: selected === q.a ? "#22c55e" : "#f87171"
+                }}>
+                  {selected === q.a ? "✅ Correct!" : `❌ Correct: ${q.options[q.a]}`}
                 </p>
-                <p className="text-[#7aad80]">{q.explanation}</p>
+                <p style={{ fontSize: 12, lineHeight: 1.6, color: "#a3c9a8" }}>
+                  {q.explanation}
+                </p>
               </div>
             )}
 
+            {/* Next button */}
             {answered && (
               <button
                 onClick={handleNext}
-                className="w-full mt-4 bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold py-2.5 rounded-full text-[13px] transition-all animate-slide-up hover:scale-[1.02] active:scale-95"
+                className="animate-slide-up"
+                style={{
+                  width: "100%", marginTop: 16, padding: "13px 0",
+                  background: "#22c55e", border: "none", borderRadius: 999,
+                  color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer",
+                  fontFamily: "inherit", transition: "all 0.2s"
+                }}
+                onMouseOver={e => (e.currentTarget.style.background = "#16a34a")}
+                onMouseOut={e => (e.currentTarget.style.background = "#22c55e")}
               >
-                {qi + 1 >= questions.length ? "🏆 See Results" : "Next Question →"}
+                {qi + 1 >= QUESTIONS_PER_SESSION ? "🏆 See Results" : "Next Question →"}
               </button>
             )}
           </div>
         )}
 
-        {done && (
-          <div className="p-6 text-center animate-slide-up">
-            <div className="text-[48px] mb-2 animate-bounce-in">
+        {/* Done screen */}
+        {done && finalStats && (
+          <div className="animate-slide-up" style={{ padding: 24, textAlign: "center" }}>
+            <div style={{ fontSize: 52, marginBottom: 8 }} className="animate-bounce-in">
               {score >= 4 ? "🏆" : score >= 3 ? "🌟" : score >= 2 ? "🌱" : "📚"}
             </div>
-            <h3 className="text-[#e8f5e9] font-black text-[20px] mb-1">
+            <p style={{ color: "#e8f5e9", fontWeight: 800, fontSize: 22, marginBottom: 4 }}>
               {score >= 4 ? "Excellent!" : score >= 3 ? "Well done!" : score >= 2 ? "Good try!" : "Keep learning!"}
-            </h3>
-            <p className="text-[#7aad80] text-[13px] mb-5">
-              You scored <span className="text-[#e8f5e9] font-bold">{score}/{questions.length}</span> correct
+            </p>
+            <p style={{ color: "#7aad80", fontSize: 14, marginBottom: 20 }}>
+              {score} / {QUESTIONS_PER_SESSION} correct
             </p>
 
-            <div className="bg-[#22c55e]/10 border border-[#22c55e]/30 rounded-2xl px-5 py-4 mb-4 animate-bounce-in">
-              <div className="text-[#22c55e] font-black text-[28px] leading-none">+{score * XP_PER_CORRECT} XP</div>
-              <div className="text-[#7aad80] text-[11px] font-semibold mt-1">
-                {getLevelTitle(loadStats().xp)} · {loadStats().xp.toLocaleString()} total XP
-              </div>
-              {loadStats().streak > 1 && (
-                <div className="flex items-center justify-center gap-1 text-orange-400 text-[12px] font-bold mt-2">
-                  <Flame className="w-4 h-4" /> {loadStats().streak} day streak!
+            <div
+              className="animate-bounce-in"
+              style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)",
+                       borderRadius: 18, padding: "18px 24px", marginBottom: 16 }}
+            >
+              {xpEarnedDisplay > 0 ? (
+                <p style={{ color: "#22c55e", fontWeight: 900, fontSize: 32, lineHeight: 1 }}>
+                  +{xpEarnedDisplay} XP
+                </p>
+              ) : (
+                <p style={{ color: "#7aad80", fontSize: 13 }}>Already played today — XP not counted again</p>
+              )}
+              <p style={{ color: "#7aad80", fontSize: 12, fontWeight: 600, marginTop: 6 }}>
+                {lvl?.emoji} {lvl?.name} · {(finalStats.xp ?? 0).toLocaleString()} total XP
+              </p>
+              {finalStats.streak > 1 && (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center",
+                              gap: 5, color: "#fb923c", fontWeight: 700, fontSize: 13, marginTop: 8 }}>
+                  <Flame style={{ width: 16, height: 16 }} />
+                  {finalStats.streak} day streak! 🔥
                 </div>
               )}
             </div>
 
-            <p className="text-[#4a7050] text-[11px] mb-4">Come back tomorrow to keep your streak going! 🌱</p>
+            <p style={{ color: "#4a7050", fontSize: 12, marginBottom: 16 }}>
+              Come back tomorrow to keep your streak! 🌱
+            </p>
 
             <button
               onClick={onClose}
-              className="w-full bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold py-3 rounded-full text-[13px] transition-all hover:scale-[1.02] active:scale-95"
+              style={{
+                width: "100%", padding: "14px 0", background: "#22c55e", border: "none",
+                borderRadius: 999, color: "#fff", fontWeight: 700, fontSize: 14,
+                cursor: "pointer", fontFamily: "inherit"
+              }}
+              onMouseOver={e => (e.currentTarget.style.background = "#16a34a")}
+              onMouseOut={e => (e.currentTarget.style.background = "#22c55e")}
             >
               Done 🎉
             </button>
