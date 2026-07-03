@@ -1,6 +1,6 @@
 import { useState, FormEvent } from "react";
 import { Link, useLocation } from "wouter";
-import { MapPin, LogOut, Check, X, ChevronRight, Sprout } from "lucide-react";
+import { MapPin, LogOut, Check, X, ChevronRight } from "lucide-react";
 import { useAuth, type UserRole } from "@/hooks/use-auth";
 
 /* ─── constants ───────────────────────────────────────── */
@@ -48,18 +48,16 @@ function getAnonymousId(userId: number): { display: string; emoji: string } {
 /* ─── Guest view ──────────────────────────────────────── */
 function GuestView() {
   return (
-    <div className="h-full overflow-y-auto bg-[#1a1a1b]">
+    <div className="h-full overflow-y-auto bg-background ms-theme-transition">
       <div className="max-w-lg mx-auto px-4 pt-16 pb-10 flex flex-col items-center text-center">
-        <div className="w-20 h-20 rounded-full bg-[#22c55e]/10 border-2 border-[#22c55e]/20 flex items-center justify-center mb-5">
-          <Sprout className="w-9 h-9 text-[#22c55e]" />
-        </div>
-        <h2 className="text-[#E7E9EA] font-bold text-[22px] mb-2">You're browsing as a guest</h2>
-        <p className="text-[#71767B] text-[14px] leading-relaxed mb-8 max-w-sm">
+        <img src="/mshauri-logo.png?v=2" alt="Mshauri" className="w-24 h-24 object-contain mb-5 drop-shadow-md" />
+        <h2 className="text-foreground font-bold text-[22px] mb-2">You're browsing as a guest</h2>
+        <p className="text-muted-foreground text-[14px] leading-relaxed mb-8 max-w-sm">
           Sign in to save your conversations, track your questions, and build your reputation among Zimbabwean farmers.
         </p>
         <div className="flex gap-3 w-full max-w-xs">
           <Link href="/login" className="flex-1">
-            <button className="w-full px-5 py-3 border border-[#2F3336] rounded-full text-[#E7E9EA] hover:bg-white/5 transition-colors font-semibold text-[14px]">
+            <button className="w-full px-5 py-3 border border-border rounded-full text-foreground hover:bg-muted transition-colors font-semibold text-[14px]">
               Sign In
             </button>
           </Link>
