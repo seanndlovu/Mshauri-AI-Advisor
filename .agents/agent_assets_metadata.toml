@@ -6,3 +6,9 @@ id = "kAhajhVxGpQbWLr96jzAP"
 uri = "file://MSHAURI_2026_BUILD_PROMPT.md"
 type = "text"
 title = "Mshauri 2026 — Master Build Prompt"
+
+[[outputs]]
+id = "cDrFK0gaO7Sq06ictfAN0"
+uri = "file://mshauri-deploy.zip"
+type = "unspecified"
+title = "Mshauri Deploy Scripts"
