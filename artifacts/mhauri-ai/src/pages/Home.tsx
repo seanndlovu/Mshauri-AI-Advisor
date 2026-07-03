@@ -7,6 +7,7 @@ import { formatDistanceToNow } from "date-fns";
 import { FeaturedStoryCarousel } from "@/components/home/FeaturedStoryCarousel";
 import { ContinueLearning } from "@/components/home/ContinueLearning";
 import { CommunityDiscussions } from "@/components/home/CommunityDiscussions";
+import { MarketPriceCarousel } from "@/components/home/MarketPriceCarousel";
 
 const EXAMPLES = [
   { label: "🌽 Maize disease",   text: "My maize leaves are turning yellow at the tips. What could be wrong?" },
@@ -25,7 +26,6 @@ declare global {
   interface Window { SpeechRecognition: SpeechRecognitionConstructor; webkitSpeechRecognition: SpeechRecognitionConstructor; }
 }
 
-interface MarketItem { id?: number; item?: string; commodity?: string; priceUsd?: number; price?: number; unit?: string; }
 interface Post { id: number; communityId: number; title: string; content: string; upvotes: number; commentCount: number; createdAt: string; imageUrl?: string | null; }
 interface Community { id: number; slug: string; }
 
@@ -115,34 +115,6 @@ function TrendingDiscussions() {
   );
 }
 
-function MarketStatsStrip() {
-  const [items, setItems] = useState<MarketItem[]>([]);
-
-  useEffect(() => {
-    fetch("/api/market-prices?limit=5", { credentials: "include" })
-      .then(r => r.json())
-      .then(d => Array.isArray(d) && setItems(d.slice(0, 5)))
-      .catch(() => {});
-  }, []);
-
-  if (items.length === 0) return null;
-
-  return (
-    <div className="flex gap-2 overflow-x-auto pb-1 mb-5 -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
-      {items.map((item, i) => {
-        const name = item.item ?? item.commodity ?? "—";
-        const price = item.priceUsd ?? item.price ?? 0;
-        return (
-          <div key={i} className="shrink-0 bg-[#16181C] border border-[#2F3336] rounded-xl px-3 py-2 min-w-[100px]">
-            <div className="text-[#71767B] text-[10px] font-semibold truncate">{name}</div>
-            <div className="text-[#22c55e] font-black text-[14px]">${price.toFixed(2)}</div>
-            <div className="text-[#71767B] text-[9px]">per unit</div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -212,7 +184,7 @@ export default function Home() {
             </p>
           </div>
 
-          <MarketStatsStrip />
+          <MarketPriceCarousel />
 
           <div className="bg-[#16181C] border border-[#2F3336] rounded-2xl p-4 mb-6 focus-within:border-[#22c55e]/50 transition-colors">
             <div className="flex items-center gap-3 mb-3 pb-3 border-b border-[#2F3336]">
