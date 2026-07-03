@@ -1,94 +1,96 @@
 import { useRef } from "react";
-import { ChevronLeft, ChevronRight, BookOpen, FileText, PlayCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface LearningItem {
   id: string;
   tag: string;
-  icon: "magazine" | "pdf" | "video";
+  tagColor: string;
   title: string;
-  color: string;
+  meta: string;
   href: string;
-  coverGradient: string;
+  watermark: string;
 }
 
 const ITEMS: LearningItem[] = [
   {
     id: "mag-13",
     tag: "Magazine",
-    icon: "magazine",
-    title: "Maricho Magazine Issue 13",
-    color: "text-[#22c55e]",
+    tagColor: "#22c55e",
+    title: "Maricho Magazine May 2026",
+    meta: "8 min read",
     href: "https://www.wpdm.com/package_download/wpdmdl=1309/",
-    coverGradient: "from-[#22c55e]/30 to-[#16a34a]/10",
+    watermark: "🌿",
+  },
+  {
+    id: "podcast-23",
+    tag: "Podcast",
+    tagColor: "#22c55e",
+    title: "The Agriculture Update Episode 23",
+    meta: "⏱ 24 min",
+    href: "https://marichomedia.com",
+    watermark: "🎙️",
+  },
+  {
+    id: "ca-pdf",
+    tag: "Report",
+    tagColor: "#22c55e",
+    title: "Climate Smart Agriculture in SADC Region",
+    meta: "PDF · 2.4 MB",
+    href: "https://marichomedia.com",
+    watermark: "☀️",
+  },
+  {
+    id: "faw-pdf",
+    tag: "Research",
+    tagColor: "#22c55e",
+    title: "Drought Tolerant Maize Varieties in Zimbabwe",
+    meta: "PDF · 1.8 MB",
+    href: "https://marichomedia.com",
+    watermark: "🌽",
+  },
+  {
+    id: "armyworm-vid",
+    tag: "Video",
+    tagColor: "#22c55e",
+    title: "How to Identify and Control Armyworm",
+    meta: "▶ 5:36",
+    href: "https://marichomedia.com",
+    watermark: "🐛",
+  },
+  {
+    id: "ag-ep23",
+    tag: "Podcast",
+    tagColor: "#22c55e",
+    title: "The Agriculture Update Episode 22",
+    meta: "⏱ 31 min",
+    href: "https://marichomedia.com",
+    watermark: "🌾",
   },
   {
     id: "mag-12",
     tag: "Magazine",
-    icon: "magazine",
+    tagColor: "#22c55e",
     title: "Maricho Magazine Issue 12",
-    color: "text-[#22c55e]",
+    meta: "6 min read",
     href: "https://www.wpdm.com/package_download/wpdmdl=1305/",
-    coverGradient: "from-[#22c55e]/20 to-[#0f766e]/10",
+    watermark: "📖",
   },
   {
-    id: "ca-pdf",
+    id: "soil-guide",
     tag: "Free PDF",
-    icon: "pdf",
-    title: "Conservation Agriculture Manual",
-    color: "text-blue-400",
+    tagColor: "#22c55e",
+    title: "Soil Health Guide for Zimbabwean Farmers",
+    meta: "PDF · 1.1 MB",
     href: "https://marichomedia.com",
-    coverGradient: "from-blue-500/20 to-blue-900/10",
-  },
-  {
-    id: "faw-pdf",
-    tag: "Pest Guide",
-    icon: "pdf",
-    title: "Fall Armyworm Identification & Control",
-    color: "text-orange-400",
-    href: "https://marichomedia.com",
-    coverGradient: "from-orange-500/20 to-orange-900/10",
-  },
-  {
-    id: "clim-pdf",
-    tag: "Climate",
-    icon: "pdf",
-    title: "Climate Smart Agriculture for Zimbabwe",
-    color: "text-cyan-400",
-    href: "https://marichomedia.com",
-    coverGradient: "from-cyan-500/20 to-cyan-900/10",
-  },
-  {
-    id: "mag-11",
-    tag: "Magazine",
-    icon: "magazine",
-    title: "Maricho Magazine Issue 11",
-    color: "text-[#22c55e]",
-    href: "https://www.wpdm.com/package_download/wpdmdl=1282/",
-    coverGradient: "from-purple-500/20 to-purple-900/10",
-  },
-  {
-    id: "policy-zim",
-    tag: "Policy",
-    icon: "pdf",
-    title: "Zimbabwe Agricultural Policy Review",
-    color: "text-amber-400",
-    href: "https://marichomedia.com",
-    coverGradient: "from-amber-500/20 to-amber-900/10",
+    watermark: "🌱",
   },
 ];
-
-const ICON_MAP = {
-  magazine: BookOpen,
-  pdf: FileText,
-  video: PlayCircle,
-};
 
 export function ContinueLearning() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   function scroll(dir: "left" | "right") {
-    if (!scrollRef.current) return;
-    scrollRef.current.scrollBy({ left: dir === "right" ? 200 : -200, behavior: "smooth" });
+    scrollRef.current?.scrollBy({ left: dir === "right" ? 340 : -340, behavior: "smooth" });
   }
 
   return (
@@ -113,31 +115,95 @@ export function ContinueLearning() {
 
       <div
         ref={scrollRef}
-        className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide"
+        className="flex gap-3 overflow-x-auto pb-2 scrollbar-none"
         style={{ scrollbarWidth: "none" }}
       >
-        {ITEMS.map(item => {
-          const Icon = ICON_MAP[item.icon];
-          return (
-            <a
-              key={item.id}
-              href={item.href}
-              target="_blank"
-              rel="noreferrer"
-              className="shrink-0 w-[160px] rounded-xl border border-[#2F3336] bg-[#16181C] hover:border-[#22c55e]/30 overflow-hidden transition-all group cursor-pointer"
+        {ITEMS.map((item, idx) => (
+          <a
+            key={item.id}
+            href={item.href}
+            target="_blank"
+            rel="noreferrer"
+            className="shrink-0 w-[160px] rounded-2xl overflow-hidden group cursor-pointer transition-all hover:scale-[1.03] hover:shadow-xl"
+            style={{ textDecoration: "none" }}
+          >
+            {/* Card image area — dark forest green with watermark */}
+            <div
+              style={{
+                position: "relative",
+                height: 110,
+                background: `linear-gradient(140deg, #0a1a0a 0%, #162416 45%, #0d2010 100%)`,
+                overflow: "hidden",
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "flex-start",
+                padding: "10px 10px 0",
+              }}
             >
-              <div className={`h-[90px] bg-gradient-to-br ${item.coverGradient} flex items-center justify-center`}>
-                <Icon className={`w-8 h-8 ${item.color} opacity-70 group-hover:opacity-100 transition-opacity`} />
+              {/* Decorative glow blob */}
+              <div style={{
+                position: "absolute", bottom: -20, right: -20,
+                width: 90, height: 90,
+                background: "radial-gradient(circle, rgba(34,197,94,0.18) 0%, transparent 70%)",
+                borderRadius: "50%",
+                pointerEvents: "none",
+              }} />
+              {/* Large watermark emoji */}
+              <div style={{
+                position: "absolute", bottom: -4, right: 4,
+                fontSize: 56, opacity: 0.18, lineHeight: 1,
+                transform: "rotate(-8deg)",
+                filter: "drop-shadow(0 0 8px rgba(34,197,94,0.4))",
+                userSelect: "none",
+                pointerEvents: "none",
+              }}>
+                {item.watermark}
               </div>
-              <div className="p-2.5">
-                <span className={`text-[10px] font-bold uppercase tracking-wide ${item.color}`}>{item.tag}</span>
-                <p className="text-[#E7E9EA] text-[12px] font-semibold leading-snug mt-0.5 line-clamp-2 group-hover:text-white transition-colors">
-                  {item.title}
-                </p>
+              {/* Tag badge */}
+              <span style={{
+                background: "rgba(34,197,94,0.18)",
+                border: "1px solid rgba(34,197,94,0.35)",
+                color: "#22c55e",
+                fontSize: 9,
+                fontWeight: 700,
+                padding: "2px 8px",
+                borderRadius: 999,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                backdropFilter: "blur(4px)",
+              }}>
+                {item.tag}
+              </span>
+            </div>
+
+            {/* Card content */}
+            <div style={{
+              background: "#0f1e0f",
+              borderTop: "1px solid rgba(34,197,94,0.12)",
+              padding: "10px 10px 12px",
+            }}>
+              <p style={{
+                color: "#e8f5e9",
+                fontSize: 12,
+                fontWeight: 700,
+                lineHeight: 1.45,
+                marginBottom: 6,
+                display: "-webkit-box",
+                WebkitBoxOrient: "vertical",
+                WebkitLineClamp: 2,
+                overflow: "hidden",
+              }}>
+                {item.title}
+              </p>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ color: "#7aad80", fontSize: 10, fontWeight: 500 }}>
+                  {item.meta}
+                </span>
+                <span style={{ fontSize: 14 }}>🔖</span>
               </div>
-            </a>
-          );
-        })}
+            </div>
+          </a>
+        ))}
       </div>
     </div>
   );
