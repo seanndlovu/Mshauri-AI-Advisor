@@ -1,0 +1,236 @@
+gri Challenge (instead of Agri Quiz)
+
+A gamified learning platform where farmers, students, extension officers, agribusinesses, and agriculture enthusiasts compete with each other while learning.
+
+Core Objectives
+Drive daily visits to Maricho Media.
+Increase time spent on the platform.
+Encourage users to return every day.
+Build an agriculture community.
+Reward learning rather than guessing.
+Collect useful engagement data.
+Gameplay
+Daily Challenge
+5–10 new agriculture questions every day.
+Questions sourced from:
+Maricho Media articles
+videos
+podcasts
+AGRITEX knowledge
+seasonal farming information
+local Zimbabwean farming practices
+
+Users have 24 hours to complete the challenge.
+
+Learn Before You Play
+
+Instead of immediately answering questions, users can:
+
+📖 Read today's Maricho Media article
+
+🎧 Listen to a podcast
+
+▶️ Watch a short video
+
+Then play the quiz.
+
+This drives traffic directly to Maricho Media.
+
+Community Competition
+
+Instead of only playing against AI:
+
+Compete against everyone using the platform.
+
+Leaderboards could include:
+
+Daily Leaderboard
+Weekly Leaderboard
+Monthly Leaderboard
+All-Time Leaderboard
+Friends Leaderboard
+Province Leaderboard
+District Leaderboard
+School Leaderboard
+Farmer Group Leaderboard
+
+This creates a strong sense of community.
+
+Streaks
+
+Maintain your learning streak.
+
+Examples:
+
+🔥 7-day streak
+
+🔥 30-day streak
+
+🔥 100-day streak
+
+🔥 365-day streak
+
+Missing a day resets your streak unless you use a "Streak Saver" reward.
+
+XP & Levels
+
+Users earn:
+
+XP
+Coins
+Badges
+Levels
+
+Example:
+
+Level 1 – Seed
+
+Level 5 – Seedling
+
+Level 10 – Farmer
+
+Level 20 – Agronomist
+
+Level 30 – Master Farmer
+
+Level 50 – Agriculture Champion
+
+Seasonal Events
+
+Examples:
+
+Maize Challenge
+Livestock Week
+Climate Smart Farming Month
+Winter Wheat Challenge
+Pest Identification Challenge
+
+Limited-time events encourage repeat engagement.
+
+Rewards
+
+Reward users with:
+
+Airtime
+Seed vouchers
+Fertilizer discounts
+Partner coupons
+Maricho merchandise
+Premium content
+Certificates
+Recognition on the leaderboard
+AI Features
+
+The AI should act as a coach, not the opponent.
+
+Examples:
+
+Explain wrong answers.
+Recommend articles.
+Suggest videos.
+Recommend the next lesson.
+Personalize quizzes based on the user's crops, livestock, location, and knowledge level.
+
+This creates a better learning experience than simply competing against AI.
+
+Maricho Media Integration (Most Important)
+
+The game should be tightly integrated with Maricho Media.
+
+For example:
+
+Today's article:
+"How to Control Fall Armyworm"
+
+↓
+
+Read for 3 minutes
+
+↓
+
+Play today's quiz
+
+↓
+
+Earn XP
+
+↓
+
+Unlock tomorrow's quiz
+
+↓
+
+Share your score
+
+↓
+
+Invite friends
+
+↓
+
+Repeat tomorrow
+
+This turns Maricho Media content into interactive learning and keeps users coming back.
+
+Community Features
+
+Allow users to:
+
+Follow other farmers
+Add friends
+Challenge friends
+Create farmer clubs
+Form cooperatives
+Join school competitions
+Join district competitions
+Comment on articles
+Discuss quiz questions
+
+This transforms the platform into an agricultural learning community rather than just a quiz app.
+
+Should it be Global or Maricho Community?
+
+I recommend starting with a Maricho Community rather than a fully global platform.
+
+Phase 1: Maricho Community (Recommended)
+
+Everyone who signs up becomes part of the Maricho learning community.
+
+Benefits:
+
+Drives traffic to Maricho Media.
+Strengthens the Maricho brand.
+Builds loyalty.
+Easier to moderate.
+Encourages repeat visits.
+Supports your mission of agricultural education.
+
+Users still compete with all registered Maricho users, making the leaderboards active and engaging.
+
+Phase 2: Global Expansion
+
+Once the platform has traction, you can expand to:
+
+Zimbabwe
+SADC
+Africa
+Global users
+
+Add regional leaderboards and localized content while keeping Maricho Media as the central hub.
+
+Additional Features to Differentiate the Platform
+Crop-specific learning paths (maize, tomatoes, poultry, cattle, goats, etc.)
+Weather-based quizzes tailored to the user's location and season.
+Photo challenges (identify pests, diseases, weeds, or nutrient deficiencies from images).
+Weekly AI Coach that highlights strengths, weaknesses, and recommended Maricho articles.
+Achievement badges for milestones such as "Soil Health Expert," "Livestock Champion," or "Climate Smart Farmer."
+Referral rewards for inviting new users to the Maricho community.
+Final Recommendation
+
+Don't build "Agri Quiz." Build an Agri Learning Ecosystem centered on Maricho Media.
+
+The quiz should be the engagement engine—not the product itself. Every question should encourage users to read articles, watch videos, listen to podcasts, and participate in the Maricho community. This creates a sustainable flywheel:
+
+Discover content → Learn → Play → Earn rewards → Climb leaderboards → Share → Return daily → Consume more Maricho content.
+
+This approach aligns much better with your long-term goal of increasing Maricho Media's traffic, engagement, and impact while creating a vibrant agricultural community.
