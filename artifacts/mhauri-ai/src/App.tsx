@@ -23,6 +23,7 @@ import Rules from "@/pages/Rules";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import AiDisclaimer from "@/pages/AiDisclaimer";
 import CookiePolicy from "@/pages/CookiePolicy";
+import Magazine from "@/pages/Magazine";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ function Router() {
             <Route path="/" component={Home} />
             <Route path="/ask" component={Home} />
             <Route path="/feed" component={Feed} />
+            <Route path="/magazine" component={Magazine} />
             <Route path="/conversations/:id" component={Conversation} />
             <Route path="/communities" component={Communities} />
             <Route path="/communities/:slug" component={CommunityFeed} />

@@ -66,3 +66,16 @@ export const alertsTable = pgTable("alerts", {
 });
 
 export type Alert = typeof alertsTable.$inferSelect;
+
+export const gameStatsTable = pgTable("game_stats", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }).unique(),
+  xp: integer("xp").notNull().default(0),
+  level: integer("level").notNull().default(1),
+  streak: integer("streak").notNull().default(0),
+  lastPlayedDate: text("last_played_date"),
+  totalGames: integer("total_games").notNull().default(0),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
+export type GameStats = typeof gameStatsTable.$inferSelect;

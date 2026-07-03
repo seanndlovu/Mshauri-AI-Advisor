@@ -1,8 +1,7 @@
 import { useState, useEffect, FormEvent } from "react";
 import { useRoute, Link } from "wouter";
-import { ArrowLeft, MessageCircle, MapPin, Clock, Send, Check, UserPlus, Newspaper } from "lucide-react";
+import { ArrowLeft, MessageCircle, MapPin, Clock, Send, Check, UserPlus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import MarichoNewsroom from "@/components/community/MarichoNewsroom";
 
 function getJoined(): number[] {
   try { return JSON.parse(localStorage.getItem("mshauri_joined") || "[]"); }
@@ -26,7 +25,7 @@ interface Post {
 const TYPE_COLORS: Record<string, string> = {
   question:      "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
   disease_report:"bg-red-500/15    text-red-400    border-red-500/30",
-  market_price:  "bg-emerald-500/15text-emerald-400 border-emerald-500/30",
+  market_price:  "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
   opportunity:   "bg-purple-500/15 text-purple-400  border-purple-500/30",
   success_story: "bg-green-500/15  text-green-400   border-green-500/30",
   weather:       "bg-blue-500/15   text-blue-400    border-blue-500/30",
@@ -51,8 +50,6 @@ export default function CommunityFeed() {
   const [form, setForm] = useState({ type: "question", title: "", content: "", location: "" });
   const [posting, setPosting] = useState(false);
   const [joined, setJoined] = useState(false);
-  const [view, setView] = useState<"posts" | "magazine">("posts");
-  const isMaricho = slug === "maricho";
 
   useEffect(() => {
     fetch(`/api/communities/${slug}`).then(r => r.json()).then(setCommunity).catch(() => {});
@@ -105,7 +102,6 @@ export default function CommunityFeed() {
     <div className="h-full overflow-y-auto bg-[#1a1a1b]">
       <div className="max-w-2xl mx-auto px-4 py-4">
 
-        {/* Header */}
         <div className="flex items-center gap-3 mb-5">
           <Link href="/communities">
             <button className="p-2 rounded-full hover:bg-white/5 transition-colors">
@@ -113,7 +109,7 @@ export default function CommunityFeed() {
             </button>
           </Link>
           <div className="flex-1 min-w-0">
-            <h1 className="text-[#E7E9EA] font-bold text-lg truncate">r/{slug}</h1>
+            <h1 className="text-[#E7E9EA] font-bold text-lg truncate">m/{slug}</h1>
             {community && <p className="text-[#71767B] text-xs truncate">{community.description}</p>}
           </div>
           {community && (
@@ -136,37 +132,6 @@ export default function CommunityFeed() {
           )}
         </div>
 
-        {/* Maricho: view tabs */}
-        {isMaricho && (
-          <div className="flex gap-1 mb-4 bg-[#16181C] border border-[#2F3336] rounded-full p-1">
-            <button
-              onClick={() => setView("posts")}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-full text-[12px] font-bold transition-all ${
-                view === "posts"
-                  ? "bg-[#22c55e] text-white shadow"
-                  : "text-[#71767B] hover:text-[#d7dadc]"
-              }`}
-            >
-              <MessageCircle className="w-3.5 h-3.5" /> Posts
-            </button>
-            <button
-              onClick={() => setView("magazine")}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-full text-[12px] font-bold transition-all ${
-                view === "magazine"
-                  ? "bg-[#22c55e] text-white shadow"
-                  : "text-[#71767B] hover:text-[#d7dadc]"
-              }`}
-            >
-              <Newspaper className="w-3.5 h-3.5" /> Magazine
-            </button>
-          </div>
-        )}
-
-        {/* Magazine view */}
-        {isMaricho && view === "magazine" && <MarichoNewsroom />}
-
-        {/* Sort + Post button — only in posts view */}
-        {(!isMaricho || view === "posts") && (
         <div className="flex items-center justify-between mb-4">
           <div className="flex gap-1">
             {(["recent", "helpful"] as SortMode[]).map(s => (
@@ -186,10 +151,8 @@ export default function CommunityFeed() {
             <Send className="w-3.5 h-3.5" /> Post
           </button>
         </div>
-        )}
 
-        {/* Compose form — posts view only */}
-        {(!isMaricho || view === "posts") && showCompose && (
+        {showCompose && (
           <form onSubmit={submitPost} className="mb-4 bg-[#16181C] border border-[#2F3336] rounded-2xl p-4 flex flex-col gap-3">
             <div className="grid grid-cols-2 gap-2">
               <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
@@ -217,79 +180,75 @@ export default function CommunityFeed() {
           </form>
         )}
 
-        {/* Ad + Posts — posts view only */}
-        {(!isMaricho || view === "posts") && !showCompose && (
+        {!showCompose && (
           <div className="mb-4 rounded-2xl overflow-hidden border border-[#2F3336] bg-[#16181C]">
             <img src="/ad-1money.png" alt="1Money — A NetOne Product" className="w-full object-contain" />
             <div className="px-3 py-1.5 text-center border-t border-[#2F3336]">
-              <p className="text-[#4a5260] text-[9px]">Sponsored · <a href="mailto:ads@maricho.media" className="text-[#22c55e]/70 hover:text-[#22c55e]">Advertise with us</a></p>
+              <p className="text-[#4a5260] text-[9px]">Ads · <a href="mailto:ads@maricho.media" className="text-[#22c55e]/70 hover:text-[#22c55e]">Advertise with us</a></p>
             </div>
           </div>
         )}
 
-        {/* Posts — hidden in magazine view */}
-        {(!isMaricho || view === "posts") && (
-          loading ? (
-            <div className="flex flex-col gap-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-28 rounded-2xl bg-white/5 animate-pulse" />
-              ))}
-            </div>
-          ) : posts.length === 0 ? (
-            <div className="text-center py-16 text-[#71767B]">
-              <p className="mb-2">No posts yet in r/{slug}</p>
-              <button onClick={() => setShowCompose(true)} className="text-[#22c55e] hover:underline text-sm font-semibold">
-                Be the first to post
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {posts.map(post => (
-                <Link key={post.id} href={`/posts/${post.id}`}>
-                  <div className="bg-[#16181C] border border-[#2F3336] hover:border-[#4a5568] rounded-2xl p-4 cursor-pointer transition-all group">
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${TYPE_COLORS[post.type] ?? TYPE_COLORS.question}`}>
-                        {TYPE_LABELS[post.type] ?? post.type}
+        {loading ? (
+          <div className="flex flex-col gap-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-28 rounded-2xl bg-white/5 animate-pulse" />
+            ))}
+          </div>
+        ) : posts.length === 0 ? (
+          <div className="text-center py-16 text-[#71767B]">
+            <p className="mb-2">No posts yet in m/{slug}</p>
+            <button onClick={() => setShowCompose(true)} className="text-[#22c55e] hover:underline text-sm font-semibold">
+              Be the first to post
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {posts.map(post => (
+              <Link key={post.id} href={`/posts/${post.id}`}>
+                <div className="bg-[#16181C] border border-[#2F3336] hover:border-[#4a5568] rounded-2xl p-4 cursor-pointer transition-all group">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${TYPE_COLORS[post.type] ?? TYPE_COLORS.question}`}>
+                      {TYPE_LABELS[post.type] ?? post.type}
+                    </span>
+                    {post.location && (
+                      <span className="flex items-center gap-1 text-[11px] text-[#71767B]">
+                        <MapPin className="w-3 h-3" />{post.location}
                       </span>
-                      {post.location && (
-                        <span className="flex items-center gap-1 text-[11px] text-[#71767B]">
-                          <MapPin className="w-3 h-3" />{post.location}
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="text-[#E7E9EA] font-bold text-[15px] leading-snug mb-1.5 group-hover:text-white transition-colors">
-                      {post.title}
-                    </h3>
-                    {post.imageUrl && (
-                      <div className="rounded-xl overflow-hidden mb-2 bg-black border border-[#2F3336]">
-                        <img src={post.imageUrl} alt="Post image" className="w-full max-h-52 object-cover" />
-                      </div>
                     )}
-                    {post.videoUrl && (
-                      <div className="rounded-xl overflow-hidden mb-2 bg-black border border-[#2F3336]">
-                        <video src={post.videoUrl} className="w-full max-h-52" controls preload="metadata" onClick={e => e.preventDefault()} />
-                      </div>
-                    )}
-                    {post.linkUrl && !post.imageUrl && !post.videoUrl && (
-                      <div className="flex items-center gap-2 mb-2 bg-[#1a1a1b] border border-[#2F3336] rounded-xl px-3 py-2">
-                        <span className="text-[11px]">🔗</span>
-                        <span className="text-[#22c55e] text-[11px] truncate">{post.linkUrl}</span>
-                      </div>
-                    )}
-                    {!post.imageUrl && !post.videoUrl && (
-                      <p className="text-[#71767B] text-[13px] leading-relaxed line-clamp-2 mb-3">{post.content}</p>
-                    )}
-                    <div className="flex items-center gap-3 pt-3 border-t border-[#2F3336] text-[#71767B] text-[11px]">
-                      <span>👍 {post.upvotes} helpful</span>
-                      <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" />{post.commentCount}</span>
-                      <span>u/{post.authorName ?? "anonymous"}</span>
-                      <span className="flex items-center gap-1 ml-auto"><Clock className="w-3 h-3" />{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
-                    </div>
                   </div>
-                </Link>
-              ))}
-            </div>
-          )
+                  <h3 className="text-[#E7E9EA] font-bold text-[15px] leading-snug mb-1.5 group-hover:text-white transition-colors">
+                    {post.title}
+                  </h3>
+                  {post.imageUrl && (
+                    <div className="rounded-xl overflow-hidden mb-2 bg-black border border-[#2F3336]">
+                      <img src={post.imageUrl} alt="Post image" className="w-full max-h-52 object-cover" />
+                    </div>
+                  )}
+                  {post.videoUrl && (
+                    <div className="rounded-xl overflow-hidden mb-2 bg-black border border-[#2F3336]">
+                      <video src={post.videoUrl} className="w-full max-h-52" controls preload="metadata" onClick={e => e.preventDefault()} />
+                    </div>
+                  )}
+                  {post.linkUrl && !post.imageUrl && !post.videoUrl && (
+                    <div className="flex items-center gap-2 mb-2 bg-[#1a1a1b] border border-[#2F3336] rounded-xl px-3 py-2">
+                      <span className="text-[11px]">🔗</span>
+                      <span className="text-[#22c55e] text-[11px] truncate">{post.linkUrl}</span>
+                    </div>
+                  )}
+                  {!post.imageUrl && !post.videoUrl && (
+                    <p className="text-[#71767B] text-[13px] leading-relaxed line-clamp-2 mb-3">{post.content}</p>
+                  )}
+                  <div className="flex items-center gap-3 pt-3 border-t border-[#2F3336] text-[#71767B] text-[11px]">
+                    <span>👍 {post.upvotes} helpful</span>
+                    <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" />{post.commentCount}</span>
+                    <span>u/{post.authorName ?? "anonymous"}</span>
+                    <span className="flex items-center gap-1 ml-auto"><Clock className="w-3 h-3" />{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         )}
       </div>
     </div>

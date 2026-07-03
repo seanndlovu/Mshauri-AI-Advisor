@@ -2,47 +2,67 @@ import { Router, type IRouter } from "express";
 
 const router: IRouter = Router();
 
+interface NewsItem {
+  title: string;
+  link: string;
+  excerpt: string;
+  date: string;
+  imageUrl: string;
+}
+
+let _cache: { items: NewsItem[]; expires: number } | null = null;
+
+function decodeHtml(str: string): string {
+  return str
+    .replace(/&amp;/g, "&")
+    .replace(/&#8217;/g, "\u2019")
+    .replace(/&#8220;/g, "\u201C")
+    .replace(/&#8221;/g, "\u201D")
+    .replace(/&hellip;/g, "\u2026")
+    .replace(/&#8230;/g, "\u2026")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&#\d+;/g, "");
+}
+
 router.get("/news", async (_req, res): Promise<void> => {
+  if (_cache && Date.now() < _cache.expires) {
+    res.json(_cache.items);
+    return;
+  }
   try {
-    const response = await fetch("https://marichomedia.com/feed", {
-      headers: { Accept: "application/rss+xml, text/xml, */*" },
-      signal: AbortSignal.timeout(8000),
+    const response = await fetch(
+      "https://marichomedia.com/wp-json/wp/v2/posts?per_page=4&_embed=true",
+      { signal: AbortSignal.timeout(8000) }
+    );
+    if (!response.ok) throw new Error("API error");
+    const posts = await response.json() as Record<string, unknown>[];
+
+    const items: NewsItem[] = posts.map(post => {
+      const rawTitle = (post.title as { rendered: string })?.rendered ?? "";
+      const title = decodeHtml(rawTitle.replace(/<[^>]+>/g, ""));
+
+      const rawExcerpt = (post.excerpt as { rendered: string })?.rendered ?? "";
+      const excerpt = decodeHtml(
+        rawExcerpt.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
+      ).slice(0, 320);
+
+      const embedded = post._embedded as Record<string, unknown> | undefined;
+      const mediaArr = embedded?.["wp:featuredmedia"] as Record<string, unknown>[] | undefined;
+      const imageUrl = (mediaArr?.[0]?.source_url as string) ?? "";
+
+      return {
+        title,
+        excerpt,
+        date: (post.date as string) ?? "",
+        imageUrl,
+        link: (post.link as string) ?? "",
+      };
     });
-    if (!response.ok) { res.json([]); return; }
-    const xml = await response.text();
 
-    const items: Array<{
-      title: string; link: string; description: string; pubDate: string; image: string;
-    }> = [];
-
-    const itemRe = /<item>([\s\S]*?)<\/item>/g;
-    let m;
-    while ((m = itemRe.exec(xml)) !== null) {
-      const block = m[1];
-      const title =
-        (block.match(/<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/s) ?? [])[1]?.trim() ?? "";
-      const link =
-        (block.match(/<link>(https?:[^<]+)<\/link>/) ?? [])[1]?.trim() ??
-        (block.match(/<guid[^>]*>(https?:[^<]+)<\/guid>/) ?? [])[1]?.trim() ?? "";
-      const rawDesc =
-        (block.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/s) ?? [])[1] ?? "";
-      const description = rawDesc
-        .replace(/<[^>]*>/g, " ")
-        .replace(/\s+/g, " ")
-        .trim()
-        .slice(0, 160);
-      const pubDate =
-        (block.match(/<pubDate>(.*?)<\/pubDate>/) ?? [])[1]?.trim() ?? "";
-      const image =
-        (block.match(/enclosure[^>]+url="([^"]+)"/) ?? [])[1] ??
-        (block.match(/<media:content[^>]+url="([^"]+)"/) ?? [])[1] ??
-        (block.match(/<wp:attachment_url>(.*?)<\/wp:attachment_url>/) ?? [])[1] ?? "";
-      if (title) items.push({ title, link, description, pubDate, image });
-    }
-
-    res.json(items.slice(0, 6));
+    _cache = { items, expires: Date.now() + 30 * 60 * 1000 };
+    res.json(items);
   } catch {
-    res.json([]);
+    res.json(_cache?.items ?? []);
   }
 });
 

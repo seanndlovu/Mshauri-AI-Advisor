@@ -2,3 +2,5 @@
 - [Seed script transitive deps](seed-transitive-deps.md) — scripts/tsx can't resolve workspace transitive deps (e.g. drizzle-orm via @workspace/db); use raw pg for seed scripts instead.
 - [Session auth cookie production](session-auth-config.md) — express-session needs sameSite:none + secure:true in production for Replit's HTTPS proxy; dev uses sameSite:lax.
 - [WhatsApp token runtime](whatsapp-token.md) — WHATSAPP_ACCESS_TOKEN must be read at request time via getWhatsAppConfig(), not cached at startup.
+- [Dashboard layout architecture](dashboard-layout.md) — Home.tsx owns its 2-column (content+right sidebar) layout inside AppLayout's main slot; AppLayout stays as left-sidebar+main only; don't add right-sidebar slot to AppLayout.
+- [Game stats dual storage](game-stats-storage.md) — DailyQuiz writes to localStorage("mshauri_game") for guests; POST /api/game/complete syncs for logged-in users; gameStatsTable in community.ts schema.

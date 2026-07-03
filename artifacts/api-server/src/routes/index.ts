@@ -12,6 +12,7 @@ import { authRouter } from "./auth";
 import { communitiesRouter } from "./communities";
 import { postsRouter } from "./posts";
 import { newsRouter } from "./news";
+import { gameRouter } from "./game";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(authRouter);
 router.use(communitiesRouter);
 router.use(postsRouter);
 router.use(newsRouter);
+router.use(gameRouter);
 
 export default router;

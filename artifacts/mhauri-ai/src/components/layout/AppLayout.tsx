@@ -1,20 +1,28 @@
 import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import {
-  Bot, TrendingUp, UserCircle,
-  Menu, PenSquare, Sun, Moon,
-  ChevronUp, ChevronDown, Star, Settings, Users,
+  TrendingUp, UserCircle,
+  Menu, Sun, Moon,
+  ChevronUp, ChevronDown, Settings,
+  Users, BookOpen, LayoutDashboard, Zap, Sparkles,
 } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/use-auth";
-import { CreatePostModal } from "@/components/CreatePostModal";
+import { DailyQuiz } from "@/components/game/DailyQuiz";
 
 const MAIN_NAV = [
-  { path: "/",       label: "Ask AI",    icon: Bot,         exact: true  },
-  { path: "/feed",   label: "Community", icon: Users                     },
-  { path: "/prices", label: "Markets",   icon: TrendingUp                },
-  { path: "/me",     label: "Me",        icon: UserCircle                },
+  { path: "/",         label: "Home",      icon: LayoutDashboard, exact: true },
+  { path: "/feed",     label: "Community", icon: Users                        },
+  { path: "/magazine", label: "Magazine",  icon: BookOpen                     },
+  { path: "/prices",   label: "Markets",   icon: TrendingUp                   },
+];
+
+const MOBILE_NAV = [
+  { path: "/",       label: "Home",      icon: LayoutDashboard, exact: true },
+  { path: "/feed",   label: "Community", icon: Users                        },
+  { path: "/prices", label: "Markets",   icon: TrendingUp                   },
+  { path: "/me",     label: "Me",        icon: UserCircle                   },
 ];
 
 const WA_LINK = "https://wa.me/263714280244?text=Hi%2C%20I%20want%20to%20connect%20with%20Mshauri";
@@ -37,15 +45,14 @@ function WhatsAppFAB() {
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [quizOpen, setQuizOpen] = useState(false);
 
   return (
     <div className="flex h-[100dvh] w-full bg-[#1a1a1b] text-[#d7dadc] overflow-hidden ms-theme-transition">
-      {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-[240px] bg-[#1a1a1b] border-r border-[#343536] shrink-0 h-full overflow-y-auto ms-theme-transition">
-        <SidebarContent />
+        <SidebarContent onPlayQuiz={() => setQuizOpen(true)} />
       </aside>
 
-      {/* Mobile hamburger */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetTrigger asChild>
           <button className="md:hidden fixed top-3 left-3 z-50 w-9 h-9 bg-[#272729] rounded-full flex items-center justify-center border border-[#343536] ms-theme-transition">
@@ -53,23 +60,23 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </button>
         </SheetTrigger>
         <SheetContent side="left" className="w-[240px] p-0 bg-[#1a1a1b] border-r border-[#343536] ms-theme-transition">
-          <SidebarContent onNavigate={() => setMobileOpen(false)} />
+          <SidebarContent onNavigate={() => setMobileOpen(false)} onPlayQuiz={() => { setMobileOpen(false); setQuizOpen(true); }} />
         </SheetContent>
       </Sheet>
 
-      {/* Mobile bottom nav — 4 tabs */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#1a1a1b] border-t border-[#343536] flex ms-theme-transition">
-        {MAIN_NAV.map(({ path, label, icon: Icon, exact }) => (
+        {MOBILE_NAV.map(({ path, label, icon: Icon, exact }) => (
           <MobileTab key={path} path={path} label={label} Icon={Icon} exact={exact} />
         ))}
       </nav>
 
-      {/* Floating WhatsApp button */}
       <WhatsAppFAB />
 
       <main className="flex-1 overflow-hidden min-w-0 pb-16 md:pb-0">
         {children}
       </main>
+
+      <DailyQuiz open={quizOpen} onClose={() => setQuizOpen(false)} />
     </div>
   );
 }
@@ -112,56 +119,111 @@ function ThemeToggle() {
     <button
       onClick={toggle}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
       className="relative flex items-center shrink-0 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22c55e]"
       style={{
-        width: 52,
-        height: 28,
-        transition: "background 0.3s ease, border-color 0.3s ease",
-        background: isDark
-          ? "linear-gradient(135deg,#0f1e12,#1a2e1c)"
-          : "linear-gradient(135deg,#dcfce7,#bbf7d0)",
+        width: 52, height: 28, transition: "background 0.3s ease, border-color 0.3s ease",
+        background: isDark ? "linear-gradient(135deg,#0f1e12,#1a2e1c)" : "linear-gradient(135deg,#dcfce7,#bbf7d0)",
         border: isDark ? "1.5px solid #2a4030" : "1.5px solid #86efac",
-        boxShadow: isDark
-          ? "0 0 0 0px rgba(34,197,94,0)"
-          : "0 0 10px rgba(34,197,94,0.18)",
+        boxShadow: isDark ? "0 0 0 0px rgba(34,197,94,0)" : "0 0 10px rgba(34,197,94,0.18)",
       }}
     >
-      {/* Sliding thumb */}
       <span
         className="absolute flex items-center justify-center rounded-full shadow-md"
         style={{
-          width: 22,
-          height: 22,
-          top: 2,
-          left: 2,
+          width: 22, height: 22, top: 2, left: 2,
           transition: "transform 0.3s cubic-bezier(0.34,1.56,0.64,1), background 0.3s ease",
           transform: isDark ? "translateX(24px)" : "translateX(0px)",
-          background: isDark
-            ? "linear-gradient(135deg,#22c55e,#16a34a)"
-            : "linear-gradient(135deg,#16a34a,#22c55e)",
+          background: isDark ? "linear-gradient(135deg,#22c55e,#16a34a)" : "linear-gradient(135deg,#16a34a,#22c55e)",
           boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
         }}
       >
-        {isDark
-          ? <Moon  className="w-[11px] h-[11px] text-white" />
-          : <Sun   className="w-[11px] h-[11px] text-white" />}
+        {isDark ? <Moon className="w-[11px] h-[11px] text-white" /> : <Sun className="w-[11px] h-[11px] text-white" />}
       </span>
     </button>
   );
 }
 
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
+const LEVELS_SIDEBAR = [
+  { min: 0,     title: "Seed Farmer"          },
+  { min: 500,   title: "Smallholder"           },
+  { min: 1500,  title: "Field Farmer"          },
+  { min: 3000,  title: "Crop Specialist"       },
+  { min: 5500,  title: "Agronomy Expert"       },
+  { min: 9000,  title: "Senior Grower"         },
+  { min: 14000, title: "Field Expert"          },
+  { min: 20000, title: "Master Farmer"         },
+  { min: 28000, title: "Agricultural Advisor"  },
+  { min: 38000, title: "Mshauri Champion"      },
+];
+
+function getLevelData(xp: number) {
+  let current = LEVELS_SIDEBAR[0];
+  let nextMin = LEVELS_SIDEBAR[1]?.min ?? LEVELS_SIDEBAR[0].min + 500;
+  for (let i = 0; i < LEVELS_SIDEBAR.length; i++) {
+    if (xp >= LEVELS_SIDEBAR[i].min) {
+      current = LEVELS_SIDEBAR[i];
+      nextMin = LEVELS_SIDEBAR[i + 1]?.min ?? LEVELS_SIDEBAR[i].min + 10000;
+    }
+  }
+  const progress = Math.min(100, ((xp - current.min) / (nextMin - current.min)) * 100);
+  return { title: current.title, progress };
 }
 
-// Deterministic avatar colour from community slug
+function GameSidebarBlock({ onPlayNow }: { onPlayNow: () => void }) {
+  const [xp, setXp] = useState(0);
+  const [streak, setStreak] = useState(0);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("mshauri_game");
+      if (raw) {
+        const data = JSON.parse(raw) as { xp?: number; streak?: number };
+        setXp(data.xp ?? 0);
+        setStreak(data.streak ?? 0);
+      }
+    } catch {}
+    fetch("/api/game/stats", { credentials: "include" })
+      .then(r => r.json())
+      .then(d => { if (d && typeof d.xp === "number") { setXp(d.xp); setStreak(d.streak ?? 0); } })
+      .catch(() => {});
+  }, []);
+
+  const { title, progress } = getLevelData(xp);
+
+  return (
+    <>
+      <div className="mx-3 border-t border-[#343536] my-2" />
+      <div className="mx-3 border border-[#343536] rounded-xl p-3 mb-1 bg-[#1e2022]">
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center gap-1.5">
+            <Zap className="w-3 h-3 text-[#22c55e]" />
+            <span className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Mshauri Game</span>
+          </div>
+          {streak > 0 && (
+            <span className="text-[10px] text-orange-400 font-bold">🔥 {streak}d</span>
+          )}
+        </div>
+        <div className="text-[#d7dadc] text-[12px] font-bold mb-1">{title}</div>
+        <div className="w-full bg-[#343536] rounded-full h-1.5 mb-2">
+          <div
+            className="bg-[#22c55e] h-1.5 rounded-full transition-all duration-500"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-[#818384] text-[10px]">{xp.toLocaleString()} XP</span>
+          <button
+            onClick={onPlayNow}
+            className="text-[#22c55e] text-[11px] font-bold hover:underline transition-colors"
+          >
+            Play Now →
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 const AVATAR_COLORS = [
   "#22c55e","#3b82f6","#f59e0b","#ef4444","#8b5cf6",
   "#06b6d4","#ec4899","#10b981","#f97316","#6366f1",
@@ -191,7 +253,6 @@ function CommunitiesSidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <>
       <div className="mx-3 border-t border-[#343536] my-2" />
-      {/* Header row */}
       <button
         onClick={() => setOpen(o => !o)}
         className="flex items-center justify-between w-full px-3 mb-1 group"
@@ -203,14 +264,13 @@ function CommunitiesSidebar({ onNavigate }: { onNavigate?: () => void }) {
       </button>
 
       {open && (
-        <div className="flex flex-col overflow-y-auto max-h-56">
-          {/* Manage link */}
+        <div className="flex flex-col overflow-y-auto max-h-52">
           <Link href="/communities" onClick={onNavigate}>
             <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg mx-1 text-[#818384] hover:bg-[#272729] hover:text-[#d7dadc] transition-colors group cursor-pointer">
               <div className="w-6 h-6 rounded-full bg-[#272729] border border-[#343536] flex items-center justify-center shrink-0">
                 <Settings className="w-3 h-3 text-[#818384]" />
               </div>
-              <span className="text-[12px] flex-1">Manage Communities</span>
+              <span className="text-[12px] flex-1">All Communities</span>
             </div>
           </Link>
 
@@ -222,15 +282,13 @@ function CommunitiesSidebar({ onNavigate }: { onNavigate?: () => void }) {
                 <div className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg mx-1 transition-colors group cursor-pointer ${
                   active ? "bg-[#272729] text-[#d7dadc]" : "text-[#818384] hover:bg-[#272729] hover:text-[#d7dadc]"
                 }`}>
-                  {/* Avatar */}
                   <div
                     className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-white font-black text-[10px]"
                     style={{ backgroundColor: color }}
                   >
                     {c.name[0].toUpperCase()}
                   </div>
-                  <span className="text-[12px] flex-1 truncate">r/{c.slug}</span>
-                  <Star className="w-3 h-3 opacity-0 group-hover:opacity-60 shrink-0 transition-opacity" />
+                  <span className="text-[12px] flex-1 truncate">m/{c.slug}</span>
                 </div>
               </Link>
             );
@@ -246,25 +304,23 @@ function AdPlaceholder() {
     <>
       <div className="mx-3 border-t border-[#343536] my-2" />
       <div className="px-3 mb-1">
-        <span className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Sponsored</span>
+        <span className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Ads</span>
       </div>
       <div className="mx-3 rounded-xl overflow-hidden border border-[#2F3336] bg-[#1a1c1f]">
         <img src="/ad-1money.png" alt="1Money — A NetOne Product" className="w-full object-contain" />
         <div className="px-3 py-2 text-center">
-          <p className="text-[#4a5260] text-[9px]">Sponsored · <a href="mailto:ads@maricho.media" className="text-[#22c55e]/70 hover:text-[#22c55e]">Advertise</a></p>
+          <p className="text-[#4a5260] text-[9px]">Ads · <a href="mailto:ads@maricho.media" className="text-[#22c55e]/70 hover:text-[#22c55e]">Advertise</a></p>
         </div>
       </div>
     </>
   );
 }
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarContent({ onNavigate, onPlayQuiz }: { onNavigate?: () => void; onPlayQuiz: () => void }) {
   const { user } = useAuth();
-  const [createOpen, setCreateOpen] = useState(false);
 
   return (
     <div className="flex flex-col h-full py-3">
-      {/* Logo + theme toggle row */}
       <div className="flex items-center justify-between gap-2 px-4 py-2.5 mb-2 mx-2">
         <Link href="/" className="flex-1 min-w-0">
           <div onClick={onNavigate} className="flex items-center gap-2.5 cursor-pointer hover:bg-[#272729] rounded-lg transition-colors">
@@ -278,32 +334,29 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <ThemeToggle />
       </div>
 
-      {/* Create Post CTA */}
       <div className="px-3 mb-3">
-        <button
-          onClick={() => setCreateOpen(true)}
-          className="w-full flex items-center justify-center gap-2 bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold py-2 rounded-full text-[13px] transition-colors"
-        >
-          <PenSquare className="w-4 h-4" /> Create Post
-        </button>
+        <Link href="/" onClick={onNavigate}>
+          <button className="w-full flex items-center justify-center gap-2 bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold py-2 rounded-full text-[13px] transition-colors">
+            <Sparkles className="w-4 h-4" />
+            Ask Mshauri
+          </button>
+        </Link>
       </div>
 
-      {/* Main nav — 4 destinations */}
       <nav className="px-2 mb-2 flex flex-col gap-0.5">
         {MAIN_NAV.map(({ path, label, icon, exact }) => (
           <NavLink key={path} path={path} label={label} icon={icon} exact={exact} onClick={onNavigate} />
         ))}
       </nav>
 
-      {/* Communities list */}
+      <GameSidebarBlock onPlayNow={onPlayQuiz} />
+
       <CommunitiesSidebar onNavigate={onNavigate} />
 
-      {/* Ad placeholder */}
       <AdPlaceholder />
 
       <div className="flex-1" />
 
-      {/* Legal links */}
       <div className="mx-3 mb-1">
         <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 px-3 pt-2 pb-1">
           {([["Rules", "/rules"], ["Privacy", "/privacy"], ["AI Use", "/ai-disclaimer"], ["Cookies", "/cookies"]] as [string, string][]).map(([label, href]) => (
@@ -340,12 +393,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         )}
       </div>
       <div className="h-3" />
-
-      <CreatePostModal
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onCreated={() => {}}
-      />
     </div>
   );
 }
