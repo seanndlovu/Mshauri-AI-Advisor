@@ -99,18 +99,6 @@ function TrendingDiscussions() {
         </div>
       </div>
 
-      <div className="mt-4 pt-3 border-t border-[#2F3336]">
-        <p className="text-[10px] font-bold text-[#818384] uppercase tracking-wider mb-2">Share Mshauri</p>
-        <div className="flex gap-2">
-          <a
-            href="https://wa.me/?text=Check%20out%20Mshauri%20-%20Zimbabwe's%20AI%20agricultural%20assistant"
-            target="_blank" rel="noreferrer"
-            className="flex items-center gap-1 text-[#71767B] hover:text-[#25d366] text-[11px] transition-colors"
-          >
-            <Share2 className="w-3.5 h-3.5" /> WhatsApp
-          </a>
-        </div>
-      </div>
     </div>
   );
 }

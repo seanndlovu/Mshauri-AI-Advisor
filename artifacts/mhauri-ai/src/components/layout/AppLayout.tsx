@@ -193,31 +193,89 @@ function GameSidebarBlock({ onPlayNow }: { onPlayNow: () => void }) {
   return (
     <>
       <div className="mx-3 border-t border-[#343536] my-2" />
-      <div className="mx-3 border border-[#343536] rounded-xl p-3 mb-1 bg-[#1e2022]">
-        <div className="flex items-center justify-between mb-1.5">
-          <div className="flex items-center gap-1.5">
-            <Zap className="w-3 h-3 text-[#22c55e]" />
-            <span className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Mshauri Game</span>
+      <div className="mx-3 mb-2">
+        {/* Game card — dark green gradient */}
+        <div
+          style={{
+            position: "relative", overflow: "hidden", borderRadius: 16,
+            background: "linear-gradient(140deg, #0a1a0a 0%, #162416 55%, #0d2010 100%)",
+            border: "1.5px solid rgba(34,197,94,0.22)",
+            boxShadow: "0 2px 20px rgba(34,197,94,0.08)",
+            padding: "14px 14px 12px",
+          }}
+        >
+          {/* Glow blob */}
+          <div style={{
+            position: "absolute", bottom: -24, right: -24,
+            width: 100, height: 100,
+            background: "radial-gradient(circle, rgba(34,197,94,0.18) 0%, transparent 70%)",
+            borderRadius: "50%", pointerEvents: "none",
+          }} />
+          {/* Watermark */}
+          <div style={{
+            position: "absolute", bottom: -6, right: 4,
+            fontSize: 52, opacity: 0.12, lineHeight: 1,
+            transform: "rotate(-12deg)", pointerEvents: "none", userSelect: "none",
+          }}>
+            🌾
           </div>
-          {streak > 0 && (
-            <span className="text-[10px] text-orange-400 font-bold">🔥 {streak}d</span>
-          )}
-        </div>
-        <div className="text-[#d7dadc] text-[12px] font-bold mb-1">{title}</div>
-        <div className="w-full bg-[#343536] rounded-full h-1.5 mb-2">
-          <div
-            className="bg-[#22c55e] h-1.5 rounded-full transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-[#818384] text-[10px]">{xp.toLocaleString()} XP</span>
-          <button
-            onClick={onPlayNow}
-            className="text-[#22c55e] text-[11px] font-bold hover:underline transition-colors"
-          >
-            Play Now →
-          </button>
+
+          {/* Header row */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{
+                width: 22, height: 22, borderRadius: 6,
+                background: "rgba(34,197,94,0.18)", border: "1px solid rgba(34,197,94,0.3)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <Zap style={{ width: 11, height: 11, color: "#22c55e" }} />
+              </div>
+              <span style={{ fontSize: 10, fontWeight: 800, color: "#22c55e", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                Mshauri Game
+              </span>
+            </div>
+            <span style={{ fontSize: 12, fontWeight: 800, color: "#fb923c" }}>
+              🔥 {streak > 0 ? `${streak}d` : "0d"}
+            </span>
+          </div>
+
+          {/* Level title */}
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#e8f5e9", marginBottom: 6, lineHeight: 1.2 }}>
+            {title}
+          </div>
+
+          {/* XP bar */}
+          <div style={{ width: "100%", height: 5, background: "rgba(34,197,94,0.12)", borderRadius: 3, marginBottom: 10 }}>
+            <div style={{
+              height: 5, borderRadius: 3,
+              background: "linear-gradient(90deg, #16a34a, #22c55e)",
+              width: `${progress}%`,
+              transition: "width 0.5s ease",
+              boxShadow: "0 0 6px rgba(34,197,94,0.5)",
+            }} />
+          </div>
+
+          {/* Footer row */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 11, color: "#7aad80", fontWeight: 600 }}>
+              {xp.toLocaleString()} XP
+            </span>
+            <button
+              onClick={onPlayNow}
+              style={{
+                background: "linear-gradient(135deg, #16a34a, #22c55e)",
+                border: "none", borderRadius: 999, color: "#fff",
+                fontSize: 11, fontWeight: 800, padding: "5px 12px",
+                cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
+                boxShadow: "0 2px 8px rgba(34,197,94,0.3)",
+                fontFamily: "inherit", transition: "all 0.2s",
+              }}
+              onMouseOver={e => (e.currentTarget.style.transform = "scale(1.05)")}
+              onMouseOut={e => (e.currentTarget.style.transform = "scale(1)")}
+            >
+              Play Now ⚡
+            </button>
+          </div>
         </div>
       </div>
     </>

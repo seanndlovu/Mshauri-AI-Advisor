@@ -1,5 +1,39 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { X, Trophy, Zap, Flame } from "lucide-react";
+
+/* ── Floating emoji particle system ─────────────────────────────────── */
+interface Particle { id: number; emoji: string; x: number; }
+
+const CORRECT_EMOJIS  = ["🌟","✨","🎉","💚","🌿","🏆","⚡","🌱"];
+const WRONG_EMOJIS    = ["😬","💧","📚","🤔","💡"];
+const DONE_EMOJIS     = ["🎊","🏆","🌟","✨","🎉","🌾","🌽","💚"];
+
+function FloatingParticles({ particles }: { particles: Particle[] }) {
+  return (
+    <>
+      {particles.map(p => (
+        <div key={p.id} style={{
+          position: "fixed",
+          left: p.x, top: "50%",
+          fontSize: 28,
+          pointerEvents: "none",
+          zIndex: 400,
+          animation: "floatUp 1.2s ease-out forwards",
+          userSelect: "none",
+        }}>
+          {p.emoji}
+        </div>
+      ))}
+      <style>{`
+        @keyframes floatUp {
+          0%   { transform: translateY(0) scale(1);   opacity: 1; }
+          60%  { transform: translateY(-120px) scale(1.2); opacity: 0.9; }
+          100% { transform: translateY(-220px) scale(0.6); opacity: 0; }
+        }
+      `}</style>
+    </>
+  );
+}
 
 interface Question {
   q: string;
@@ -155,7 +189,21 @@ export function DailyQuiz({ open, onClose, onXpEarned }: Props) {
   const [timeLeft, setTimeLeft] = useState(TIMER_SECS);
   const [finalStats, setFinalStats] = useState<LocalStats | null>(null);
   const [xpEarnedDisplay, setXpEarnedDisplay] = useState(0);
+  const [particles, setParticles] = useState<Particle[]>([]);
+  const particleIdRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const burst = useCallback((emojis: string[], count = 6) => {
+    const newParticles: Particle[] = Array.from({ length: count }, () => ({
+      id: ++particleIdRef.current,
+      emoji: emojis[Math.floor(Math.random() * emojis.length)],
+      x: Math.random() * (window.innerWidth - 80) + 40,
+    }));
+    setParticles(p => [...p, ...newParticles]);
+    setTimeout(() => {
+      setParticles(p => p.filter(x => !newParticles.find(n => n.id === x.id)));
+    }, 1400);
+  }, []);
 
   function startSession() {
     const shuffled = [...QUIZ_BANK].sort(() => Math.random() - 0.5).slice(0, QUESTIONS_PER_SESSION);
@@ -187,7 +235,12 @@ export function DailyQuiz({ open, onClose, onXpEarned }: Props) {
     if (timerRef.current) clearInterval(timerRef.current);
     setSelected(idx);
     setAnswered(true);
-    if (idx === questions[qi].a) setScore(s => s + 1);
+    if (idx === questions[qi].a) {
+      setScore(s => s + 1);
+      burst(CORRECT_EMOJIS, 7);
+    } else {
+      burst(WRONG_EMOJIS, 4);
+    }
   }
 
   function handleNext() {
@@ -202,6 +255,7 @@ export function DailyQuiz({ open, onClose, onXpEarned }: Props) {
   }
 
   function finishSession(finalScore: number) {
+    burst(finalScore >= 4 ? DONE_EMOJIS : CORRECT_EMOJIS, finalScore >= 4 ? 12 : 6);
     const xpGained = finalScore * XP_PER_CORRECT;
     const today = new Date().toISOString().split("T")[0];
     const prev = loadStats();
@@ -229,6 +283,9 @@ export function DailyQuiz({ open, onClose, onXpEarned }: Props) {
 
   const q = questions[qi] ?? null;
 
+  // Render particles outside the modal so they float over everything
+  const particleLayer = <FloatingParticles particles={particles} />;
+
   function optionStyle(i: number): React.CSSProperties {
     if (!answered) {
       return { background: "rgba(255,255,255,0.04)", border: "1.5px solid #1a3020", color: "#e8f5e9" };
@@ -243,6 +300,8 @@ export function DailyQuiz({ open, onClose, onXpEarned }: Props) {
   const lvl = finalStats ? getLevel(finalStats.xp) : null;
 
   return (
+    <>
+    {particleLayer}
     <div
       style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center",
                padding: 16, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)" }}
@@ -440,5 +499,6 @@ export function DailyQuiz({ open, onClose, onXpEarned }: Props) {
         )}
       </div>
     </div>
+    </>
   );
 }
