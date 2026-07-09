@@ -1,7 +1,8 @@
 import { useState, useEffect, FormEvent } from "react";
 import { useRoute, Link } from "wouter";
-import { ArrowLeft, MessageCircle, MapPin, Clock, Send, Check, UserPlus } from "lucide-react";
+import { ArrowLeft, MessageCircle, MapPin, Clock, Send, Check, UserPlus, LogIn } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { useAuth } from "@/hooks/use-auth";
 
 function getJoined(): number[] {
   try { return JSON.parse(localStorage.getItem("mshauri_joined") || "[]"); }
@@ -41,12 +42,14 @@ type SortMode = "recent" | "helpful";
 export default function CommunityFeed() {
   const [, params] = useRoute("/communities/:slug");
   const slug = params?.slug ?? "";
+  const { user, loading: authLoading } = useAuth();
 
   const [community, setCommunity] = useState<Community | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [sort, setSort] = useState<SortMode>("recent");
   const [loading, setLoading] = useState(true);
   const [showCompose, setShowCompose] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [form, setForm] = useState({ type: "question", title: "", content: "", location: "" });
   const [posting, setPosting] = useState(false);
   const [joined, setJoined] = useState(false);
@@ -58,6 +61,16 @@ export default function CommunityFeed() {
   useEffect(() => {
     if (community) setJoined(getJoined().includes(community.id));
   }, [community?.id]);
+
+  function openCompose() {
+    if (!authLoading && !user) { setShowLoginPrompt(true); return; }
+    setShowCompose(v => !v);
+  }
+
+  function handleToggleJoin() {
+    if (!authLoading && !user) { setShowLoginPrompt(true); return; }
+    toggleJoin();
+  }
 
   function toggleJoin() {
     if (!community) return;
@@ -116,7 +129,7 @@ export default function CommunityFeed() {
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-[#71767B] text-[11px]">{community.memberCount.toLocaleString()} members</span>
               <button
-                onClick={toggleJoin}
+                onClick={handleToggleJoin}
                 className={`flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-bold transition-all border ${
                   joined
                     ? "bg-[#22c55e]/10 text-[#22c55e] border-[#22c55e]/40 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/40"
@@ -146,29 +159,49 @@ export default function CommunityFeed() {
               </button>
             ))}
           </div>
-          <button onClick={() => setShowCompose(!showCompose)}
+          <button onClick={openCompose}
             className="flex items-center gap-2 bg-[#22c55e] hover:bg-[#16a34a] text-white text-[12px] font-bold px-4 py-1.5 rounded-full transition-colors">
             <Send className="w-3.5 h-3.5" /> Post
           </button>
         </div>
 
+        {showLoginPrompt && (
+          <div className="mb-4 bg-[#16181C] border border-[#22c55e]/30 rounded-2xl p-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <LogIn className="w-4 h-4 text-[#22c55e] shrink-0" />
+              <p className="text-[#E7E9EA] text-sm">Log in to post or join this community.</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link href="/login">
+                <button className="px-3 py-1.5 rounded-full border border-[#2F3336] text-[#E7E9EA] text-[12px] font-bold hover:bg-white/5">Log In</button>
+              </Link>
+              <Link href="/register">
+                <button className="px-3 py-1.5 rounded-full bg-[#22c55e] text-white text-[12px] font-bold hover:bg-[#16a34a]">Sign Up</button>
+              </Link>
+              <button onClick={() => setShowLoginPrompt(false)} className="p-1.5 rounded-full text-[#71767B] hover:bg-white/5 text-sm">
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
         {showCompose && (
           <form onSubmit={submitPost} className="mb-4 bg-[#16181C] border border-[#2F3336] rounded-2xl p-4 flex flex-col gap-3">
             <div className="grid grid-cols-2 gap-2">
               <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
-                className="bg-black border border-[#2F3336] rounded-xl px-3 py-2 text-[#E7E9EA] text-sm focus:outline-none focus:border-[#22c55e]">
+                className="bg-[#272729] border border-[#2F3336] rounded-xl px-3 py-2 text-[#E7E9EA] text-sm focus:outline-none focus:border-[#22c55e]">
                 {Object.entries(TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
               <input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
                 placeholder="Location (optional)"
-                className="bg-black border border-[#2F3336] rounded-xl px-3 py-2 text-[#E7E9EA] text-sm placeholder-[#71767B] focus:outline-none focus:border-[#22c55e]" />
+                className="bg-[#272729] border border-[#2F3336] rounded-xl px-3 py-2 text-[#E7E9EA] text-sm placeholder-[#71767B] focus:outline-none focus:border-[#22c55e]" />
             </div>
             <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
               required placeholder="Title"
-              className="bg-black border border-[#2F3336] rounded-xl px-3 py-2 text-[#E7E9EA] text-sm placeholder-[#71767B] focus:outline-none focus:border-[#22c55e]" />
+              className="bg-[#272729] border border-[#2F3336] rounded-xl px-3 py-2 text-[#E7E9EA] text-sm placeholder-[#71767B] focus:outline-none focus:border-[#22c55e]" />
             <textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
               required rows={3} placeholder="Describe your question or situation…"
-              className="bg-black border border-[#2F3336] rounded-xl px-3 py-2 text-[#E7E9EA] text-sm placeholder-[#71767B] focus:outline-none focus:border-[#22c55e] resize-none" />
+              className="bg-[#272729] border border-[#2F3336] rounded-xl px-3 py-2 text-[#E7E9EA] text-sm placeholder-[#71767B] focus:outline-none focus:border-[#22c55e] resize-none" />
             <div className="flex gap-2 justify-end">
               <button type="button" onClick={() => setShowCompose(false)}
                 className="px-4 py-2 rounded-full border border-[#2F3336] text-[#71767B] text-sm hover:bg-white/5">Cancel</button>
@@ -198,7 +231,7 @@ export default function CommunityFeed() {
         ) : posts.length === 0 ? (
           <div className="text-center py-16 text-[#71767B]">
             <p className="mb-2">No posts yet in m/{slug}</p>
-            <button onClick={() => setShowCompose(true)} className="text-[#22c55e] hover:underline text-sm font-semibold">
+            <button onClick={openCompose} className="text-[#22c55e] hover:underline text-sm font-semibold">
               Be the first to post
             </button>
           </div>

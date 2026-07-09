@@ -84,7 +84,7 @@ export function CreateCommunityModal({ open, onClose, onCreated }: Props) {
               onChange={e => setName(e.target.value)}
               placeholder="e.g. Aquaculture Zimbabwe"
               maxLength={80}
-              className="w-full bg-black border border-[#2F3336] rounded-lg px-3 py-2.5 text-[#E7E9EA] text-[14px] placeholder-[#71767B] focus:outline-none focus:border-[#22c55e]/60 transition-colors"
+              className="w-full bg-[#272729] border border-[#2F3336] rounded-lg px-3 py-2.5 text-[#E7E9EA] text-[14px] placeholder-[#71767B] focus:outline-none focus:border-[#22c55e]/60 transition-colors"
             />
           </div>
 
@@ -93,7 +93,7 @@ export function CreateCommunityModal({ open, onClose, onCreated }: Props) {
             <label className="block text-[12px] font-bold text-[#71767B] mb-1.5 uppercase tracking-wide">
               URL Slug <span className="text-[#71767B] font-normal normal-case">(r/slug)</span>
             </label>
-            <div className="flex items-center bg-black border border-[#2F3336] rounded-lg overflow-hidden focus-within:border-[#22c55e]/60 transition-colors">
+            <div className="flex items-center bg-[#272729] border border-[#2F3336] rounded-lg overflow-hidden focus-within:border-[#22c55e]/60 transition-colors">
               <span className="px-3 text-[#71767B] text-[14px] shrink-0">r/</span>
               <input
                 value={slug}
@@ -117,7 +117,7 @@ export function CreateCommunityModal({ open, onClose, onCreated }: Props) {
               placeholder="What is this community about? Who should join?"
               maxLength={300}
               rows={3}
-              className="w-full bg-black border border-[#2F3336] rounded-lg px-3 py-2.5 text-[#E7E9EA] text-[14px] placeholder-[#71767B] focus:outline-none focus:border-[#22c55e]/60 transition-colors resize-none"
+              className="w-full bg-[#272729] border border-[#2F3336] rounded-lg px-3 py-2.5 text-[#E7E9EA] text-[14px] placeholder-[#71767B] focus:outline-none focus:border-[#22c55e]/60 transition-colors resize-none"
             />
             <p className="text-[11px] text-[#71767B] mt-1">{description.length}/300</p>
           </div>
