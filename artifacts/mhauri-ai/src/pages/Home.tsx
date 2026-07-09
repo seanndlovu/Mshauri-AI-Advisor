@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import { useLocation, Link } from "wouter";
 import { useChatStream } from "@/hooks/use-chat-stream";
 import { useAuth } from "@/hooks/use-auth";
-import { Mic, MicOff, Camera, Send, X, MessageCircle, Share2, TrendingUp } from "lucide-react";
+import { Mic, MicOff, Paperclip, Send, X, MessageCircle, Share2, TrendingUp, FileText } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { FeaturedStoryCarousel } from "@/components/home/FeaturedStoryCarousel";
 import { ContinueLearning } from "@/components/home/ContinueLearning";
@@ -109,11 +109,22 @@ export default function Home() {
   const { user } = useAuth();
   const [askText, setAskText] = useState("");
   const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [attachedFile, setAttachedFile] = useState<{ name: string; mimeType: string; dataUrl: string } | null>(null);
+  const [attachError, setAttachError] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [voiceUnsupported, setVoiceUnsupported] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { sendMessage, isStreaming } = useChatStream();
+
+  const ALLOWED_DOCUMENT_TYPES = [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
+    "text/csv",
+  ];
+  const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -123,21 +134,47 @@ export default function Home() {
   }, [askText]);
 
   function handleSubmit() {
-    if ((!askText.trim() && !imageBase64) || isStreaming) return;
-    const t = askText; const img = imageBase64;
-    setAskText(""); setImageBase64(null);
+    if ((!askText.trim() && !imageBase64 && !attachedFile) || isStreaming) return;
+    const t = askText; const img = imageBase64; const file = attachedFile;
+    setAskText(""); setImageBase64(null); setAttachedFile(null);
     if (textareaRef.current) textareaRef.current.style.height = "auto";
-    sendMessage(t, img, (id: number) => setLocation(`/conversations/${id}`));
+    sendMessage(t, img, file, (id: number) => setLocation(`/conversations/${id}`));
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); }
   }
 
-  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]; if (!file) return;
+    setAttachError(null);
+
+    if (file.size > MAX_FILE_BYTES) {
+      setAttachError("File is too large. Max size is 10MB.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    const isImage = file.type.startsWith("image/");
+    const isDocument = ALLOWED_DOCUMENT_TYPES.includes(file.type);
+
+    if (!isImage && !isDocument) {
+      setAttachError("Only images, PDF, Word, and text files are supported — no video or audio.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     const reader = new FileReader();
-    reader.onload = (ev) => setImageBase64(ev.target?.result as string);
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      if (isImage) {
+        setImageBase64(dataUrl);
+        setAttachedFile(null);
+      } else {
+        setAttachedFile({ name: file.name, mimeType: file.type, dataUrl });
+        setImageBase64(null);
+      }
+    };
     reader.readAsDataURL(file);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
@@ -195,6 +232,23 @@ export default function Home() {
               </div>
             )}
 
+            {attachedFile && (
+              <div className="flex items-center gap-2 mb-3 bg-[#0f1011] border border-[#2F3336] rounded-xl px-3 py-2 w-fit max-w-full">
+                <FileText className="w-4 h-4 text-[#22c55e] shrink-0" />
+                <span className="text-[#E7E9EA] text-[12px] truncate max-w-[200px]">{attachedFile.name}</span>
+                <button
+                  onClick={() => setAttachedFile(null)}
+                  className="w-4 h-4 shrink-0 flex items-center justify-center text-[#71767B] hover:text-[#ef4444] transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {attachError && (
+              <div className="text-[#ef4444] text-[11px] mb-2">{attachError}</div>
+            )}
+
             <textarea
               ref={textareaRef}
               value={askText}
@@ -220,18 +274,24 @@ export default function Home() {
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  title="Attach a photo"
+                  title="Attach an image, PDF, Word, or text file"
                   className="p-2 rounded-full text-[#71767B] hover:text-[#22c55e] hover:bg-[#22c55e]/10 transition-all"
                 >
-                  <Camera className="w-4 h-4" />
+                  <Paperclip className="w-4 h-4" />
                 </button>
-                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,.pdf,.doc,.docx,.txt,.csv,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/csv"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
                 {isListening && <span className="text-[#22c55e] text-[11px] font-bold animate-pulse ml-1">Listening…</span>}
                 {voiceUnsupported && <span className="text-[#71767B] text-[11px] ml-1">Voice unavailable</span>}
               </div>
               <button
                 onClick={handleSubmit}
-                disabled={(!askText.trim() && !imageBase64) || isStreaming}
+                disabled={(!askText.trim() && !imageBase64 && !attachedFile) || isStreaming}
                 className="flex items-center gap-1.5 bg-[#22c55e] hover:bg-[#16a34a] disabled:opacity-40 disabled:cursor-not-allowed text-white text-[12px] font-bold px-4 py-2 rounded-full transition-all"
               >
                 {isStreaming ? (

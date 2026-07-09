@@ -14,6 +14,39 @@ import { findRelevantArticles } from "../lib/knowledge-search";
 
 const router: IRouter = Router();
 
+const MAX_ATTACHMENT_TEXT_CHARS = 8000;
+const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024; // 10MB
+
+const ALLOWED_DOCUMENT_MIME_TYPES = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+  "text/csv",
+]);
+
+async function extractDocumentText(mimeType: string, buffer: Buffer): Promise<string> {
+  if (mimeType === "application/pdf") {
+    const { PDFParse } = await import("pdf-parse");
+    const parser = new PDFParse({ data: buffer });
+    try {
+      const result = await parser.getText();
+      return result.text;
+    } finally {
+      await parser.destroy();
+    }
+  }
+  if (mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+    const mammoth = await import("mammoth");
+    const result = await mammoth.extractRawText({ buffer });
+    return result.value;
+  }
+  if (mimeType === "text/plain" || mimeType === "text/csv") {
+    return buffer.toString("utf-8");
+  }
+  throw new Error(`Unsupported document type: ${mimeType}`);
+}
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -138,10 +171,40 @@ router.post("/chat/conversations/:id/stream", async (req: Request, res: Response
     return;
   }
 
-  const { message, imageBase64 } = req.body as { message?: unknown; imageBase64?: unknown };
+  const { message, imageBase64, fileBase64, fileName, fileMimeType } = req.body as {
+    message?: unknown;
+    imageBase64?: unknown;
+    fileBase64?: unknown;
+    fileName?: unknown;
+    fileMimeType?: unknown;
+  };
   if (!message || typeof message !== "string") {
     res.status(400).json({ error: "message is required" });
     return;
+  }
+
+  let documentText: string | null = null;
+  let documentLabel: string | null = null;
+  if (fileBase64 && typeof fileBase64 === "string" && typeof fileMimeType === "string") {
+    if (!ALLOWED_DOCUMENT_MIME_TYPES.has(fileMimeType)) {
+      res.status(400).json({ error: "Unsupported file type. Only PDF, Word documents, and text files are allowed." });
+      return;
+    }
+    const base64Data = fileBase64.replace(/^data:[^;]+;base64,/, "");
+    const buffer = Buffer.from(base64Data, "base64");
+    if (buffer.byteLength > MAX_ATTACHMENT_BYTES) {
+      res.status(400).json({ error: "File is too large. Please attach a file under 10MB." });
+      return;
+    }
+    try {
+      const extracted = await extractDocumentText(fileMimeType, buffer);
+      documentText = extracted.slice(0, MAX_ATTACHMENT_TEXT_CHARS);
+      documentLabel = typeof fileName === "string" ? fileName : "attached document";
+    } catch (err) {
+      req.log.error({ err }, "Failed to extract document text");
+      res.status(400).json({ error: "Could not read that file. Please try a different PDF, Word, or text file." });
+      return;
+    }
   }
 
   const [conversation] = await db
@@ -171,8 +234,18 @@ router.post("/chat/conversations/:id/stream", async (req: Request, res: Response
     })),
   ];
 
+  let storedContent = message;
+  if (documentText && documentLabel) {
+    storedContent = `${message}\n\n[Attached document: ${documentLabel}]`;
+  }
+
   const userContent: OpenAI.Chat.ChatCompletionContentPart[] = [
-    { type: "text", text: message },
+    {
+      type: "text",
+      text: documentText && documentLabel
+        ? `${message}\n\n[Attached document: ${documentLabel}]\n---\n${documentText}\n---`
+        : message,
+    },
   ];
 
   let imageDataUrl: string | null = null;
@@ -192,7 +265,7 @@ router.post("/chat/conversations/:id/stream", async (req: Request, res: Response
   await db.insert(messagesTable).values({
     conversationId,
     role: "user",
-    content: message,
+    content: storedContent,
     imageUrl: imageDataUrl,
   });
 

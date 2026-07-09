@@ -27,9 +27,10 @@ export function useChatStream(conversationId?: number) {
   const sendMessage = useCallback(async (
     text: string, 
     imageBase64: string | null, 
+    file: { name: string; mimeType: string; dataUrl: string } | null,
     onConversationCreated?: (id: number) => void
   ) => {
-    if (!text.trim() && !imageBase64) return;
+    if (!text.trim() && !imageBase64 && !file) return;
     
     setIsStreaming(true);
     setStreamError(null);
@@ -71,7 +72,13 @@ export function useChatStream(conversationId?: number) {
       const response = await fetch(`${import.meta.env.BASE_URL}api/chat/conversations/${targetConversationId}/stream`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, imageBase64 })
+        body: JSON.stringify({
+          message: text,
+          imageBase64,
+          fileBase64: file?.dataUrl ?? null,
+          fileName: file?.name ?? null,
+          fileMimeType: file?.mimeType ?? null,
+        })
       });
       
       if (!response.ok) {

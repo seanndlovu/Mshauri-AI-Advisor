@@ -4,7 +4,7 @@ import {
   getGetConversationMessagesQueryKey,
 } from "@workspace/api-client-react";
 import { ChatArea } from "@/components/chat/ChatArea";
-import { ChatInput } from "@/components/chat/ChatInput";
+import { ChatInput, type ChatFileAttachment } from "@/components/chat/ChatInput";
 import { useChatStream } from "@/hooks/use-chat-stream";
 
 export default function Conversation() {
@@ -20,8 +20,8 @@ export default function Conversation() {
 
   const { sendMessage, isStreaming, localMessages } = useChatStream(conversationId);
 
-  const handleSendMessage = (text: string, imageBase64: string | null) => {
-    sendMessage(text, imageBase64);
+  const handleSendMessage = (text: string, imageBase64: string | null, file: ChatFileAttachment | null) => {
+    sendMessage(text, imageBase64, file);
   };
 
   return (
