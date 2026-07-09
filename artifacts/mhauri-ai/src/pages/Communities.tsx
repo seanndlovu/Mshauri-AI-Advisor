@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Link } from "wouter";
-import { Users, TrendingUp, Sprout } from "lucide-react";
+import { Link, useLocation, useSearch } from "wouter";
+import { Users, TrendingUp, Sprout, Plus } from "lucide-react";
 
 interface Community {
   id: number;
@@ -21,6 +21,9 @@ const COMMUNITY_ICONS: Record<string, string> = {
 export default function Communities() {
   const [communities, setCommunities] = useState<Community[]>([]);
   const [loading, setLoading] = useState(true);
+  const [, setLocation] = useLocation();
+  const search = useSearch();
+  const [showPicker, setShowPicker] = useState(false);
 
   useEffect(() => {
     fetch("/api/communities")
@@ -29,13 +32,56 @@ export default function Communities() {
       .catch(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    if (params.get("create") === "1") setShowPicker(true);
+  }, [search]);
+
+  function pickCommunity(slug: string) {
+    setShowPicker(false);
+    setLocation(`/communities/${slug}?compose=1`);
+  }
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-2xl mx-auto px-4 py-4">
-        <div className="mb-6">
-          <h1 className="text-[#E7E9EA] text-xl font-bold">Communities</h1>
-          <p className="text-[#71767B] text-sm mt-0.5">Join discussions with Zimbabwe's food systems community</p>
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div>
+            <h1 className="text-[#E7E9EA] text-xl font-bold">Communities</h1>
+            <p className="text-[#71767B] text-sm mt-0.5">Join discussions with Zimbabwe's food systems community</p>
+          </div>
+          <button
+            onClick={() => setShowPicker(true)}
+            title="Create post"
+            className="shrink-0 flex items-center gap-1.5 bg-[#22c55e] hover:bg-[#16a34a] text-white text-[12px] font-bold px-3.5 py-2 rounded-full transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" strokeWidth={3} /> Create
+          </button>
         </div>
+
+        {showPicker && (
+          <div className="mb-4 bg-[#16181C] border border-[#2F3336] rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[#E7E9EA] text-sm font-semibold">Choose a community to post in</p>
+              <button onClick={() => setShowPicker(false)} className="p-1 rounded-full text-[#71767B] hover:bg-white/5 text-sm">✕</button>
+            </div>
+            {communities.length === 0 ? (
+              <p className="text-[#71767B] text-sm">No communities available yet.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {communities.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => pickCommunity(c.slug)}
+                    className="flex items-center gap-1.5 bg-[#272729] hover:bg-[#343536] text-[#E7E9EA] text-[12px] font-semibold px-3 py-1.5 rounded-full transition-colors"
+                  >
+                    <span>{COMMUNITY_ICONS[c.slug] ?? "🌱"}</span> r/{c.slug}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {loading ? (
           <div className="flex flex-col gap-3">

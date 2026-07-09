@@ -5,7 +5,7 @@ import {
   Menu, Sun, Moon,
   ChevronUp, ChevronDown, Settings,
   Users, BookOpen, LayoutDashboard, Zap, Sparkles,
-  Bell, ChevronDown as ChevronDownIcon,
+  Bell, ChevronDown as ChevronDownIcon, Plus,
 } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -28,13 +28,56 @@ const MOBILE_NAV = [
 
 const WA_LINK = "https://wa.me/263714280244?text=Hi%2C%20I%20want%20to%20connect%20with%20Mshauri";
 
+const CREATE_BUTTON_ROUTES = ["/feed", "/communities"];
+
+function CreatePostButton() {
+  const [location, setLocation] = useLocation();
+
+  function handleClick() {
+    if (location.startsWith("/communities/")) {
+      window.dispatchEvent(new CustomEvent("mshauri:create-post"));
+    } else {
+      setLocation("/communities?create=1");
+    }
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      title="Create post"
+      style={{
+        display: "flex", alignItems: "center", gap: 6,
+        padding: "7px 14px 7px 10px", borderRadius: 999, border: "none",
+        background: "rgba(34,197,94,0.12)", color: "#e8f5e9",
+        fontSize: 13, fontWeight: 700, cursor: "pointer",
+        fontFamily: "inherit", transition: "all 0.2s",
+      }}
+      onMouseOver={e => (e.currentTarget.style.background = "rgba(34,197,94,0.22)")}
+      onMouseOut={e => (e.currentTarget.style.background = "rgba(34,197,94,0.12)")}
+    >
+      <span style={{
+        width: 20, height: 20, borderRadius: "50%",
+        background: "linear-gradient(135deg, #16a34a, #22c55e)",
+        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+      }}>
+        <Plus style={{ width: 13, height: 13, color: "#fff" }} strokeWidth={3} />
+      </span>
+      Create
+    </button>
+  );
+}
+
 function TopHeader({ onPlayQuiz }: { onPlayQuiz: () => void }) {
   const { user } = useAuth();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   const initials = user?.name
     ? user.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
     : "";
+
+  const showCreate = user && CREATE_BUTTON_ROUTES.some(
+    (base) => location === base || location.startsWith(base + "/")
+  );
 
   return (
     <div
@@ -46,6 +89,7 @@ function TopHeader({ onPlayQuiz }: { onPlayQuiz: () => void }) {
         flexShrink: 0,
       }}
     >
+      {showCreate && <CreatePostButton />}
       {user ? (
         <>
           {/* Notification bell */}

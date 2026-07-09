@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent } from "react";
-import { useRoute, Link } from "wouter";
+import { useRoute, Link, useSearch } from "wouter";
 import { ArrowLeft, MessageCircle, MapPin, Clock, Send, Check, UserPlus, LogIn } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
@@ -43,6 +43,7 @@ export default function CommunityFeed() {
   const [, params] = useRoute("/communities/:slug");
   const slug = params?.slug ?? "";
   const { user, loading: authLoading } = useAuth();
+  const search = useSearch();
 
   const [community, setCommunity] = useState<Community | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -62,10 +63,27 @@ export default function CommunityFeed() {
     if (community) setJoined(getJoined().includes(community.id));
   }, [community?.id]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    if (params.get("compose") === "1") {
+      if (!authLoading && !user) setShowLoginPrompt(true);
+      else if (user) setShowCompose(true);
+    }
+  }, [search, authLoading, user]);
+
   function openCompose() {
     if (!authLoading && !user) { setShowLoginPrompt(true); return; }
     setShowCompose(v => !v);
   }
+
+  useEffect(() => {
+    function handleCreatePost() {
+      if (!authLoading && !user) { setShowLoginPrompt(true); return; }
+      setShowCompose(true);
+    }
+    window.addEventListener("mshauri:create-post", handleCreatePost);
+    return () => window.removeEventListener("mshauri:create-post", handleCreatePost);
+  }, [authLoading, user]);
 
   function handleToggleJoin() {
     if (!authLoading && !user) { setShowLoginPrompt(true); return; }
