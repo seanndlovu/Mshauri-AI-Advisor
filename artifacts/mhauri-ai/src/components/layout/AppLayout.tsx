@@ -508,14 +508,16 @@ function AdPlaceholder() {
   return (
     <>
       <div className="mx-3 border-t border-[#343536] my-2" />
-      <div className="px-3 mb-1">
-        <span className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Ads</span>
+      <div className="px-3 mb-1 flex items-center justify-between">
+        <span className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Sponsored</span>
+        <a href="mailto:ads@maricho.media" className="text-[#4a5260] hover:text-[#22c55e] text-[9px] transition-colors">Advertise</a>
       </div>
       <div className="mx-3 rounded-xl overflow-hidden border border-[#2F3336] bg-[#1a1c1f]">
-        <img src="/ad-1money.png" alt="1Money — A NetOne Product" className="w-full object-contain" />
-        <div className="px-3 py-2 text-center">
-          <p className="text-[#4a5260] text-[9px]">Ads · <a href="mailto:ads@maricho.media" className="text-[#22c55e]/70 hover:text-[#22c55e]">Advertise</a></p>
-        </div>
+        <img
+          src="/ads/innscor-zimnyama.png"
+          alt="Zimnyama donates Boran bulls to strengthen beef value chain in Zimbabwe — Innscor Africa / AMP Meats"
+          className="w-full object-cover"
+        />
       </div>
     </>
   );
