@@ -43,7 +43,7 @@ function ZmxPartnerCard() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (!open || posts.length > 0) return;
+    if (posts.length > 0) return;
     setLoading(true);
     setError(false);
     fetch("/api/zmx/feed", { credentials: "include" })
@@ -51,7 +51,7 @@ function ZmxPartnerCard() {
       .then((data: ZmxPost[]) => { setPosts(data); })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, [open, posts.length]);
+  }, [posts.length]);
 
   function relativeDate(iso: string) {
     const d = new Date(iso);
@@ -65,21 +65,24 @@ function ZmxPartnerCard() {
 
   return (
     <>
-      {/* Partner card — collapsed view */}
+      {/* Partner card — with inline feed preview */}
       <div className="mb-6 bg-[#16181C] border border-[#2F3336] rounded-2xl overflow-hidden">
+        {/* Header */}
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#2F3336]">
           <span className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Partners</span>
         </div>
+
+        {/* ZMX branding row */}
         <button
-          className="w-full flex items-center gap-4 px-4 py-4 hover:bg-white/[0.02] transition-colors group text-left"
+          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors group text-left border-b border-[#2F3336]"
           onClick={() => setOpen(true)}
         >
-          <div className="w-11 h-11 rounded-xl bg-[#0a1628] border border-[#1e3a5f] flex items-center justify-center shrink-0 text-[9px] font-black text-[#3b82f6] tracking-widest">
+          <div className="w-9 h-9 rounded-lg bg-[#0a1628] border border-[#1e3a5f] flex items-center justify-center shrink-0 text-[8px] font-black text-[#3b82f6] tracking-widest">
             ZMX
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[#E7E9EA] font-bold text-[13px] leading-tight">Zimbabwe Mercantile Exchange</div>
-            <div className="text-[#71767B] text-[11px] mt-0.5">Live grain &amp; commodity trading feed</div>
+            <div className="text-[#E7E9EA] font-bold text-[12px] leading-tight">Zimbabwe Mercantile Exchange</div>
+            <div className="text-[#71767B] text-[10px] mt-0.5">Commodity trading &amp; market data</div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
@@ -87,6 +90,41 @@ function ZmxPartnerCard() {
             <ChevronRight className="w-3.5 h-3.5 text-[#818384] group-hover:text-[#22c55e] transition-colors ml-1" />
           </div>
         </button>
+
+        {/* Inline market feed preview */}
+        {loading && (
+          <div className="flex items-center justify-center py-5">
+            <div className="w-4 h-4 rounded-full border-2 border-[#2F3336] border-t-[#3b82f6] animate-spin" />
+          </div>
+        )}
+        {!loading && !error && posts.slice(0, 3).map((post, i) => (
+          <a
+            key={post.id}
+            href={post.link}
+            target="_blank"
+            rel="noreferrer"
+            className={`flex items-start gap-2.5 px-4 py-2.5 hover:bg-white/[0.025] transition-colors group ${i < 2 ? "border-b border-[#2F3336]" : ""}`}
+          >
+            <div className="w-1 h-1 rounded-full bg-[#3b82f6] mt-[7px] shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-[#C7C9CC] text-[11px] leading-snug group-hover:text-[#3b82f6] transition-colors line-clamp-2">
+                {post.title}
+              </div>
+              <div className="text-[#5B5F65] text-[10px] mt-0.5">{relativeDate(post.date)}</div>
+            </div>
+            <ExternalLink className="w-3 h-3 text-[#5B5F65] group-hover:text-[#3b82f6] transition-colors shrink-0 mt-1" />
+          </a>
+        ))}
+
+        {/* See all */}
+        {!loading && posts.length > 0 && (
+          <button
+            onClick={() => setOpen(true)}
+            className="w-full flex items-center justify-center gap-1 py-2.5 text-[#5B5F65] hover:text-[#3b82f6] text-[10px] font-bold transition-colors border-t border-[#2F3336]"
+          >
+            See all ZMX market updates <ChevronRight className="w-3 h-3" />
+          </button>
+        )}
       </div>
 
       {/* Slide-in panel with live ZMX feed */}
