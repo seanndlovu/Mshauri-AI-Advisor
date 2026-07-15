@@ -449,13 +449,17 @@ async function handleIncomingMessage(
     const skip = /^skip$/i.test(answer);
 
     if (onboarding.step === "awaiting_name") {
-      const name = skip ? undefined : answer.slice(0, 80);
-      if (name) {
-        await db.update(farmersTable).set({ name }).where(eq(farmersTable.phone, phone)).catch(() => {});
+      if (skip) {
+        // User doesn't want to register right now — drop the flow and answer normally
+        clearOnboardingState(phone);
+        await sendWhatsAppMessage(phone, "No problem! Just ask me your farming question anytime. Type REGISTER whenever you'd like to set up your profile.");
+        return;
       }
+      const name = answer.slice(0, 80);
+      await db.update(farmersTable).set({ name }).where(eq(farmersTable.phone, phone)).catch(() => {});
       setOnboardingState(phone, { step: "awaiting_location", name });
       await sendWhatsAppMessage(phone,
-        `${name ? `Great, ${name}!` : "No problem!"} Which province are you in?\n\n1. Harare\n2. Bulawayo\n3. Manicaland\n4. Mashonaland Central\n5. Mashonaland East\n6. Mashonaland West\n7. Masvingo\n8. Matabeleland North\n9. Matabeleland South\n10. Midlands\n\n(Type the name or number, or SKIP)`
+        `Great, ${name}! Which province are you in?\n\n1. Harare\n2. Bulawayo\n3. Manicaland\n4. Mashonaland Central\n5. Mashonaland East\n6. Mashonaland West\n7. Masvingo\n8. Matabeleland North\n9. Matabeleland South\n10. Midlands\n\n(Type the name or number, or SKIP)`
       );
       return;
     }
@@ -551,17 +555,12 @@ async function handleIncomingMessage(
       return;
     }
 
-    if (keyword === "welcome" || (isNewUser && !keyword)) {
-      const hasProfile = !!(farmer?.name);
-      if (isNewUser && !hasProfile) {
-        // Start onboarding after welcome
-        await sendWhatsAppMessage(phone, WELCOME_MESSAGE);
-        setOnboardingState(phone, { step: "awaiting_name" });
-        await sendWhatsAppMessage(phone, "First, let's set up your profile so I can personalise my advice.\n\nWhat's your name? (or type SKIP)");
-        void logAnalyticsEvent(eventType, phone, langPref, userText);
-        return;
-      }
+    if (keyword === "welcome") {
       await sendWhatsAppMessage(phone, WELCOME_MESSAGE);
+      if (isNewUser && !farmer?.name) {
+        // Soft profile invite — one message, no forced flow
+        await sendWhatsAppMessage(phone, "Type REGISTER to set up your farmer profile for personalised advice, or just ask your question now!");
+      }
       void logAnalyticsEvent(eventType, phone, langPref, userText);
       return;
     } else if (keyword === "help") {
@@ -645,6 +644,11 @@ async function handleIncomingMessage(
     .where(eq(conversationsTable.id, conversationId));
 
   await sendWhatsAppMessage(phone, reply);
+
+  // For brand-new users with no profile, append a one-time soft nudge after answering
+  if (isNewUser && !farmer?.name) {
+    await sendWhatsAppMessage(phone, "💡 Tip: Type REGISTER to set up your farmer profile and I'll personalise my advice for your crops and location.");
+  }
 
   // After answering, check if this message is worth posting to the community
   // Run classification in background — don't delay the reply
