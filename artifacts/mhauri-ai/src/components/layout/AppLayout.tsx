@@ -5,7 +5,7 @@ import {
   Menu, Sun, Moon,
   ChevronUp, ChevronDown, Settings,
   Users, BookOpen, LayoutDashboard, Zap, Sparkles,
-  Bell, ChevronDown as ChevronDownIcon, Plus,
+  Bell, ChevronDown as ChevronDownIcon, Plus, X,
 } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -505,6 +505,8 @@ function CommunitiesSidebar({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 function AdPlaceholder() {
+  const [lightbox, setLightbox] = useState(false);
+
   return (
     <>
       <div className="mx-3 border-t border-[#343536] my-2" />
@@ -512,13 +514,47 @@ function AdPlaceholder() {
         <span className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Sponsored</span>
         <a href="mailto:ads@maricho.media" className="text-[#4a5260] hover:text-[#22c55e] text-[9px] transition-colors">Advertise</a>
       </div>
-      <div className="mx-3 rounded-xl overflow-hidden border border-[#2F3336] bg-[#1a1c1f]">
+      <div
+        className="mx-3 rounded-xl overflow-hidden border border-[#2F3336] bg-[#1a1c1f] cursor-pointer hover:border-[#22c55e]/30 transition-colors"
+        onClick={() => setLightbox(true)}
+      >
         <img
           src="/ads/innscor-zimnyama.png"
           alt="Zimnyama donates Boran bulls to strengthen beef value chain in Zimbabwe — Innscor Africa / AMP Meats"
           className="w-full object-cover"
         />
       </div>
+
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setLightbox(false)}
+        >
+          <div
+            className="relative max-w-lg w-full bg-[#0f1011] rounded-2xl overflow-hidden border border-[#2F3336] shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[#2F3336]">
+              <span className="text-[#818384] text-[10px] font-bold uppercase tracking-wider">Sponsored · Innscor Africa / AMP Meats</span>
+              <button
+                onClick={() => setLightbox(false)}
+                className="p-1.5 rounded-full text-[#818384] hover:text-[#E7E9EA] hover:bg-white/5 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <img
+              src="/ads/innscor-zimnyama.png"
+              alt="Zimnyama donates Boran bulls to strengthen beef value chain in Zimbabwe"
+              className="w-full object-contain"
+            />
+            <div className="px-4 py-3 border-t border-[#2F3336]">
+              <p className="text-[#E7E9EA] font-bold text-[13px] leading-snug mb-1">Zimnyama Donates Boran Bulls to Strengthen Beef Value Chain in Zimbabwe</p>
+              <p className="text-[#71767B] text-[11px] leading-relaxed">A groundbreaking initiative by Zimnyama (Innscor Africa) donating Boran bulls to Dotito Mt Darwin via the Cattle Business Centre — part of the Beef Enterprise Strengthening and Transformation (BEST) Project in partnership with World Vision.</p>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -84,8 +84,9 @@ export default function Profile() {
 
   if (!user) return <GuestView />;
 
-  const { display: anonId, emoji: anonEmoji } = getAnonymousId(user.id);
   const roleStyle = ROLE_COLORS[user.role];
+  const displayName = user.name || "Member";
+  const initials = displayName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
 
   function openSettings() {
     setForm({ location: user!.location ?? "", role: user!.role });
@@ -127,14 +128,14 @@ export default function Profile() {
 
         {/* Identity card */}
         <div className="bg-[#16181C] border border-[#2F3336] rounded-2xl p-6 mb-4 text-center">
-          {/* Animal avatar */}
-          <div className="w-20 h-20 rounded-full bg-[#22c55e]/10 border-2 border-[#22c55e]/25 flex items-center justify-center mx-auto mb-3 text-4xl">
-            {anonEmoji}
+          {/* Initials avatar */}
+          <div className="w-20 h-20 rounded-full bg-[#22c55e]/15 border-2 border-[#22c55e]/30 flex items-center justify-center mx-auto mb-3">
+            <span className="text-[#22c55e] font-black text-[28px] leading-none">{initials}</span>
           </div>
 
-          {/* Anonymous ID */}
+          {/* Real display name */}
           <h1 className="text-[#E7E9EA] font-black text-[24px] tracking-tight mb-2">
-            {anonId}
+            {displayName}
           </h1>
 
           {/* Role badge */}
@@ -214,10 +215,10 @@ export default function Profile() {
               <select
                 value={form.location}
                 onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
-                className="bg-black border border-[#2F3336] rounded-xl px-3 py-2.5 text-[#E7E9EA] text-[14px] focus:outline-none focus:border-[#22c55e] transition-colors"
+                className="bg-[#1a1c1f] border border-[#2F3336] rounded-xl px-3 py-2.5 text-[#E7E9EA] text-[14px] focus:outline-none focus:border-[#22c55e] transition-colors appearance-none"
               >
-                <option value="">Not set</option>
-                {LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
+                <option value="" className="bg-[#1a1c1f] text-[#71767B]">Not set</option>
+                {LOCATIONS.map(l => <option key={l} value={l} className="bg-[#1a1c1f] text-[#E7E9EA]">{l}</option>)}
               </select>
             </div>
 
@@ -226,7 +227,7 @@ export default function Profile() {
               <select
                 value={form.role}
                 onChange={e => setForm(f => ({ ...f, role: e.target.value as UserRole }))}
-                className="bg-black border border-[#2F3336] rounded-xl px-3 py-2.5 text-[#E7E9EA] text-[14px] focus:outline-none focus:border-[#22c55e] transition-colors"
+                className="bg-[#1a1c1f] border border-[#2F3336] rounded-xl px-3 py-2.5 text-[#E7E9EA] text-[14px] focus:outline-none focus:border-[#22c55e] transition-colors appearance-none"
               >
                 {Object.entries(ROLE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
