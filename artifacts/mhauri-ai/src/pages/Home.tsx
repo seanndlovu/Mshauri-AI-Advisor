@@ -216,7 +216,7 @@ export default function Home() {
               <img src="/mshauri-logo.png?v=2" alt="Mshauri" className="w-8 h-8 object-contain shrink-0" />
               <div>
                 <div className="text-[#E7E9EA] font-bold text-[14px] leading-tight">Ask Mshauri</div>
-                <div className="text-[#71767B] text-[11px]">Your intelligent agricultural assistant</div>
+                <div className="text-[#71767B] text-[11px]">The global food systems intelligence OS</div>
               </div>
             </div>
 

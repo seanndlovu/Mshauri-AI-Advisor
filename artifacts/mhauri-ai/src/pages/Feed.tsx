@@ -96,7 +96,7 @@ function AwarenessStrip({
         <img src="/mshauri-logo.png?v=2" alt="Mshauri" className="w-6 h-6 rounded-lg object-contain bg-black shrink-0" />
         <div className="text-[#E7E9EA] font-bold text-[13px] leading-tight">Ask Mshauri AI</div>
       </div>
-      <div className="text-[#71767B] text-[10px] leading-snug">Crops, markets, climate & food systems intelligence</div>
+      <div className="text-[#71767B] text-[10px] leading-snug">The global food systems intelligence OS</div>
       <div className="text-[#22c55e] text-[10px] font-semibold">Ask now →</div>
     </button>,
 

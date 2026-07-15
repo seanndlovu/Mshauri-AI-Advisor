@@ -205,7 +205,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const WELCOME_MESSAGE = `Welcome to Mshauri AI! 🌾
 
-I'm your personal farming assistant for Zimbabwe. Here's what I can do:
+The global food systems intelligence OS. Here's what I can do:
 
 Ask me anything:
 • "My maize leaves are yellow" → diagnosis + fix
