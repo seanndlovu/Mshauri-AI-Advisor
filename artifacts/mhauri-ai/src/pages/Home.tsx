@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import { useLocation, Link } from "wouter";
 import { useChatStream } from "@/hooks/use-chat-stream";
 import { useAuth } from "@/hooks/use-auth";
-import { Mic, MicOff, Paperclip, Send, X, MessageCircle, Share2, TrendingUp, FileText } from "lucide-react";
+import { Mic, MicOff, Paperclip, Send, X, MessageCircle, Share2, TrendingUp, FileText, ExternalLink, ChevronRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { FeaturedStoryCarousel } from "@/components/home/FeaturedStoryCarousel";
 import { ContinueLearning } from "@/components/home/ContinueLearning";
@@ -32,6 +32,110 @@ interface Community { id: number; slug: string; }
 function getGreeting(): { time: string } {
   const h = new Date().getHours();
   return { time: h < 12 ? "morning" : h < 17 ? "afternoon" : "evening" };
+}
+
+function ZmxPartnerCard() {
+  const [open, setOpen] = useState(false);
+  const [iframeError, setIframeError] = useState(false);
+
+  return (
+    <>
+      {/* Card */}
+      <div className="mb-6 bg-[#16181C] border border-[#2F3336] rounded-2xl overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[#2F3336]">
+          <span className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Partners</span>
+        </div>
+        <div
+          className="flex items-center gap-4 px-4 py-4 cursor-pointer hover:bg-white/[0.02] transition-colors group"
+          onClick={() => { setOpen(true); setIframeError(false); }}
+        >
+          <div className="w-12 h-12 rounded-xl bg-[#0a1628] border border-[#1e3a5f] flex items-center justify-center shrink-0 text-[10px] font-black text-[#3b82f6] tracking-wider">
+            ZMX
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[#E7E9EA] font-bold text-[14px] leading-tight mb-0.5">Zimbabwe Mercantile Exchange</div>
+            <div className="text-[#71767B] text-[12px] leading-snug">Commodity trading &amp; market price discovery for Zimbabwe</div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-[#818384] group-hover:text-[#22c55e] transition-colors shrink-0" />
+        </div>
+      </div>
+
+      {/* Slide-in panel */}
+      {open && (
+        <div className="fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setOpen(false)}
+          />
+
+          {/* Panel */}
+          <div className="relative ml-auto w-full max-w-2xl h-full bg-[#0f1011] border-l border-[#2F3336] flex flex-col shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-[#2F3336] shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-[#0a1628] border border-[#1e3a5f] flex items-center justify-center text-[9px] font-black text-[#3b82f6] tracking-wider shrink-0">
+                ZMX
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[#E7E9EA] font-bold text-[13px]">Zimbabwe Mercantile Exchange</div>
+                <div className="text-[#71767B] text-[10px]">zmx.co.zw</div>
+              </div>
+              <a
+                href="https://zmx.co.zw"
+                target="_blank"
+                rel="noreferrer"
+                title="Open in new tab"
+                className="p-2 rounded-full text-[#818384] hover:text-[#22c55e] hover:bg-white/5 transition-colors"
+                onClick={e => e.stopPropagation()}
+              >
+                <ExternalLink className="w-4 h-4" />
+              </a>
+              <button
+                onClick={() => setOpen(false)}
+                className="p-2 rounded-full text-[#818384] hover:text-[#E7E9EA] hover:bg-white/5 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-hidden">
+              {iframeError ? (
+                <div className="flex flex-col items-center justify-center h-full gap-4 px-8 text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-[#0a1628] border border-[#1e3a5f] flex items-center justify-center text-[18px] font-black text-[#3b82f6]">ZMX</div>
+                  <div>
+                    <div className="text-[#E7E9EA] font-bold text-[15px] mb-1">Zimbabwe Mercantile Exchange</div>
+                    <div className="text-[#71767B] text-[13px] leading-relaxed mb-4">ZMX restricts embedding — open their platform directly to access live commodity trading, price discovery and market data.</div>
+                  </div>
+                  <a
+                    href="https://zmx.co.zw"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-2 bg-[#3b82f6] hover:bg-[#2563eb] text-white text-[13px] font-bold px-5 py-2.5 rounded-full transition-colors"
+                  >
+                    <ExternalLink className="w-4 h-4" /> Open ZMX Platform
+                  </a>
+                </div>
+              ) : (
+                <iframe
+                  src="https://zmx.co.zw"
+                  title="Zimbabwe Mercantile Exchange"
+                  className="w-full h-full border-0"
+                  onError={() => setIframeError(true)}
+                  onLoad={e => {
+                    try {
+                      const doc = (e.target as HTMLIFrameElement).contentDocument;
+                      if (!doc) setIframeError(true);
+                    } catch { setIframeError(true); }
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
 
 function TrendingDiscussions() {
@@ -193,7 +297,7 @@ export default function Home() {
   }
 
   const { time } = getGreeting();
-  const firstName = user?.name?.split(" ")[0] ?? "Farmer";
+  const firstName = user?.name?.split(" ")[0];
 
   return (
     <div className="h-full flex overflow-hidden bg-[#0f1011] ms-theme-transition">
@@ -202,10 +306,10 @@ export default function Home() {
 
           <div className="mb-5">
             <h1 className="text-[#E7E9EA] font-black text-[22px] leading-tight">
-              Good {time}, {firstName} 🌱
+              {firstName ? `Good ${time}, ${firstName}` : `Good ${time}`}
             </h1>
             <p className="text-[#71767B] text-[13px] mt-1">
-              Get expert answers. Grow smarter. Feed the future.
+              Ask smarter. Analyze faster. Power better decisions across the global food system.
             </p>
           </div>
 
@@ -314,6 +418,8 @@ export default function Home() {
               </button>
             ))}
           </div>
+
+          <ZmxPartnerCard />
 
           <FeaturedStoryCarousel />
           <ContinueLearning />
