@@ -34,102 +34,162 @@ function getGreeting(): { time: string } {
   return { time: h < 12 ? "morning" : h < 17 ? "afternoon" : "evening" };
 }
 
+interface ZmxPost { id: number; title: string; link: string; date: string; }
+
 function ZmxPartnerCard() {
   const [open, setOpen] = useState(false);
-  const [iframeError, setIframeError] = useState(false);
+  const [posts, setPosts] = useState<ZmxPost[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (!open || posts.length > 0) return;
+    setLoading(true);
+    setError(false);
+    fetch("/api/zmx/feed", { credentials: "include" })
+      .then(r => { if (!r.ok) throw new Error("feed error"); return r.json(); })
+      .then((data: ZmxPost[]) => { setPosts(data); })
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  }, [open, posts.length]);
+
+  function relativeDate(iso: string) {
+    const d = new Date(iso);
+    const diffDays = Math.floor((Date.now() - d.getTime()) / 86400000);
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 30) return `${diffDays}d ago`;
+    const diffMonths = Math.floor(diffDays / 30);
+    return `${diffMonths}mo ago`;
+  }
 
   return (
     <>
-      {/* Card */}
+      {/* Partner card — collapsed view */}
       <div className="mb-6 bg-[#16181C] border border-[#2F3336] rounded-2xl overflow-hidden">
-        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[#2F3336]">
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#2F3336]">
           <span className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Partners</span>
         </div>
-        <div
-          className="flex items-center gap-4 px-4 py-4 cursor-pointer hover:bg-white/[0.02] transition-colors group"
-          onClick={() => { setOpen(true); setIframeError(false); }}
+        <button
+          className="w-full flex items-center gap-4 px-4 py-4 hover:bg-white/[0.02] transition-colors group text-left"
+          onClick={() => setOpen(true)}
         >
-          <div className="w-12 h-12 rounded-xl bg-[#0a1628] border border-[#1e3a5f] flex items-center justify-center shrink-0 text-[10px] font-black text-[#3b82f6] tracking-wider">
+          <div className="w-11 h-11 rounded-xl bg-[#0a1628] border border-[#1e3a5f] flex items-center justify-center shrink-0 text-[9px] font-black text-[#3b82f6] tracking-widest">
             ZMX
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[#E7E9EA] font-bold text-[14px] leading-tight mb-0.5">Zimbabwe Mercantile Exchange</div>
-            <div className="text-[#71767B] text-[12px] leading-snug">Commodity trading &amp; market price discovery for Zimbabwe</div>
+            <div className="text-[#E7E9EA] font-bold text-[13px] leading-tight">Zimbabwe Mercantile Exchange</div>
+            <div className="text-[#71767B] text-[11px] mt-0.5">Live grain &amp; commodity trading feed</div>
           </div>
-          <ChevronRight className="w-4 h-4 text-[#818384] group-hover:text-[#22c55e] transition-colors shrink-0" />
-        </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
+            <span className="text-[#22c55e] text-[10px] font-bold">LIVE</span>
+            <ChevronRight className="w-3.5 h-3.5 text-[#818384] group-hover:text-[#22c55e] transition-colors ml-1" />
+          </div>
+        </button>
       </div>
 
-      {/* Slide-in panel */}
+      {/* Slide-in panel with live ZMX feed */}
       {open && (
         <div className="fixed inset-0 z-50 flex">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setOpen(false)}
-          />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
 
-          {/* Panel */}
-          <div className="relative ml-auto w-full max-w-2xl h-full bg-[#0f1011] border-l border-[#2F3336] flex flex-col shadow-2xl">
+          <div className="relative ml-auto w-full max-w-lg h-full bg-[#0f1011] border-l border-[#2F3336] flex flex-col shadow-2xl">
             {/* Header */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-[#2F3336] shrink-0">
-              <div className="w-8 h-8 rounded-lg bg-[#0a1628] border border-[#1e3a5f] flex items-center justify-center text-[9px] font-black text-[#3b82f6] tracking-wider shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-[#0a1628] border border-[#1e3a5f] flex items-center justify-center text-[8px] font-black text-[#3b82f6] tracking-widest shrink-0">
                 ZMX
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[#E7E9EA] font-bold text-[13px]">Zimbabwe Mercantile Exchange</div>
-                <div className="text-[#71767B] text-[10px]">zmx.co.zw</div>
+                <div className="text-[#E7E9EA] font-bold text-[13px] leading-tight">Zimbabwe Mercantile Exchange</div>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
+                  <span className="text-[#22c55e] text-[10px] font-bold">Live trading feed</span>
+                </div>
               </div>
               <a
                 href="https://zmx.co.zw"
                 target="_blank"
                 rel="noreferrer"
-                title="Open in new tab"
                 className="p-2 rounded-full text-[#818384] hover:text-[#22c55e] hover:bg-white/5 transition-colors"
                 onClick={e => e.stopPropagation()}
+                title="Open ZMX website"
               >
                 <ExternalLink className="w-4 h-4" />
               </a>
-              <button
-                onClick={() => setOpen(false)}
-                className="p-2 rounded-full text-[#818384] hover:text-[#E7E9EA] hover:bg-white/5 transition-colors"
-              >
+              <button onClick={() => setOpen(false)} className="p-2 rounded-full text-[#818384] hover:text-[#E7E9EA] hover:bg-white/5 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Content */}
-            <div className="flex-1 overflow-hidden">
-              {iframeError ? (
-                <div className="flex flex-col items-center justify-center h-full gap-4 px-8 text-center">
-                  <div className="w-16 h-16 rounded-2xl bg-[#0a1628] border border-[#1e3a5f] flex items-center justify-center text-[18px] font-black text-[#3b82f6]">ZMX</div>
-                  <div>
-                    <div className="text-[#E7E9EA] font-bold text-[15px] mb-1">Zimbabwe Mercantile Exchange</div>
-                    <div className="text-[#71767B] text-[13px] leading-relaxed mb-4">ZMX restricts embedding — open their platform directly to access live commodity trading, price discovery and market data.</div>
-                  </div>
-                  <a
-                    href="https://zmx.co.zw"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-2 bg-[#3b82f6] hover:bg-[#2563eb] text-white text-[13px] font-bold px-5 py-2.5 rounded-full transition-colors"
-                  >
-                    <ExternalLink className="w-4 h-4" /> Open ZMX Platform
-                  </a>
+            {/* Trade platform CTA */}
+            <div className="px-4 py-3 border-b border-[#2F3336] bg-[#0a1628]/60 shrink-0">
+              <div className="text-[#71767B] text-[11px] mb-2">Access Zimbabwe's commodity exchange</div>
+              <div className="flex gap-2">
+                <a
+                  href="https://system.zmx.co.zw/ZMX_web/login.php#!/home"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 bg-[#3b82f6] hover:bg-[#2563eb] text-white text-[11px] font-bold px-3 py-1.5 rounded-full transition-colors"
+                >
+                  <TrendingUp className="w-3 h-3" /> Trade on Web
+                </a>
+                <a
+                  href="tel:*727#"
+                  className="flex items-center gap-1.5 border border-[#2F3336] hover:border-[#3b82f6]/50 text-[#E7E9EA] hover:text-[#3b82f6] text-[11px] font-bold px-3 py-1.5 rounded-full transition-colors"
+                >
+                  *727# USSD
+                </a>
+              </div>
+            </div>
+
+            {/* Feed */}
+            <div className="flex-1 overflow-y-auto">
+              {loading && (
+                <div className="flex items-center justify-center h-32">
+                  <div className="w-5 h-5 rounded-full border-2 border-[#2F3336] border-t-[#3b82f6] animate-spin" />
                 </div>
-              ) : (
-                <iframe
-                  src="https://zmx.co.zw"
-                  title="Zimbabwe Mercantile Exchange"
-                  className="w-full h-full border-0"
-                  onError={() => setIframeError(true)}
-                  onLoad={e => {
-                    try {
-                      const doc = (e.target as HTMLIFrameElement).contentDocument;
-                      if (!doc) setIframeError(true);
-                    } catch { setIframeError(true); }
-                  }}
-                />
               )}
+              {error && !loading && (
+                <div className="flex flex-col items-center justify-center h-32 gap-2 px-6 text-center">
+                  <div className="text-[#71767B] text-[12px]">Could not load ZMX feed right now.</div>
+                  <button
+                    onClick={() => { setPosts([]); setError(false); setLoading(true); fetch("/api/zmx/feed", { credentials: "include" }).then(r => r.json()).then((d: ZmxPost[]) => setPosts(d)).catch(() => setError(true)).finally(() => setLoading(false)); }}
+                    className="text-[#3b82f6] text-[11px] font-bold hover:underline"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+              {!loading && !error && posts.length > 0 && (
+                <div className="divide-y divide-[#2F3336]">
+                  {posts.map(post => (
+                    <a
+                      key={post.id}
+                      href={post.link}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-start gap-3 px-4 py-3.5 hover:bg-white/[0.025] transition-colors group"
+                    >
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#3b82f6] mt-[6px] shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[#E7E9EA] text-[12px] font-medium leading-snug group-hover:text-[#3b82f6] transition-colors line-clamp-2">
+                          {post.title}
+                        </div>
+                        <div className="text-[#71767B] text-[10px] mt-1">{relativeDate(post.date)}</div>
+                      </div>
+                      <ExternalLink className="w-3 h-3 text-[#818384] group-hover:text-[#3b82f6] transition-colors shrink-0 mt-1" />
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-4 py-3 border-t border-[#2F3336] shrink-0">
+              <a href="https://zmx.co.zw/market-data/" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1.5 text-[#71767B] hover:text-[#3b82f6] text-[11px] transition-colors">
+                View all market data on ZMX <ExternalLink className="w-3 h-3" />
+              </a>
             </div>
           </div>
         </div>
