@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useSearch } from "wouter";
-import { Users, TrendingUp, Sprout, Plus } from "lucide-react";
+import { Users, TrendingUp, Sprout, Plus, Sparkles } from "lucide-react";
 
 interface Community {
   id: number;
@@ -45,10 +45,10 @@ export default function Communities() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-2xl mx-auto px-4 py-4">
-        <div className="mb-6 flex items-center justify-between gap-3">
+        <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h1 className="text-[#E7E9EA] text-xl font-bold">Communities</h1>
-            <p className="text-[#71767B] text-sm mt-0.5">Join discussions with Zimbabwe's food systems community</p>
+            <p className="text-[#71767B] text-sm mt-0.5">Connect, share knowledge, and solve challenges together</p>
           </div>
           <button
             onClick={() => setShowPicker(true)}
@@ -57,6 +57,21 @@ export default function Communities() {
           >
             <Plus className="w-3.5 h-3.5" strokeWidth={3} /> Create
           </button>
+        </div>
+
+        {/* What are communities — explanation banner */}
+        <div className="mb-5 bg-[#16181C] border border-[#2F3336] rounded-2xl overflow-hidden">
+          <div className="px-4 pt-4 pb-3">
+            <p className="text-[#C4C9CF] text-[13px] leading-relaxed">
+              <span className="text-[#E7E9EA] font-semibold">Mshauri Communities</span> are spaces where people with shared interests connect to ask questions, share knowledge, exchange ideas, and learn from one another. Join discussions, discover new insights, get advice from experts and peers, and work together to solve challenges across the global food system.
+            </p>
+          </div>
+          <div className="flex items-center gap-2.5 px-4 py-2.5 border-t border-[#2F3336] bg-[#22c55e]/5">
+            <Sparkles className="w-3.5 h-3.5 text-[#22c55e] shrink-0" />
+            <p className="text-[#22c55e] text-[12px] font-medium">
+              Mshauri AI is active in every community — post a question and get an instant expert answer.
+            </p>
+          </div>
         </div>
 
         {showPicker && (
