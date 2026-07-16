@@ -66,12 +66,17 @@ export default function Communities() {
               <span className="text-[#E7E9EA] font-semibold">Mshauri Communities</span> are spaces where people with shared interests connect to ask questions, share knowledge, exchange ideas, and learn from one another. Join discussions, discover new insights, get advice from experts and peers, and work together to solve challenges across the global food system.
             </p>
           </div>
-          <div className="flex items-center gap-2.5 px-4 py-2.5 border-t border-[#2F3336] bg-[#22c55e]/5">
-            <Sparkles className="w-3.5 h-3.5 text-[#22c55e] shrink-0" />
-            <p className="text-[#22c55e] text-[12px] font-medium">
-              Mshauri AI is active in every community — post a question and get an instant expert answer.
-            </p>
-          </div>
+          <Link href="/ask">
+            <div className="flex items-center justify-between gap-2.5 px-4 py-2.5 border-t border-[#2F3336] bg-[#22c55e]/5 hover:bg-[#22c55e]/10 transition-colors cursor-pointer group">
+              <div className="flex items-center gap-2.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#22c55e] shrink-0" />
+                <p className="text-[#22c55e] text-[12px] font-medium">
+                  Have a question? Ask Mshauri AI for an instant expert answer
+                </p>
+              </div>
+              <span className="text-[#22c55e] text-[11px] font-bold shrink-0 group-hover:underline">Ask now →</span>
+            </div>
+          </Link>
         </div>
 
         {showPicker && (
