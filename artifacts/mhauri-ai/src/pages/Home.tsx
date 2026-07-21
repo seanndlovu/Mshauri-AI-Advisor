@@ -66,28 +66,25 @@ function ZmxPartnerCard() {
   return (
     <>
       {/* Partner card — with inline feed preview */}
-      <div className="mb-6 bg-[#16181C] border border-[#2F3336] rounded-2xl overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#2F3336]">
-          <span className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Partners</span>
-        </div>
+      <div className="bg-[#16181C] border border-[#2F3336] rounded-xl overflow-hidden">
 
         {/* ZMX branding row */}
         <button
-          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors group text-left border-b border-[#2F3336]"
+          className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/[0.03] transition-colors group text-left border-b border-[#2F3336]"
           onClick={() => setOpen(true)}
         >
-          <div className="w-9 h-9 rounded-lg bg-[#0a1628] border border-[#1e3a5f] flex items-center justify-center shrink-0 text-[8px] font-black text-[#3b82f6] tracking-widest">
-            ZMX
+          {/* ZMX logo on white pill */}
+          <div className="shrink-0 bg-white rounded-lg px-2 py-1.5 flex items-center justify-center h-9 w-[64px]">
+            <img src="/logos/zmx-logo.png" alt="ZMX" className="h-full w-full object-contain" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[#E7E9EA] font-bold text-[12px] leading-tight">Zimbabwe Mercantile Exchange</div>
+            <div className="text-[#E7E9EA] font-bold text-[11px] leading-tight">Zimbabwe Mercantile Exchange</div>
             <div className="text-[#71767B] text-[10px] mt-0.5">Commodity trading &amp; market data</div>
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
             <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
-            <span className="text-[#22c55e] text-[10px] font-bold">LIVE</span>
-            <ChevronRight className="w-3.5 h-3.5 text-[#818384] group-hover:text-[#22c55e] transition-colors ml-1" />
+            <span className="text-[#22c55e] text-[9px] font-bold">LIVE</span>
+            <ChevronRight className="w-3 h-3 text-[#818384] group-hover:text-[#22c55e] transition-colors" />
           </div>
         </button>
 
@@ -135,8 +132,8 @@ function ZmxPartnerCard() {
           <div className="relative ml-auto w-full max-w-lg h-full bg-[#0f1011] border-l border-[#2F3336] flex flex-col shadow-2xl">
             {/* Header */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-[#2F3336] shrink-0">
-              <div className="w-8 h-8 rounded-lg bg-[#0a1628] border border-[#1e3a5f] flex items-center justify-center text-[8px] font-black text-[#3b82f6] tracking-widest shrink-0">
-                ZMX
+              <div className="shrink-0 bg-white rounded-lg px-2 py-1 flex items-center justify-center h-8 w-[56px]">
+                <img src="/logos/zmx-logo.png" alt="ZMX" className="h-full w-full object-contain" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-[#E7E9EA] font-bold text-[13px] leading-tight">Zimbabwe Mercantile Exchange</div>
@@ -250,7 +247,7 @@ function TrendingDiscussions() {
           setCommunities(m);
         }
       }).catch(() => {});
-    fetch("/api/posts?sort=top&limit=5", { credentials: "include" })
+    fetch("/api/posts?sort=top&limit=3", { credentials: "include" })
       .then(r => r.json())
       .then(d => Array.isArray(d) && setPosts(d))
       .catch(() => {});
@@ -291,6 +288,13 @@ function TrendingDiscussions() {
         })}
       </div>
 
+      {/* Partners — ZMX */}
+      <div className="mt-4 pt-3 border-t border-[#2F3336]">
+        <p className="text-[10px] font-bold text-[#818384] uppercase tracking-wider mb-2">Partners</p>
+        <ZmxPartnerCard />
+      </div>
+
+      {/* Sponsored */}
       <div className="mt-4 pt-3 border-t border-[#2F3336]">
         <div className="flex items-center justify-between mb-2">
           <p className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Sponsored</p>
@@ -298,16 +302,6 @@ function TrendingDiscussions() {
         </div>
         <a href="tel:+263772424997" className="block rounded-xl overflow-hidden border border-[#2F3336] mb-3 hover:border-[#22c55e]/40 transition-colors">
           <img src="/ads/mshauri-advertise.png" alt="Advertise with Mshauri — contact +263772424997" className="w-full object-cover" />
-        </a>
-        <a href="https://zmx.co.zw/market-data/" target="_blank" rel="noreferrer" className="block rounded-xl overflow-hidden border border-[#2F3336] hover:border-[#3b82f6]/40 transition-colors bg-[#0a1628]">
-          <div className="flex items-center gap-3 px-3 py-3">
-            <div className="w-9 h-9 rounded-lg bg-[#0a1628] border border-[#1e3a5f] flex items-center justify-center text-[8px] font-black text-[#3b82f6] tracking-widest shrink-0">ZMX</div>
-            <div className="flex-1 min-w-0">
-              <div className="text-[#E7E9EA] text-[11px] font-bold leading-tight">ZMX Market Data</div>
-              <div className="text-[#71767B] text-[10px]">Live commodity prices</div>
-            </div>
-            <span className="text-[9px] font-bold text-[#3b82f6]">VIEW →</span>
-          </div>
         </a>
       </div>
 
@@ -526,8 +520,6 @@ export default function Home() {
               </button>
             ))}
           </div>
-
-          <ZmxPartnerCard />
 
           <FeaturedStoryCarousel />
           <ContinueLearning />
