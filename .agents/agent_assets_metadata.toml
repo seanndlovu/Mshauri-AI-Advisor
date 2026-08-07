@@ -12,3 +12,10 @@ id = "cDrFK0gaO7Sq06ictfAN0"
 uri = "file://mshauri-deploy.zip"
 type = "unspecified"
 title = "Mshauri Deploy Scripts"
+
+[[outputs]]
+id = "ItNEwXINHSM4kZqq1tzb-"
+uri = "file://mshauri-selfhost.zip"
+type = "unspecified"
+title = "mshauri-selfhost.zip"
+description = "Complete Mshauri source code ready for self-hosting on mshauri.marichomedia.com. Includes all deploy scripts and .env.example pre-filled with your domain."
