@@ -19,3 +19,10 @@ uri = "file://mshauri-selfhost.zip"
 type = "unspecified"
 title = "mshauri-selfhost.zip"
 description = "Complete Mshauri source code ready for self-hosting on mshauri.marichomedia.com. Includes all deploy scripts and .env.example pre-filled with your domain."
+
+[[outputs]]
+id = "e8nmri1wU-CDBw5IXVp1M"
+uri = "file://deploy/mshauri-server-setup.html"
+type = "text"
+title = "Mshauri Server Setup Guide"
+description = "Complete deployment guide for mshauri.marichomedia.com — open and click 'Save as PDF'"

@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mshauri — Server Deployment Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #16a34a;
+    --green-light: #dcfce7;
+    --green-mid: #22c55e;
+    --red-light: #fee2e2;
+    --red: #dc2626;
+    --orange-light: #fff7ed;
+    --orange: #ea580c;
+    --blue-light: #eff6ff;
+    --blue: #2563eb;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-400: #9ca3af;
+    --gray-600: #4b5563;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --font: 'Inter', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+
+  body {
+    font-family: var(--font);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--gray-800);
+    background: #fff;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 48px 80px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    border-bottom: 3px solid var(--green);
+    padding-bottom: 20px;
+    margin-bottom: 32px;
+  }
+  .header-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .logo-pill {
+    background: var(--green);
+    color: #fff;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: 0.5px;
+    padding: 6px 16px;
+    border-radius: 8px;
+    display: inline-block;
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--gray-900);
+    margin-top: 12px;
+    line-height: 1.2;
+  }
+  .header .subtitle {
+    font-size: 13px;
+    color: var(--gray-600);
+    margin-top: 4px;
+  }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 20px;
+  }
+  .meta-item {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+  .meta-item .label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--gray-400);
+  }
+  .meta-item .value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin-top: 2px;
+    font-family: var(--mono);
+  }
+
+  /* ── SECRETS BOX ── */
+  .secrets-box {
+    background: var(--orange-light);
+    border: 1.5px solid #fed7aa;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 28px;
+  }
+  .secrets-box h3 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--orange);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .secrets-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .secrets-table th {
+    text-align: left;
+    font-weight: 700;
+    color: var(--gray-600);
+    padding: 4px 8px 4px 0;
+    border-bottom: 1px solid #fed7aa;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .secrets-table td {
+    padding: 6px 8px 6px 0;
+    border-bottom: 1px solid #fde8cc;
+    vertical-align: top;
+  }
+  .secrets-table tr:last-child td { border-bottom: none; }
+  .tag { 
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .tag-client { background: #dbeafe; color: #1d4ed8; }
+  .tag-you { background: #dcfce7; color: #15803d; }
+
+  /* ── STEPS ── */
+  .step {
+    margin-bottom: 28px;
+    page-break-inside: avoid;
+  }
+  .step-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .step-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--green);
+    color: #fff;
+    font-weight: 800;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-num.gray { background: var(--gray-400); }
+  .step-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gray-900);
+  }
+  .step-subtitle {
+    font-size: 11px;
+    color: var(--gray-600);
+    margin-left: auto;
+    font-style: italic;
+  }
+
+  /* ── CODE BLOCKS ── */
+  pre {
+    background: var(--gray-900);
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin: 8px 0;
+    page-break-inside: avoid;
+  }
+  code {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--gray-100);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: var(--green);
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+  }
+  .comment { color: #6b7280; }
+  .cmd { color: #86efac; }
+  .str { color: #fbbf24; }
+  .key { color: #93c5fd; }
+
+  /* ── CALLOUTS ── */
+  .callout {
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-size: 12px;
+    display: flex;
+    gap: 10px;
+  }
+  .callout-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .callout.warn { background: var(--orange-light); border: 1px solid #fed7aa; }
+  .callout.info { background: var(--blue-light); border: 1px solid #bfdbfe; }
+  .callout.success { background: var(--green-light); border: 1px solid #bbf7d0; }
+  .callout strong { font-weight: 700; }
+
+  /* ── ENV FILE ── */
+  .env-block {
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 2;
+    page-break-inside: avoid;
+  }
+  .env-section { color: #6b7280; font-size: 10px; }
+  .env-key { color: #93c5fd; }
+  .env-val { color: #fbbf24; }
+  .env-fill { color: #f87171; }
+  .env-ok { color: #86efac; }
+
+  /* ── TABLE ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin: 10px 0;
+  }
+  th {
+    background: var(--gray-100);
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--gray-600);
+    border-bottom: 2px solid var(--gray-200);
+  }
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--gray-200);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  .prob { color: var(--red); font-weight: 600; }
+
+  /* ── ARCHITECTURE ── */
+  .arch {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    padding: 20px 24px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    line-height: 2;
+    color: var(--gray-800);
+  }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--green);
+    margin: 32px 0 16px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--green-light);
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid var(--gray-200);
+    font-size: 11px;
+    color: var(--gray-400);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* ── PRINT BUTTON (hidden when printing) ── */
+  .print-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--green);
+    color: #fff;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    font-family: var(--font);
+    z-index: 999;
+  }
+  .print-btn:hover { background: #15803d; }
+
+  @media print {
+    body { padding: 24px 32px; max-width: 100%; font-size: 11.5px; }
+    .print-btn { display: none; }
+    .step { page-break-inside: avoid; }
+    pre { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<button class="print-btn" onclick="window.print()">⬇ Save as PDF</button>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <span class="logo-pill">Mshauri</span>
+      <h1>Server Deployment Guide</h1>
+      <p class="subtitle">Step-by-step instructions for deploying on the Maricho Media VPS</p>
+    </div>
+  </div>
+  <div class="meta-grid">
+    <div class="meta-item">
+      <div class="label">Target Domain</div>
+      <div class="value">mshauri.marichomedia.com</div>
+    </div>
+    <div class="meta-item">
+      <div class="label">Server IP</div>
+      <div class="value">50.6.195.160</div>
+    </div>
+    <div class="meta-item">
+      <div class="label">Operating System</div>
+      <div class="value">Ubuntu Linux 24.04.4 ✓</div>
+    </div>
+    <div class="meta-item">
+      <div class="label">Server Panel</div>
+      <div class="value">Virtualmin 8.1 / Webmin 2.451</div>
+    </div>
+    <div class="meta-item">
+      <div class="label">RAM / Disk</div>
+      <div class="value">3.82 GB RAM / 43 GB free disk</div>
+    </div>
+    <div class="meta-item">
+      <div class="label">GitHub Repository</div>
+      <div class="value">seanndlovu/Mshauri-AI-Advisor</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECRETS -->
+<div class="secrets-box">
+  <h3>⚠️ Secrets &amp; credentials needed before you start</h3>
+  <table class="secrets-table">
+    <thead>
+      <tr>
+        <th>Variable</th>
+        <th>Description</th>
+        <th>Source</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>OPENAI_API_KEY</code></td>
+        <td>OpenAI API key — starts with <code>sk-</code></td>
+        <td><span class="tag tag-client">Client provides</span></td>
+      </tr>
+      <tr>
+        <td><code>WHATSAPP_ACCESS_TOKEN</code></td>
+        <td>Never-expiring system user token from Meta Business Manager</td>
+        <td><span class="tag tag-client">Client provides</span></td>
+      </tr>
+      <tr>
+        <td><code>WHATSAPP_PHONE_NUMBER_ID</code></td>
+        <td>Phone Number ID from Meta Business Manager</td>
+        <td><span class="tag tag-client">Client provides</span></td>
+      </tr>
+      <tr>
+        <td><code>DB_PASS</code></td>
+        <td>Any strong password you choose for the database</td>
+        <td><span class="tag tag-you">You generate</span></td>
+      </tr>
+      <tr>
+        <td><code>SESSION_SECRET</code></td>
+        <td>Random 64-character string (run: <code>openssl rand -hex 32</code>)</td>
+        <td><span class="tag tag-you">You generate</span></td>
+      </tr>
+      <tr>
+        <td><code>WHATSAPP_VERIFY_TOKEN</code></td>
+        <td>Any string you choose — used for webhook verification</td>
+        <td><span class="tag tag-you">You choose</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- STEPS -->
+<p class="section-title">Deployment Steps</p>
+
+<!-- STEP 0 -->
+<div class="step">
+  <div class="step-header">
+    <div class="step-num gray">0</div>
+    <div>
+      <div class="step-title">DNS — Point the domain at the server</div>
+    </div>
+    <span class="step-subtitle">Do this FIRST — wait 15 min before Step 7</span>
+  </div>
+  <p style="margin-bottom:8px;font-size:12px;">In Maricho Media's DNS manager, add an <strong>A record</strong>:</p>
+  <pre><span class="comment"># DNS A Record settings</span>
+<span class="key">Type :</span>  <span class="str">A</span>
+<span class="key">Name :</span>  <span class="str">mshauri</span>
+<span class="key">Value:</span>  <span class="str">50.6.195.160</span>
+<span class="key">TTL  :</span>  <span class="str">300</span> (or Auto)</pre>
+  <p style="margin-top:8px;font-size:12px;">Verify propagation before continuing:</p>
+  <pre><span class="cmd">nslookup mshauri.marichomedia.com</span>
+<span class="comment"># Must return: 50.6.195.160</span></pre>
+</div>
+
+<!-- STEP 1 -->
+<div class="step">
+  <div class="step-header">
+    <div class="step-num">1</div>
+    <div><div class="step-title">SSH into the server</div></div>
+  </div>
+  <pre><span class="cmd">ssh root@50.6.195.160</span></pre>
+</div>
+
+<!-- STEP 2 -->
+<div class="step">
+  <div class="step-header">
+    <div class="step-num">2</div>
+    <div><div class="step-title">Stop Apache (Virtualmin conflict)</div></div>
+  </div>
+  <div class="callout warn">
+    <span class="callout-icon">⚠️</span>
+    <div><strong>Virtualmin installs Apache on port 80.</strong> This app uses Nginx — both cannot run on port 80 at the same time. If other websites on this server use Apache, discuss with the client before proceeding.</div>
+  </div>
+  <pre><span class="comment"># Check what is on port 80</span>
+<span class="cmd">sudo lsof -i :80</span>
+
+<span class="comment"># Stop Apache and prevent it from restarting on reboot</span>
+<span class="cmd">sudo systemctl stop apache2</span>
+<span class="cmd">sudo systemctl disable apache2</span>
+
+<span class="comment"># Confirm it is stopped (should say: inactive)</span>
+<span class="cmd">sudo systemctl status apache2</span></pre>
+</div>
+
+<!-- STEP 3 -->
+<div class="step">
+  <div class="step-header">
+    <div class="step-num">3</div>
+    <div><div class="step-title">Clone the repository</div></div>
+  </div>
+  <pre><span class="cmd">cd /var/www</span>
+<span class="cmd">git clone https://github.com/seanndlovu/Mshauri-AI-Advisor.git mshauri</span>
+<span class="cmd">cd mshauri</span></pre>
+</div>
+
+<!-- STEP 4 -->
+<div class="step">
+  <div class="step-header">
+    <div class="step-num">4</div>
+    <div><div class="step-title">Install all server software</div></div>
+    <span class="step-subtitle">Run once — takes 3–5 minutes</span>
+  </div>
+  <pre><span class="cmd">sudo bash deploy/1-install-vps.sh</span></pre>
+  <p style="margin-top:8px;font-size:12px;">This installs: <strong>Node.js 24, pnpm, PM2, PostgreSQL 16, Nginx, Certbot</strong></p>
+  <div class="callout success">
+    <span class="callout-icon">✅</span>
+    <div>Script ends with: <code>All dependencies installed.</code> — if it fails partway, it is safe to run again.</div>
+  </div>
+</div>
+
+<!-- STEP 5 -->
+<div class="step">
+  <div class="step-header">
+    <div class="step-num">5</div>
+    <div><div class="step-title">Generate your secrets</div></div>
+  </div>
+  <pre><span class="comment"># Generate SESSION_SECRET (copy the output — you will need it below)</span>
+<span class="cmd">openssl rand -hex 32</span></pre>
+  <p style="margin-top:8px;font-size:12px;">Write down the output — paste it into the env file in the next step.</p>
+</div>
+
+<!-- STEP 6 -->
+<div class="step">
+  <div class="step-header">
+    <div class="step-num">6</div>
+    <div><div class="step-title">Configure environment variables</div></div>
+  </div>
+  <pre><span class="cmd">cp deploy/.env.example deploy/.env.production</span>
+<span class="cmd">nano deploy/.env.production</span></pre>
+  <p style="margin: 10px 0 8px; font-size:12px;">The file is pre-filled with the domain and port. Only update the values marked in red:</p>
+  <div class="env-block">
+    <span class="env-section"># Server</span><br>
+    <span class="env-key">PORT</span>=<span class="env-ok">8080</span><br>
+    <span class="env-key">NODE_ENV</span>=<span class="env-ok">production</span><br>
+    <span class="env-key">DOMAIN</span>=<span class="env-ok">mshauri.marichomedia.com</span><br>
+    <br>
+    <span class="env-section"># Database</span><br>
+    <span class="env-key">DB_NAME</span>=<span class="env-ok">mshauri</span><br>
+    <span class="env-key">DB_USER</span>=<span class="env-ok">mshauri</span><br>
+    <span class="env-key">DB_PASS</span>=<span class="env-fill">your_strong_db_password</span><br>
+    <span class="env-key">DATABASE_URL</span>=<span class="env-ok">postgresql://mshauri:</span><span class="env-fill">your_strong_db_password</span><span class="env-ok">@localhost:5432/mshauri</span><br>
+    <br>
+    <span class="env-section"># Session (paste openssl output here)</span><br>
+    <span class="env-key">SESSION_SECRET</span>=<span class="env-fill">paste_openssl_rand_hex_32_output_here</span><br>
+    <br>
+    <span class="env-section"># OpenAI</span><br>
+    <span class="env-key">OPENAI_API_KEY</span>=<span class="env-fill">sk-...</span><br>
+    <br>
+    <span class="env-section"># WhatsApp</span><br>
+    <span class="env-key">WHATSAPP_ACCESS_TOKEN</span>=<span class="env-fill">paste_from_meta_business_manager</span><br>
+    <span class="env-key">WHATSAPP_PHONE_NUMBER_ID</span>=<span class="env-fill">paste_from_meta_business_manager</span><br>
+    <span class="env-key">WHATSAPP_VERIFY_TOKEN</span>=<span class="env-fill">any_string_you_choose</span>
+  </div>
+  <div class="callout warn" style="margin-top:10px;">
+    <span class="callout-icon">⚠️</span>
+    <div><strong>Important:</strong> <code>DB_PASS</code> must match exactly in both the <code>DB_PASS=</code> line and inside <code>DATABASE_URL=</code>. Copy carefully.</div>
+  </div>
+  <p style="margin-top:8px;font-size:12px;">Save and exit nano: <code>Ctrl+X</code> → <code>Y</code> → <code>Enter</code></p>
+</div>
+
+<!-- STEP 7 -->
+<div class="step">
+  <div class="step-header">
+    <div class="step-num">7</div>
+    <div><div class="step-title">Build and launch the app</div></div>
+    <span class="step-subtitle">Takes 2–4 minutes</span>
+  </div>
+  <pre><span class="cmd">bash deploy/2-setup-app.sh</span></pre>
+  <p style="margin: 8px 0; font-size:12px;">This script automatically:</p>
+  <ul style="font-size:12px;padding-left:20px;line-height:2;">
+    <li>Creates the PostgreSQL database and user</li>
+    <li>Installs all Node.js packages</li>
+    <li>Builds the API server and frontend</li>
+    <li>Creates all database tables</li>
+    <li>Writes and activates the Nginx config</li>
+    <li>Starts the API with PM2 (auto-restarts on crash or reboot)</li>
+  </ul>
+  <div class="callout success">
+    <span class="callout-icon">✅</span>
+    <div>Expected final output:<br><code>Mshauri is running! → http://mshauri.marichomedia.com</code></div>
+  </div>
+  <p style="margin-top:10px;font-size:12px;">Verify the API is responding:</p>
+  <pre><span class="cmd">curl http://localhost/api/healthz</span>
+<span class="comment"># Expected response: {"status":"ok"}</span></pre>
+</div>
+
+<!-- STEP 8 -->
+<div class="step">
+  <div class="step-header">
+    <div class="step-num">8</div>
+    <div><div class="step-title">Add HTTPS / SSL certificate</div></div>
+  </div>
+  <div class="callout warn">
+    <span class="callout-icon">⚠️</span>
+    <div><strong>HTTPS is required.</strong> User logins will not work without it. DNS from Step 0 must be pointing at the server before this step.</div>
+  </div>
+  <pre><span class="cmd">sudo certbot --nginx -d mshauri.marichomedia.com</span></pre>
+  <p style="margin: 8px 0; font-size:12px;">When prompted:</p>
+  <ul style="font-size:12px;padding-left:20px;line-height:2;">
+    <li>Enter an email address for renewal notices</li>
+    <li>Agree to terms → type <code>Y</code></li>
+    <li>Redirect HTTP → HTTPS → choose <strong>2 (Redirect)</strong></li>
+  </ul>
+  <p style="margin-top:8px;font-size:12px;">Test the auto-renewal works:</p>
+  <pre><span class="cmd">sudo certbot renew --dry-run</span></pre>
+  <div class="callout success">
+    <span class="callout-icon">✅</span>
+    <div>Certificate auto-renews every 90 days — no manual action needed.</div>
+  </div>
+</div>
+
+<!-- STEP 9 -->
+<div class="step">
+  <div class="step-header">
+    <div class="step-num">9</div>
+    <div><div class="step-title">Final verification</div></div>
+  </div>
+  <pre><span class="comment"># 1. Open in browser</span>
+<span class="str">https://mshauri.marichomedia.com</span>
+
+<span class="comment"># 2. API health check</span>
+<span class="cmd">curl https://mshauri.marichomedia.com/api/healthz</span>
+
+<span class="comment"># 3. PM2 process status</span>
+<span class="cmd">pm2 status</span>
+
+<span class="comment"># 4. View live API logs</span>
+<span class="cmd">pm2 logs mshauri-api --lines 50</span></pre>
+</div>
+
+<!-- UPDATES -->
+<p class="section-title">Deploying Future Updates</p>
+
+<div class="step">
+  <p style="font-size:12px;margin-bottom:8px;">Whenever new code is pushed to GitHub, run this on the server:</p>
+  <pre><span class="cmd">cd /var/www/mshauri && bash deploy/3-update.sh</span></pre>
+  <p style="font-size:12px;margin-top:8px;">Pulls latest code, rebuilds everything, and restarts the API. Takes about 2 minutes.</p>
+</div>
+
+<!-- REFERENCE COMMANDS -->
+<p class="section-title">Reference Commands</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;">
+  <div>
+    <p style="font-weight:700;font-size:12px;margin-bottom:6px;">PM2 — API process manager</p>
+    <pre style="font-size:10.5px;"><span class="cmd">pm2 status</span>             <span class="comment"># is API running?</span>
+<span class="cmd">pm2 logs mshauri-api</span>   <span class="comment"># live logs</span>
+<span class="cmd">pm2 restart mshauri-api</span> <span class="comment"># restart</span>
+<span class="cmd">pm2 stop mshauri-api</span>   <span class="comment"># stop</span></pre>
+  </div>
+  <div>
+    <p style="font-weight:700;font-size:12px;margin-bottom:6px;">Nginx — web server</p>
+    <pre style="font-size:10.5px;"><span class="cmd">sudo nginx -t</span>           <span class="comment"># test config</span>
+<span class="cmd">sudo systemctl reload nginx</span>
+<span class="cmd">sudo journalctl -u nginx -f</span></pre>
+  </div>
+</div>
+
+<!-- TROUBLESHOOTING -->
+<p class="section-title">Troubleshooting</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Problem</th>
+      <th>Likely cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="prob">Port 80 already in use</td>
+      <td>Apache still running</td>
+      <td><code>sudo systemctl stop apache2 && sudo systemctl disable apache2</code></td>
+    </tr>
+    <tr>
+      <td class="prob">502 Bad Gateway in browser</td>
+      <td>Node/PM2 process crashed</td>
+      <td><code>pm2 restart mshauri-api && pm2 logs mshauri-api</code></td>
+    </tr>
+    <tr>
+      <td class="prob">Login doesn't work</td>
+      <td>HTTPS not configured</td>
+      <td>Run Step 8 (Certbot)</td>
+    </tr>
+    <tr>
+      <td class="prob">Certbot says "domain not found"</td>
+      <td>DNS not propagated yet</td>
+      <td>Wait 15 min, verify with <code>nslookup mshauri.marichomedia.com</code></td>
+    </tr>
+    <tr>
+      <td class="prob">DATABASE_URL error on startup</td>
+      <td>Password mismatch in .env</td>
+      <td>Fix <code>.env.production</code> then re-run <code>bash deploy/2-setup-app.sh</code></td>
+    </tr>
+    <tr>
+      <td class="prob">Build crashes / out of memory</td>
+      <td>Not enough RAM during build</td>
+      <td><code>sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile</code> — then retry build</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ARCHITECTURE -->
+<p class="section-title">How It Works</p>
+
+<div class="arch">
+Browser (HTTPS port 443)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+&nbsp;&nbsp;&nbsp;&nbsp;▼<br>
+<strong>Nginx</strong> (reverse proxy)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;├── /api/* &nbsp;&nbsp;→&nbsp; <strong>Node.js API</strong> on port 8080 (managed by PM2)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── connects to PostgreSQL on port 5432 (local only)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;└── /* &nbsp;&nbsp;&nbsp;&nbsp;→&nbsp; <strong>Static frontend files</strong> (artifacts/mhauri-ai/dist/)
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <span>Mshauri — Maricho Media · mshauri.marichomedia.com</span>
+  <span>github.com/seanndlovu/Mshauri-AI-Advisor</span>
+</div>
+
+</body>
+</html>
