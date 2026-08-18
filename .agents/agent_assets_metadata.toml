@@ -26,3 +26,10 @@ uri = "file://deploy/mshauri-server-setup.html"
 type = "text"
 title = "Mshauri Server Setup Guide"
 description = "Complete deployment guide for mshauri.marichomedia.com — open and click 'Save as PDF'"
+
+[[outputs]]
+id = "i0sp2MrGjy2v39TAStc46"
+uri = "file://deploy/mshauri-vps-guide-64.247.178.45.html"
+type = "text"
+title = "Mshauri VPS Setup Guide — 64.247.178.45"
+description = "Full deployment guide for your Ubuntu 22.04 server. Open and click 'Save as PDF'."

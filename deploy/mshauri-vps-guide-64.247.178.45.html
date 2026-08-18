@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Mshauri — VPS Setup Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #16a34a; --green-light: #dcfce7; --green-mid: #22c55e;
+    --orange-light: #fff7ed; --orange: #ea580c;
+    --blue-light: #eff6ff; --blue: #2563eb;
+    --red: #dc2626;
+    --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+    --gray-400: #9ca3af; --gray-600: #4b5563; --gray-800: #1f2937; --gray-900: #111827;
+    --font: 'Inter', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--gray-800);
+    background: #fff;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 48px 80px;
+  }
+
+  /* HEADER */
+  .header { border-bottom: 3px solid var(--green); padding-bottom: 20px; margin-bottom: 28px; }
+  .logo { background: var(--green); color: #fff; font-weight: 800; font-size: 17px; padding: 5px 14px; border-radius: 7px; display: inline-block; }
+  .header h1 { font-size: 21px; font-weight: 800; color: var(--gray-900); margin-top: 10px; }
+  .header p { font-size: 12px; color: var(--gray-600); margin-top: 3px; }
+
+  .meta { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 16px; }
+  .meta-card { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px; padding: 10px 14px; }
+  .meta-card .lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; color: var(--gray-400); }
+  .meta-card .val { font-size: 12px; font-weight: 600; color: var(--gray-900); margin-top: 2px; font-family: var(--mono); }
+
+  /* SECTION TITLES */
+  .sec { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.1px; color: var(--green);
+         margin: 28px 0 14px; padding-bottom: 5px; border-bottom: 2px solid var(--green-light); }
+
+  /* KEYS TABLE */
+  .keys-box { background: var(--orange-light); border: 1.5px solid #fed7aa; border-radius: 10px; padding: 14px 18px; margin-bottom: 24px; }
+  .keys-box h3 { font-size: 12px; font-weight: 700; color: var(--orange); margin-bottom: 10px; }
+  .keys-box table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  .keys-box th { text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--gray-600); padding: 4px 8px 4px 0; border-bottom: 1px solid #fed7aa; }
+  .keys-box td { padding: 6px 8px 6px 0; border-bottom: 1px solid #fde8cc; vertical-align: top; }
+  .keys-box tr:last-child td { border-bottom: none; }
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+  .tag-c { background: #dbeafe; color: #1d4ed8; }
+  .tag-y { background: var(--green-light); color: #15803d; }
+
+  /* STEPS */
+  .step { margin-bottom: 24px; page-break-inside: avoid; }
+  .step-hd { display: flex; align-items: center; gap: 11px; margin-bottom: 10px; }
+  .step-num { width: 30px; height: 30px; border-radius: 50%; background: var(--green); color: #fff;
+              font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .step-num.gray { background: var(--gray-400); }
+  .step-title { font-size: 14px; font-weight: 700; color: var(--gray-900); }
+  .step-note { font-size: 11px; color: var(--gray-400); font-style: italic; margin-left: auto; }
+
+  /* CODE */
+  pre { background: var(--gray-900); color: #e2e8f0; border-radius: 8px; padding: 13px 15px;
+        font-family: var(--mono); font-size: 11.5px; line-height: 1.75; overflow-x: auto; margin: 7px 0; page-break-inside: avoid; }
+  code { font-family: var(--mono); font-size: 11px; background: var(--gray-100); padding: 1px 5px; border-radius: 4px; color: var(--green); }
+  pre code { background: none; padding: 0; color: inherit; }
+  .c { color: #6b7280; } .cmd { color: #86efac; } .str { color: #fbbf24; } .k { color: #93c5fd; }
+
+  /* CALLOUTS */
+  .callout { border-radius: 8px; padding: 11px 15px; margin: 9px 0; font-size: 12px; display: flex; gap: 9px; }
+  .callout-icon { font-size: 15px; flex-shrink: 0; }
+  .callout.warn { background: var(--orange-light); border: 1px solid #fed7aa; }
+  .callout.ok   { background: var(--green-light);  border: 1px solid #bbf7d0; }
+  .callout.info { background: var(--blue-light);   border: 1px solid #bfdbfe; }
+
+  /* ENV */
+  .env { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 14px 16px;
+         font-family: var(--mono); font-size: 11px; line-height: 2.1; page-break-inside: avoid; }
+  .es { color: #6b7280; font-size: 10px; }
+  .ek { color: #93c5fd; } .ev { color: #fbbf24; } .ef { color: #f87171; } .eo { color: #86efac; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 10px 0; }
+  th { background: var(--gray-100); text-align: left; padding: 8px 12px; font-weight: 700;
+       font-size: 10.5px; text-transform: uppercase; letter-spacing: .4px; color: var(--gray-600);
+       border-bottom: 2px solid var(--gray-200); }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .prob { color: var(--red); font-weight: 600; }
+
+  /* ARCH */
+  .arch { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 10px;
+          padding: 18px 22px; font-family: var(--mono); font-size: 11.5px; line-height: 2; }
+
+  /* PRINT BUTTON */
+  .print-btn { position: fixed; top: 18px; right: 18px; background: var(--green); color: #fff;
+               border: none; padding: 9px 20px; border-radius: 8px; font-size: 13px; font-weight: 700;
+               cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,.15); font-family: var(--font); z-index: 999; }
+  .print-btn:hover { background: #15803d; }
+
+  /* FOOTER */
+  .footer { margin-top: 44px; padding-top: 14px; border-top: 1px solid var(--gray-200);
+            font-size: 11px; color: var(--gray-400); display: flex; justify-content: space-between; }
+
+  @media print {
+    body { padding: 24px 32px; max-width: 100%; font-size: 11.5px; }
+    .print-btn { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<button class="print-btn" onclick="window.print()">⬇ Save as PDF</button>
+
+<!-- HEADER -->
+<div class="header">
+  <span class="logo">Mshauri</span>
+  <h1>VPS Deployment Guide</h1>
+  <p>Complete step-by-step setup for your fresh Ubuntu 22.04 server</p>
+  <div class="meta">
+    <div class="meta-card"><div class="lbl">Server IP</div><div class="val">64.247.178.45</div></div>
+    <div class="meta-card"><div class="lbl">Operating System</div><div class="val">Ubuntu 22.04 LTS ✓</div></div>
+    <div class="meta-card"><div class="lbl">Target Domain</div><div class="val">mshauri.marichomedia.com</div></div>
+    <div class="meta-card"><div class="lbl">GitHub Repo</div><div class="val">seanndlovu/Mshauri-AI-Advisor</div></div>
+    <div class="meta-card"><div class="lbl">Node.js Version</div><div class="val">24 (installed by script)</div></div>
+    <div class="meta-card"><div class="lbl">Database</div><div class="val">PostgreSQL 16 (local)</div></div>
+  </div>
+</div>
+
+<!-- KEYS NEEDED -->
+<div class="keys-box">
+  <h3>⚠️ Collect these before you start — you will be asked for them in Step 6</h3>
+  <table>
+    <thead><tr><th>Secret / Key</th><th>Where to get it</th><th>Who provides</th></tr></thead>
+    <tbody>
+      <tr><td><code>OPENAI_API_KEY</code></td><td>platform.openai.com → API keys → Create new secret key</td><td><span class="tag tag-c">Client</span></td></tr>
+      <tr><td><code>WHATSAPP_ACCESS_TOKEN</code></td><td>business.facebook.com → System Users → Generate token (set to Never expires)</td><td><span class="tag tag-c">Client</span></td></tr>
+      <tr><td><code>WHATSAPP_PHONE_NUMBER_ID</code></td><td>business.facebook.com → WhatsApp → Phone Numbers → copy the ID number</td><td><span class="tag tag-c">Client</span></td></tr>
+      <tr><td><code>DB_PASS</code></td><td>Choose any strong password (e.g. <code>Mshauri@2026!</code>)</td><td><span class="tag tag-y">You choose</span></td></tr>
+      <tr><td><code>SESSION_SECRET</code></td><td>Run <code>openssl rand -hex 32</code> on the server — copy the output</td><td><span class="tag tag-y">You generate</span></td></tr>
+      <tr><td><code>WHATSAPP_VERIFY_TOKEN</code></td><td>Any word you choose (e.g. <code>mshauri2026</code>) — used for webhook setup</td><td><span class="tag tag-y">You choose</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p class="sec">Step-by-Step Setup</p>
+
+<!-- STEP 0 -->
+<div class="step">
+  <div class="step-hd"><div class="step-num gray">0</div><div class="step-title">DNS — Point your domain at the server</div><span class="step-note">Do this first — DNS takes 5–15 min to propagate</span></div>
+  <p style="font-size:12px;margin-bottom:7px;">In your DNS manager (wherever marichomedia.com is registered), add:</p>
+  <pre><span class="k">Type :</span>  <span class="str">A</span>
+<span class="k">Name :</span>  <span class="str">mshauri</span>
+<span class="k">Value:</span>  <span class="str">64.247.178.45</span>
+<span class="k">TTL  :</span>  <span class="str">300</span></pre>
+  <p style="font-size:12px;margin-top:8px;">Verify after 10–15 min (SSL won't work until this resolves):</p>
+  <pre><span class="cmd">nslookup mshauri.marichomedia.com</span>
+<span class="c"># Must show: 64.247.178.45</span></pre>
+</div>
+
+<!-- STEP 1 -->
+<div class="step">
+  <div class="step-hd"><div class="step-num">1</div><div class="step-title">SSH into the server</div></div>
+  <pre><span class="cmd">ssh root@64.247.178.45</span></pre>
+</div>
+
+<!-- STEP 2 -->
+<div class="step">
+  <div class="step-hd"><div class="step-num">2</div><div class="step-title">Clone the repository from GitHub</div></div>
+  <pre><span class="cmd">cd /var/www</span>
+<span class="cmd">git clone https://github.com/seanndlovu/Mshauri-AI-Advisor.git mshauri</span>
+<span class="cmd">cd mshauri</span></pre>
+</div>
+
+<!-- STEP 3 -->
+<div class="step">
+  <div class="step-hd"><div class="step-num">3</div><div class="step-title">Install all server software</div><span class="step-note">Runs once — takes 3–5 minutes</span></div>
+  <pre><span class="cmd">sudo bash deploy/1-install-vps.sh</span></pre>
+  <p style="font-size:12px;margin:6px 0;">Installs: <strong>Node.js 24 · pnpm · PM2 · PostgreSQL 16 · Nginx · Certbot</strong></p>
+  <div class="callout ok"><span class="callout-icon">✅</span><div>Ends with: <code>All dependencies installed.</code> — safe to re-run if it fails partway.</div></div>
+</div>
+
+<!-- STEP 4 -->
+<div class="step">
+  <div class="step-hd"><div class="step-num">4</div><div class="step-title">Generate your SESSION_SECRET</div></div>
+  <pre><span class="c"># Run this and copy the output — paste it in Step 6</span>
+<span class="cmd">openssl rand -hex 32</span></pre>
+</div>
+
+<!-- STEP 5 -->
+<div class="step">
+  <div class="step-hd"><div class="step-num">5</div><div class="step-title">Check if Apache is running on port 80</div></div>
+  <div class="callout warn"><span class="callout-icon">⚠️</span><div>Some Ubuntu installs have Apache active on port 80. This will conflict with Nginx. Check and disable it.</div></div>
+  <pre><span class="cmd">sudo lsof -i :80</span>
+<span class="c"># If you see apache2 in the output, run these:</span>
+<span class="cmd">sudo systemctl stop apache2</span>
+<span class="cmd">sudo systemctl disable apache2</span></pre>
+</div>
+
+<!-- STEP 6 -->
+<div class="step">
+  <div class="step-hd"><div class="step-num">6</div><div class="step-title">Configure environment variables</div></div>
+  <pre><span class="cmd">cp deploy/.env.example deploy/.env.production</span>
+<span class="cmd">nano deploy/.env.production</span></pre>
+  <p style="font-size:12px;margin:9px 0 7px;">Fill in the file exactly like this — replace the <span style="color:var(--red);font-weight:700;">red values</span>:</p>
+  <div class="env">
+    <span class="es"># ── Server ──────────────────────────────</span><br>
+    <span class="ek">PORT</span>=<span class="eo">8080</span><br>
+    <span class="ek">NODE_ENV</span>=<span class="eo">production</span><br>
+    <span class="ek">DOMAIN</span>=<span class="eo">mshauri.marichomedia.com</span><br><br>
+    <span class="es"># ── Database ─────────────────────────────</span><br>
+    <span class="ek">DB_NAME</span>=<span class="eo">mshauri</span><br>
+    <span class="ek">DB_USER</span>=<span class="eo">mshauri</span><br>
+    <span class="ek">DB_PASS</span>=<span class="ef">your_strong_password_here</span><br>
+    <span class="ek">DATABASE_URL</span>=postgresql://mshauri:<span class="ef">your_strong_password_here</span>@localhost:5432/mshauri<br><br>
+    <span class="es"># ── Session ──────────────────────────────</span><br>
+    <span class="ek">SESSION_SECRET</span>=<span class="ef">paste_openssl_output_here</span><br><br>
+    <span class="es"># ── OpenAI ───────────────────────────────</span><br>
+    <span class="ek">OPENAI_API_KEY</span>=<span class="ef">sk-...</span><br><br>
+    <span class="es"># ── WhatsApp ─────────────────────────────</span><br>
+    <span class="ek">WHATSAPP_ACCESS_TOKEN</span>=<span class="ef">paste_from_meta_business</span><br>
+    <span class="ek">WHATSAPP_PHONE_NUMBER_ID</span>=<span class="ef">paste_from_meta_business</span><br>
+    <span class="ek">WHATSAPP_VERIFY_TOKEN</span>=<span class="ef">any_word_you_choose</span>
+  </div>
+  <div class="callout warn" style="margin-top:9px;"><span class="callout-icon">⚠️</span><div><strong>Important:</strong> <code>DB_PASS</code> must be identical in both the <code>DB_PASS=</code> line AND inside <code>DATABASE_URL=</code>. Copy carefully.</div></div>
+  <p style="font-size:12px;margin-top:8px;">Save and exit: <code>Ctrl + X</code> → <code>Y</code> → <code>Enter</code></p>
+</div>
+
+<!-- STEP 7 -->
+<div class="step">
+  <div class="step-hd"><div class="step-num">7</div><div class="step-title">Build and launch the app</div><span class="step-note">Takes 2–4 minutes</span></div>
+  <pre><span class="cmd">bash deploy/2-setup-app.sh</span></pre>
+  <p style="font-size:12px;margin:7px 0 5px;">Automatically: creates database · installs packages · builds app · configures Nginx · starts API with PM2</p>
+  <div class="callout ok"><span class="callout-icon">✅</span><div>Ends with: <code>Mshauri is running! → http://mshauri.marichomedia.com</code></div></div>
+  <p style="font-size:12px;margin-top:9px;">Verify the API is up:</p>
+  <pre><span class="cmd">curl http://localhost/api/healthz</span>
+<span class="c"># Expected: {"status":"ok"}</span></pre>
+</div>
+
+<!-- STEP 8 -->
+<div class="step">
+  <div class="step-hd"><div class="step-num">8</div><div class="step-title">Add HTTPS / SSL certificate</div></div>
+  <div class="callout warn"><span class="callout-icon">⚠️</span><div><strong>HTTPS is required</strong> — user logins will not work without it. DNS (Step 0) must be pointing at the server before this step works.</div></div>
+  <pre><span class="cmd">sudo certbot --nginx -d mshauri.marichomedia.com</span>
+<span class="c"># When prompted about redirect → choose 2 (Redirect HTTP to HTTPS)</span></pre>
+  <p style="font-size:12px;margin-top:8px;">Test that auto-renewal works:</p>
+  <pre><span class="cmd">sudo certbot renew --dry-run</span></pre>
+  <div class="callout ok"><span class="callout-icon">✅</span><div>Certificate renews automatically every 90 days — no manual action needed.</div></div>
+</div>
+
+<!-- STEP 9 -->
+<div class="step">
+  <div class="step-hd"><div class="step-num">9</div><div class="step-title">Seed with starter content (communities &amp; demo posts)</div></div>
+  <pre><span class="cmd">pnpm --filter @workspace/scripts run seed:community</span></pre>
+  <p style="font-size:12px;margin-top:7px;">Creates 10 farming communities, 3 demo user accounts, 32 posts, and 69 comments so the app is not empty on launch.</p>
+  <div class="callout info"><span class="callout-icon">ℹ️</span><div>Demo accounts: <code>tendai@demo.zw</code> / <code>chipo@demo.zw</code> / <code>farai@demo.zw</code> — all use password <code>demo1234</code></div></div>
+</div>
+
+<!-- STEP 10 -->
+<div class="step">
+  <div class="step-hd"><div class="step-num">10</div><div class="step-title">Final check — open in browser</div></div>
+  <pre><span class="c"># Visit in browser</span>
+<span class="str">https://mshauri.marichomedia.com</span>
+
+<span class="c"># API health check</span>
+<span class="cmd">curl https://mshauri.marichomedia.com/api/healthz</span>
+
+<span class="c"># PM2 status</span>
+<span class="cmd">pm2 status</span>
+
+<span class="c"># View live logs</span>
+<span class="cmd">pm2 logs mshauri-api --lines 50</span></pre>
+</div>
+
+<p class="sec">Deploying Future Updates</p>
+
+<div class="step">
+  <p style="font-size:12px;margin-bottom:7px;">After any new code is pushed to GitHub, run this on the server:</p>
+  <pre><span class="cmd">cd /var/www/mshauri && bash deploy/3-update.sh</span></pre>
+  <p style="font-size:12px;margin-top:7px;">Pulls latest code, rebuilds, restarts API. Takes ~2 minutes. No downtime for users during frontend rebuild.</p>
+</div>
+
+<p class="sec">Useful Commands</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;">
+  <div>
+    <p style="font-weight:700;font-size:12px;margin-bottom:5px;">PM2 — API process manager</p>
+    <pre style="font-size:10.5px;"><span class="cmd">pm2 status</span>              <span class="c"># running?</span>
+<span class="cmd">pm2 logs mshauri-api</span>    <span class="c"># live logs</span>
+<span class="cmd">pm2 restart mshauri-api</span> <span class="c"># restart</span>
+<span class="cmd">pm2 stop mshauri-api</span>    <span class="c"># stop</span></pre>
+  </div>
+  <div>
+    <p style="font-weight:700;font-size:12px;margin-bottom:5px;">Nginx — web server</p>
+    <pre style="font-size:10.5px;"><span class="cmd">sudo nginx -t</span>            <span class="c"># test config</span>
+<span class="cmd">sudo systemctl reload nginx</span>
+<span class="cmd">sudo journalctl -u nginx -f</span></pre>
+  </div>
+</div>
+
+<p class="sec">Troubleshooting</p>
+
+<table>
+  <thead><tr><th>Problem</th><th>Cause</th><th>Fix</th></tr></thead>
+  <tbody>
+    <tr><td class="prob">Port 80 already in use</td><td>Apache still running</td><td><code>sudo systemctl stop apache2 && sudo systemctl disable apache2</code></td></tr>
+    <tr><td class="prob">502 Bad Gateway</td><td>PM2/Node crashed</td><td><code>pm2 restart mshauri-api && pm2 logs mshauri-api</code></td></tr>
+    <tr><td class="prob">Login doesn't work</td><td>No HTTPS</td><td>Run Step 8 (Certbot)</td></tr>
+    <tr><td class="prob">Certbot fails: domain not found</td><td>DNS not propagated</td><td>Wait 15 min, verify: <code>nslookup mshauri.marichomedia.com</code></td></tr>
+    <tr><td class="prob">Database connection error</td><td>Password mismatch in .env</td><td>Fix <code>.env.production</code> then rerun <code>bash deploy/2-setup-app.sh</code></td></tr>
+    <tr><td class="prob">Build fails / out of memory</td><td>Low RAM during build</td><td><code>sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile</code> — retry build</td></tr>
+  </tbody>
+</table>
+
+<p class="sec">Architecture</p>
+
+<div class="arch">
+  Browser (HTTPS :443)<br>
+  &nbsp;&nbsp;│<br>
+  &nbsp;&nbsp;▼<br>
+  <strong>Nginx</strong> — reverse proxy<br>
+  &nbsp;&nbsp;├── /api/* &nbsp;→ <strong>Node.js API</strong> :8080 (PM2) → <strong>PostgreSQL</strong> :5432 (local only)<br>
+  &nbsp;&nbsp;└── /* &nbsp;&nbsp;&nbsp;&nbsp;→ <strong>Static files</strong> (artifacts/mhauri-ai/dist/)
+</div>
+
+<div class="footer">
+  <span>Mshauri — Maricho Media · mshauri.marichomedia.com · Server: 64.247.178.45</span>
+  <span>github.com/seanndlovu/Mshauri-AI-Advisor</span>
+</div>
+
+</body>
+</html>
