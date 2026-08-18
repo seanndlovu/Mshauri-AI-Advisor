@@ -47,7 +47,7 @@ pnpm --filter @workspace/api-server run build
 pnpm --filter @workspace/mhauri-ai run build
 
 echo "[4/5] Pushing DB schema..."
-pnpm --filter @workspace/db run push
+DATABASE_URL="$DATABASE_URL" pnpm --filter @workspace/db run push
 
 # ── nginx ─────────────────────────────────────────────────────────
 echo "[5/5] Installing Nginx config..."
