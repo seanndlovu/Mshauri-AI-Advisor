@@ -4,12 +4,32 @@
 # Run from the repo root whenever you push new code to GitHub
 # Usage:  bash deploy/3-update.sh
 # ─────────────────────────────────────────────────────────────────
-set -e
+set -Eeuo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_FILE="$REPO_DIR/deploy/.env.production"
 
 cd "$REPO_DIR"
+
+if [ ! -f "$ENV_FILE" ]; then
+  echo "❌  Missing $ENV_FILE" >&2
+  exit 1
+fi
+
+set -a
+source "$ENV_FILE"
+set +a
+
+if [ -z "${DB_PASS:-}" ] || [ -z "${SESSION_SECRET:-}" ]; then
+  echo "❌  DB_PASS and SESSION_SECRET must be set in $ENV_FILE" >&2
+  exit 1
+fi
+
+DB_NAME="${DB_NAME:-mshauri}"
+DB_USER="${DB_USER:-mshauri}"
+DB_PASS_ENCODED="$(node -p 'encodeURIComponent(process.argv[1])' "$DB_PASS")"
+DATABASE_URL="postgresql://${DB_USER}:${DB_PASS_ENCODED}@localhost:5432/${DB_NAME}"
+export DB_NAME DB_USER DB_PASS DATABASE_URL SESSION_SECRET NODE_ENV PORT
 
 echo "[1/4] Pulling latest code..."
 git pull
@@ -18,13 +38,13 @@ echo "[2/4] Installing dependencies..."
 pnpm install --frozen-lockfile
 
 echo "[3/4] Building..."
-set -a && source "$ENV_FILE" && set +a
 pnpm run typecheck:libs
 pnpm --filter @workspace/api-server run build
 pnpm --filter @workspace/mhauri-ai run build
 
-echo "[4/4] Restarting API server..."
-pm2 restart mshauri-api
+echo "[4/4] Updating database schema and restarting API server..."
+DATABASE_URL="$DATABASE_URL" pnpm --filter @workspace/db run push
+pm2 restart mshauri-api --update-env
 
 echo ""
 echo "✅  Update complete."

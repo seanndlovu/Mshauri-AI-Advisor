@@ -4,7 +4,12 @@
 # Run once on a fresh Ubuntu 22.04 / 24.04 VPS as root or sudo user
 # Usage:  sudo bash 1-install-vps.sh
 # ─────────────────────────────────────────────────────────────────
-set -e
+set -Eeuo pipefail
+
+if [ "${EUID:-$(id -u)}" -ne 0 ]; then
+  echo "❌  Run this installer with sudo: sudo bash deploy/1-install-vps.sh" >&2
+  exit 1
+fi
 
 echo "========================================="
 echo "  Mshauri VPS installer"

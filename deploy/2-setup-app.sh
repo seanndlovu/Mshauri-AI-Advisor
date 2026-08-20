@@ -4,12 +4,25 @@
 # Run from the root of the cloned repo after 1-install-vps.sh
 # Usage:  bash deploy/2-setup-app.sh
 # ─────────────────────────────────────────────────────────────────
-set -e
+set -Eeuo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_FILE="$REPO_DIR/deploy/.env.production"
 NGINX_AVAILABLE="/etc/nginx/sites-available/mshauri"
 NGINX_ENABLED="/etc/nginx/sites-enabled/mshauri"
+
+fail() {
+  echo "❌  $1" >&2
+  exit 1
+}
+
+require_value() {
+  local name="$1"
+  local value="${!name:-}"
+  if [ -z "$value" ] || [[ "$value" == change_this_* ]] || [[ "$value" == replace_with_* ]]; then
+    fail "Missing or placeholder value for $name in $ENV_FILE"
+  fi
+}
 
 echo "========================================="
 echo "  Mshauri app setup"
@@ -23,13 +36,21 @@ if [ ! -f "$ENV_FILE" ]; then
   exit 1
 fi
 
-set -a && source "$ENV_FILE" && set +a
+set -a
+source "$ENV_FILE"
+set +a
 
 # ── database ──────────────────────────────────────────────────────
 echo "[1/5] Setting up PostgreSQL user & database..."
 DB_NAME="${DB_NAME:-mshauri}"
 DB_USER="${DB_USER:-mshauri}"
-DB_PASS="${DB_PASS:-changeme}"
+require_value DB_PASS
+require_value SESSION_SECRET
+
+# URL-encode the password so special characters work correctly in PostgreSQL.
+DB_PASS_ENCODED="$(node -p 'encodeURIComponent(process.argv[1])' "$DB_PASS")"
+DATABASE_URL="postgresql://${DB_USER}:${DB_PASS_ENCODED}@localhost:5432/${DB_NAME}"
+export DB_NAME DB_USER DB_PASS DATABASE_URL SESSION_SECRET NODE_ENV PORT
 
 sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'" | grep -q 1 || \
   sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';"
@@ -52,7 +73,7 @@ DATABASE_URL="$DATABASE_URL" pnpm --filter @workspace/db run push
 # ── nginx ─────────────────────────────────────────────────────────
 echo "[5/5] Installing Nginx config..."
 DOMAIN="${DOMAIN:-localhost}"
-STATIC_ROOT="$REPO_DIR/artifacts/mhauri-ai/dist"
+STATIC_ROOT="$REPO_DIR/artifacts/mhauri-ai/dist/public"
 API_PORT="${PORT:-8080}"
 
 cat > "$NGINX_AVAILABLE" <<NGINX
@@ -84,12 +105,12 @@ nginx -t && systemctl reload nginx
 # ── PM2 ───────────────────────────────────────────────────────────
 echo "Starting API server with PM2..."
 pm2 describe mshauri-api > /dev/null 2>&1 && pm2 delete mshauri-api || true
-pm2 start "$REPO_DIR/artifacts/api-server/dist/index.cjs" \
+pm2 start "$REPO_DIR/artifacts/api-server/dist/index.mjs" \
   --name mshauri-api \
-  --env-file "$ENV_FILE" \
+  --update-env \
   --restart-delay 3000
+pm2 startup systemd -u "$(id -un)" --hp "$HOME"
 pm2 save
-pm2 startup | tail -1 | bash || true
 
 echo ""
 echo "✅  Mshauri is running!"
