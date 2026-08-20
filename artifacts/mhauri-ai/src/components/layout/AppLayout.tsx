@@ -5,7 +5,7 @@ import {
   Menu, Sun, Moon,
   ChevronUp, ChevronDown, Settings,
   Users, BookOpen, LayoutDashboard, Zap, Sparkles,
-  Bell, ChevronDown as ChevronDownIcon, Plus, X,
+  Bell, ChevronDown as ChevronDownIcon, Plus, X, ExternalLink,
 } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -607,6 +607,16 @@ function SidebarContent({ onNavigate, onPlayQuiz }: { onNavigate?: () => void; o
               <span className="text-[10px] text-[#818384] hover:text-[#d7dadc] cursor-pointer transition-colors">{label}</span>
             </Link>
           ))}
+          <a
+            href="https://marichomedia.com/"
+            target="_blank"
+            rel="noreferrer"
+            onClick={onNavigate}
+            className="mt-2 w-full inline-flex items-center justify-center gap-1.5 rounded-full border border-[#22c55e]/45 px-3 py-1.5 text-[10px] font-bold text-[#86efac] hover:border-[#22c55e] hover:bg-[#22c55e]/10 hover:text-[#bbf7d0] transition-colors"
+          >
+            Visit Maricho Media
+            <ExternalLink className="h-3 w-3" aria-hidden="true" />
+          </a>
           <span className="text-[10px] text-[#818384] w-full mt-0.5">© 2026 Maricho Media</span>
         </div>
       </div>
