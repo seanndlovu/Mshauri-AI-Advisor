@@ -33,3 +33,10 @@ uri = "file://deploy/mshauri-vps-guide-64.247.178.45.html"
 type = "text"
 title = "Mshauri VPS Setup Guide — 64.247.178.45"
 description = "Full deployment guide for your Ubuntu 22.04 server. Open and click 'Save as PDF'."
+
+[[outputs]]
+id = "cFN8IMqkE8y_XlgY5Tlfq"
+uri = "file://deploy/FRESH-VPS-INSTALLATION-GUIDE.html"
+type = "text"
+title = "Fresh Mshauri VPS Installation Guide"
+description = "Validated production setup for the Ubuntu 22.04 VPS at 64.247.178.45. Open it and select Save as PDF."
