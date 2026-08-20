@@ -413,6 +413,16 @@ export default function Home() {
             <p className="text-[#71767B] text-[13px] mt-1">
               Ask smarter. Analyze faster. Power better decisions across the global food system.
             </p>
+            <a
+              href="https://marichomedia.com/"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#4ade80]/55 bg-gradient-to-r from-[#14532d] via-[#166534] to-[#15803d] px-3.5 py-2 text-[11px] font-bold text-white shadow-[0_6px_18px_rgba(20,83,45,0.28)] transition-all hover:-translate-y-0.5 hover:border-[#86efac] hover:shadow-[0_8px_22px_rgba(20,83,45,0.4)]"
+            >
+              <span className="h-2 w-2 rounded-full bg-[#bbf7d0] shadow-[0_0_8px_rgba(187,247,208,0.9)]" aria-hidden="true" />
+              Visit Maricho Media
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+            </a>
           </div>
 
           <MarketPriceCarousel />
