@@ -46,16 +46,9 @@ DB_NAME="${DB_NAME:-mshauri}"
 DB_USER="${DB_USER:-mshauri}"
 require_value DB_PASS
 require_value SESSION_SECRET
-
-# URL-encode the password so special characters work correctly in PostgreSQL.
-DB_PASS_ENCODED="$(node -p 'encodeURIComponent(process.argv[1])' "$DB_PASS")"
-DATABASE_URL="postgresql://${DB_USER}:${DB_PASS_ENCODED}@localhost:5432/${DB_NAME}"
-export DB_NAME DB_USER DB_PASS DATABASE_URL SESSION_SECRET NODE_ENV PORT
-
-sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'" | grep -q 1 || \
-  sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';"
-sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" | grep -q 1 || \
-  sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
+source "$REPO_DIR/deploy/postgres-setup.sh"
+configure_postgres
+export SESSION_SECRET NODE_ENV PORT
 
 # ── install & build ───────────────────────────────────────────────
 echo "[2/5] Installing dependencies..."
