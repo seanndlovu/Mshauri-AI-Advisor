@@ -11,6 +11,16 @@ ENV_FILE="$REPO_DIR/deploy/.env.production"
 
 cd "$REPO_DIR"
 
+echo "[1/4] Pulling latest code..."
+git pull --ff-only
+
+# If this script was launched from an older checkout, reload the freshly
+# pulled script so the database reconciliation fix is used immediately.
+if [ "${MSHAURI_UPDATE_REEXEC:-0}" != "1" ]; then
+  export MSHAURI_UPDATE_REEXEC=1
+  exec bash "$REPO_DIR/deploy/3-update.sh"
+fi
+
 if [ ! -f "$ENV_FILE" ]; then
   echo "❌  Missing $ENV_FILE" >&2
   exit 1
@@ -27,12 +37,9 @@ fi
 
 DB_NAME="${DB_NAME:-mshauri}"
 DB_USER="${DB_USER:-mshauri}"
-DB_PASS_ENCODED="$(node -p 'encodeURIComponent(process.argv[1])' "$DB_PASS")"
-DATABASE_URL="postgresql://${DB_USER}:${DB_PASS_ENCODED}@localhost:5432/${DB_NAME}"
-export DB_NAME DB_USER DB_PASS DATABASE_URL SESSION_SECRET NODE_ENV PORT
-
-echo "[1/4] Pulling latest code..."
-git pull
+source "$REPO_DIR/deploy/postgres-setup.sh"
+configure_postgres
+export SESSION_SECRET NODE_ENV PORT
 
 echo "[2/4] Installing dependencies..."
 pnpm install --frozen-lockfile
