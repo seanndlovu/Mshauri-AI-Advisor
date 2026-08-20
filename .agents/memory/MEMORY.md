@@ -4,3 +4,4 @@
 - [WhatsApp token runtime](whatsapp-token.md) — WHATSAPP_ACCESS_TOKEN must be read at request time via getWhatsAppConfig(), not cached at startup.
 - [Dashboard layout architecture](dashboard-layout.md) — Home.tsx owns its 2-column (content+right sidebar) layout inside AppLayout's main slot; AppLayout stays as left-sidebar+main only; don't add right-sidebar slot to AppLayout.
 - [Game stats dual storage](game-stats-storage.md) — DailyQuiz writes to localStorage("mshauri_game") for guests; POST /api/game/complete syncs for logged-in users; gameStatsTable in community.ts schema.
+- [VPS PostgreSQL retry safety](vps-postgresql-retry-safety.md) — repeatable deploys must reconcile existing role credentials, database ownership, and public-schema access before applying Drizzle changes.
