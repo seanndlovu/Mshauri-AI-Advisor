@@ -6,15 +6,25 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface MarketPrice {
+export interface PublicMarketPrice {
   id: number;
+  batchId: number;
   commodity: string;
+  /** @nullable */
+  grade?: string | null;
   unit: string;
-  priceUsd: string;
+  /** @nullable */
+  priceUsd?: string | null;
+  /** @nullable */
+  priceZig?: string | null;
   market: string;
-  priceDate: string;
+  observedDate: string;
+  source: string;
   /** @nullable */
   notes?: string | null;
   createdAt: string;
   updatedAt: string;
+  item: string;
+  quantity: string;
+  category: string;
 }

@@ -257,80 +257,45 @@ export const DeleteFarmerParams = zod.object({
 
 
 /**
- * @summary List commodity prices
+ * @summary List prices from the currently published edition
  */
 export const ListMarketPricesQueryParams = zod.object({
   "commodity": zod.coerce.string().optional(),
   "market": zod.coerce.string().optional()
 })
 
-export const ListMarketPricesResponseItem = zod.object({
+export const ListMarketPricesResponse = zod.object({
+  "data": zod.array(zod.object({
   "id": zod.number(),
+  "batchId": zod.number(),
   "commodity": zod.string(),
+  "grade": zod.string().nullish(),
   "unit": zod.string(),
-  "priceUsd": zod.string(),
+  "priceUsd": zod.string().nullish(),
+  "priceZig": zod.string().nullish(),
   "market": zod.string(),
-  "priceDate": zod.string(),
+  "observedDate": zod.string(),
+  "source": zod.string(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
-})
-export const ListMarketPricesResponse = zod.array(ListMarketPricesResponseItem)
-
-
-/**
- * @summary Add a commodity price entry
- */
-
-
-
-export const CreateMarketPriceBody = zod.object({
-  "commodity": zod.string().min(1),
-  "unit": zod.string().optional(),
-  "priceUsd": zod.string(),
-  "market": zod.string().optional(),
-  "priceDate": zod.string(),
-  "notes": zod.string().optional()
-})
-
-
-/**
- * @summary Update a price entry
- */
-export const UpdateMarketPriceParams = zod.object({
-  "id": zod.coerce.number()
-})
-
-
-
-
-export const UpdateMarketPriceBody = zod.object({
-  "commodity": zod.string().min(1),
-  "unit": zod.string().optional(),
-  "priceUsd": zod.string(),
-  "market": zod.string().optional(),
-  "priceDate": zod.string(),
-  "notes": zod.string().optional()
-})
-
-export const UpdateMarketPriceResponse = zod.object({
+  "updatedAt": zod.string(),
+  "item": zod.string(),
+  "quantity": zod.string(),
+  "category": zod.string()
+})),
+  "edition": zod.union([zod.object({
   "id": zod.number(),
-  "commodity": zod.string(),
-  "unit": zod.string(),
-  "priceUsd": zod.string(),
-  "market": zod.string(),
-  "priceDate": zod.string(),
-  "notes": zod.string().nullish(),
+  "name": zod.string(),
+  "source": zod.string(),
+  "observedDate": zod.string(),
+  "status": zod.enum(['draft', 'published', 'archived']),
+  "createdBy": zod.number().nullish(),
+  "publishedBy": zod.number().nullish(),
+  "publishedAt": zod.string().nullish(),
+  "entryCount": zod.number(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
-})
-
-
-/**
- * @summary Delete a price entry
- */
-export const DeleteMarketPriceParams = zod.object({
-  "id": zod.coerce.number()
+}),zod.null()])
 })
 
 

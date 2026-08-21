@@ -1,10 +1,22 @@
 import { Router, type IRouter } from "express";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
-import { db, usersTable } from "@workspace/db";
+import { db, usersTable, type User } from "@workspace/db";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
+
+function formatUser(user: User) {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    adminRole: user.adminRole,
+    location: user.location,
+    reputationScore: user.reputationScore,
+  };
+}
 
 declare module "express-session" {
   interface SessionData {
@@ -49,7 +61,7 @@ router.post("/auth/register", async (req, res): Promise<void> => {
   }).returning();
 
   req.session.userId = user.id;
-  res.status(201).json({ id: user.id, email: user.email, name: user.name, role: user.role, location: user.location, reputationScore: user.reputationScore });
+  res.status(201).json(formatUser(user));
 });
 
 router.post("/auth/login", async (req, res): Promise<void> => {
@@ -73,7 +85,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   }
 
   req.session.userId = user.id;
-  res.json({ id: user.id, email: user.email, name: user.name, role: user.role, location: user.location, reputationScore: user.reputationScore });
+  res.json(formatUser(user));
 });
 
 router.post("/auth/logout", (req, res): void => {
@@ -95,7 +107,7 @@ router.get("/auth/me", async (req, res): Promise<void> => {
     return;
   }
 
-  res.json({ id: user.id, email: user.email, name: user.name, role: user.role, location: user.location, reputationScore: user.reputationScore });
+  res.json(formatUser(user));
 });
 
 router.patch("/auth/me", async (req, res): Promise<void> => {
@@ -113,7 +125,7 @@ router.patch("/auth/me", async (req, res): Promise<void> => {
   if (role && validRoles.includes(role as typeof validRoles[number])) updates.role = role as typeof validRoles[number];
 
   const [user] = await db.update(usersTable).set(updates).where(eq(usersTable.id, userId)).returning();
-  res.json({ id: user.id, email: user.email, name: user.name, role: user.role, location: user.location, reputationScore: user.reputationScore });
+  res.json(formatUser(user));
 });
 
 logger.info("Auth routes loaded");

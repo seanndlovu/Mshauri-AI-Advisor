@@ -3,6 +3,7 @@ import { useRoute, Link, useSearch } from "wouter";
 import { ArrowLeft, MessageCircle, MapPin, Clock, Send, Check, UserPlus, LogIn } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
+import { SponsoredAd } from "@/components/SponsoredAd";
 
 function getJoined(): number[] {
   try { return JSON.parse(localStorage.getItem("mshauri_joined") || "[]"); }
@@ -233,15 +234,7 @@ export default function CommunityFeed() {
 
         {!showCompose && (
           <div className="mb-4 flex flex-col gap-2">
-            <div className="rounded-2xl overflow-hidden border border-[#2F3336] bg-[#16181C]">
-              <div className="px-3 pt-2 pb-1 flex items-center justify-between">
-                <span className="text-[9px] font-bold text-[#4a5260] uppercase tracking-widest">Sponsored</span>
-                <a href="mailto:ads@maricho.media" className="text-[9px] text-[#4a5260] hover:text-[#22c55e] transition-colors">Advertise</a>
-              </div>
-              <a href="tel:+263772424997" className="block hover:opacity-90 transition-opacity">
-                <img src="/ads/mshauri-advertise.png" alt="Advertise with Mshauri — contact +263772424997" className="w-full object-cover" />
-              </a>
-            </div>
+            <SponsoredAd className="rounded-2xl border border-[#2F3336] bg-[#16181C] p-3" />
             <a href="https://zmx.co.zw/market-data/" target="_blank" rel="noreferrer" className="flex items-center gap-3 px-3 py-3 bg-[#0a1628] border border-[#1e3a5f] rounded-2xl hover:border-[#3b82f6]/60 transition-colors">
               <div className="w-9 h-9 rounded-lg bg-[#0d1e35] border border-[#1e3a5f] flex items-center justify-center text-[8px] font-black text-[#3b82f6] tracking-widest shrink-0">ZMX</div>
               <div className="flex-1 min-w-0">

@@ -9,6 +9,7 @@ export const usersTable = pgTable("users", {
   name: text("name").notNull(),
   location: text("location"),
   role: text("role", { enum: ["farmer", "agribusiness", "extension_officer", "researcher", "ngo"] }).notNull().default("farmer"),
+  adminRole: text("admin_role", { enum: ["owner", "price_editor", "ad_manager"] }),
   reputationScore: integer("reputation_score").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

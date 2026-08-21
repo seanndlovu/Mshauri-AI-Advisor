@@ -24,6 +24,8 @@ import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import AiDisclaimer from "@/pages/AiDisclaimer";
 import CookiePolicy from "@/pages/CookiePolicy";
 import Magazine from "@/pages/Magazine";
+import AdminMarketPrices from "@/pages/AdminMarketPrices";
+import AdminAds from "@/pages/AdminAds";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +58,8 @@ function Router() {
             <Route path="/market-prices" component={MarketPrices} />
             <Route path="/broadcasts" component={Broadcasts} />
             <Route path="/analytics" component={Analytics} />
+            <Route path="/admin/market-prices" component={AdminMarketPrices} />
+            <Route path="/admin/ads" component={AdminAds} />
             <Route component={NotFound} />
           </Switch>
         </AppLayout>

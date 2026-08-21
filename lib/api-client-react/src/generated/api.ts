@@ -40,8 +40,7 @@ import type {
   ListArticlesParams,
   ListFarmersParams,
   ListMarketPricesParams,
-  MarketPrice,
-  MarketPriceInput,
+  MarketPricesResponse,
   Message
 } from './api.schemas';
 
@@ -1199,11 +1198,11 @@ export const getListMarketPricesUrl = (params?: ListMarketPricesParams,) => {
 }
 
 /**
- * @summary List commodity prices
+ * @summary List prices from the currently published edition
  */
-export const listMarketPrices = async (params?: ListMarketPricesParams, options?: RequestInit): Promise<MarketPrice[]> => {
+export const listMarketPrices = async (params?: ListMarketPricesParams, options?: RequestInit): Promise<MarketPricesResponse> => {
 
-  return customFetch<MarketPrice[]>(getListMarketPricesUrl(params),
+  return customFetch<MarketPricesResponse>(getListMarketPricesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -1246,7 +1245,7 @@ export type ListMarketPricesQueryError = ErrorType<unknown>
 
 
 /**
- * @summary List commodity prices
+ * @summary List prices from the currently published edition
  */
 
 export function useListMarketPrices<TData = Awaited<ReturnType<typeof listMarketPrices>>, TError = ErrorType<unknown>>(
@@ -1266,219 +1265,6 @@ export function useListMarketPrices<TData = Awaited<ReturnType<typeof listMarket
 
 
 
-
-export const getCreateMarketPriceUrl = () => {
-
-
-
-
-  return `/api/market-prices`
-}
-
-/**
- * @summary Add a commodity price entry
- */
-export const createMarketPrice = async (marketPriceInput: MarketPriceInput, options?: RequestInit): Promise<MarketPrice> => {
-
-  return customFetch<MarketPrice>(getCreateMarketPriceUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      marketPriceInput,)
-  }
-);}
-
-
-
-
-export const getCreateMarketPriceMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMarketPrice>>, TError,{data: BodyType<MarketPriceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof createMarketPrice>>, TError,{data: BodyType<MarketPriceInput>}, TContext> => {
-
-const mutationKey = ['createMarketPrice'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createMarketPrice>>, {data: BodyType<MarketPriceInput>}> = (props) => {
-          const {data} = props ?? {};
-
-          return  createMarketPrice(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CreateMarketPriceMutationResult = NonNullable<Awaited<ReturnType<typeof createMarketPrice>>>
-    export type CreateMarketPriceMutationBody = BodyType<MarketPriceInput>
-    export type CreateMarketPriceMutationError = ErrorType<unknown>
-
-    /**
- * @summary Add a commodity price entry
- */
-export const useCreateMarketPrice = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMarketPrice>>, TError,{data: BodyType<MarketPriceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof createMarketPrice>>,
-        TError,
-        {data: BodyType<MarketPriceInput>},
-        TContext
-      > => {
-      return useMutation(getCreateMarketPriceMutationOptions(options));
-    }
-
-export const getUpdateMarketPriceUrl = (id: number,) => {
-
-
-
-
-  return `/api/market-prices/${id}`
-}
-
-/**
- * @summary Update a price entry
- */
-export const updateMarketPrice = async (id: number,
-    marketPriceInput: MarketPriceInput, options?: RequestInit): Promise<MarketPrice> => {
-
-  return customFetch<MarketPrice>(getUpdateMarketPriceUrl(id),
-  {
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      marketPriceInput,)
-  }
-);}
-
-
-
-
-export const getUpdateMarketPriceMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMarketPrice>>, TError,{id: number;data: BodyType<MarketPriceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof updateMarketPrice>>, TError,{id: number;data: BodyType<MarketPriceInput>}, TContext> => {
-
-const mutationKey = ['updateMarketPrice'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateMarketPrice>>, {id: number;data: BodyType<MarketPriceInput>}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  updateMarketPrice(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type UpdateMarketPriceMutationResult = NonNullable<Awaited<ReturnType<typeof updateMarketPrice>>>
-    export type UpdateMarketPriceMutationBody = BodyType<MarketPriceInput>
-    export type UpdateMarketPriceMutationError = ErrorType<unknown>
-
-    /**
- * @summary Update a price entry
- */
-export const useUpdateMarketPrice = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMarketPrice>>, TError,{id: number;data: BodyType<MarketPriceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof updateMarketPrice>>,
-        TError,
-        {id: number;data: BodyType<MarketPriceInput>},
-        TContext
-      > => {
-      return useMutation(getUpdateMarketPriceMutationOptions(options));
-    }
-
-export const getDeleteMarketPriceUrl = (id: number,) => {
-
-
-
-
-  return `/api/market-prices/${id}`
-}
-
-/**
- * @summary Delete a price entry
- */
-export const deleteMarketPrice = async (id: number, options?: RequestInit): Promise<void> => {
-
-  return customFetch<void>(getDeleteMarketPriceUrl(id),
-  {
-    ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
-
-
-
-export const getDeleteMarketPriceMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMarketPrice>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteMarketPrice>>, TError,{id: number}, TContext> => {
-
-const mutationKey = ['deleteMarketPrice'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteMarketPrice>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
-
-          return  deleteMarketPrice(id,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeleteMarketPriceMutationResult = NonNullable<Awaited<ReturnType<typeof deleteMarketPrice>>>
-
-    export type DeleteMarketPriceMutationError = ErrorType<unknown>
-
-    /**
- * @summary Delete a price entry
- */
-export const useDeleteMarketPrice = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMarketPrice>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof deleteMarketPrice>>,
-        TError,
-        {id: number},
-        TContext
-      > => {
-      return useMutation(getDeleteMarketPriceMutationOptions(options));
-    }
 
 export const getListBroadcastsUrl = () => {
 

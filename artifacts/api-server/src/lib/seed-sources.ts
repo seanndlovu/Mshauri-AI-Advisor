@@ -52,14 +52,6 @@ const DEFAULT_SOURCES = [
     refreshIntervalHours: 72,
   },
   {
-    name: "Market Prices CSV",
-    url: "https://prices.maricho.co.zw/latest.csv",
-    type: "csv_import" as const,
-    category: "market_prices",
-    description: "Zimbabwe market prices — latest commodity prices",
-    refreshIntervalHours: 6,
-  },
-  {
     name: "Maricho Articles Search",
     url: "https://maricho.co.zw/v1/search",
     type: "live_search" as const,

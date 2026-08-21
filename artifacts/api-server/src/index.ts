@@ -21,6 +21,5 @@ app.listen(port, (err) => {
     process.exit(1);
   }
 
-  const tokenPrefix = process.env.WHATSAPP_ACCESS_TOKEN?.slice(0, 12) ?? "NOT SET";
-  logger.info({ port, whatsappTokenPrefix: tokenPrefix }, "Server listening");
+  logger.info({ port }, "Server listening");
 });

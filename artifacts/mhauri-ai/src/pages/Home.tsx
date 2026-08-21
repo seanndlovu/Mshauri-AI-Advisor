@@ -8,6 +8,7 @@ import { FeaturedStoryCarousel } from "@/components/home/FeaturedStoryCarousel";
 import { ContinueLearning } from "@/components/home/ContinueLearning";
 import { CommunityDiscussions } from "@/components/home/CommunityDiscussions";
 import { MarketPriceCarousel } from "@/components/home/MarketPriceCarousel";
+import { SponsoredAd } from "@/components/SponsoredAd";
 
 const EXAMPLES = [
   { label: "🌽 Maize disease",   text: "My maize leaves are turning yellow at the tips. What could be wrong?" },
@@ -294,16 +295,7 @@ function TrendingDiscussions() {
         <ZmxPartnerCard />
       </div>
 
-      {/* Sponsored */}
-      <div className="mt-4 pt-3 border-t border-[#2F3336]">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Sponsored</p>
-          <a href="mailto:ads@maricho.media" className="text-[#4a5260] hover:text-[#22c55e] text-[9px] transition-colors">Advertise</a>
-        </div>
-        <a href="tel:+263772424997" className="block rounded-xl overflow-hidden border border-[#2F3336] mb-3 hover:border-[#22c55e]/40 transition-colors">
-          <img src="/ads/mshauri-advertise.png" alt="Advertise with Mshauri — contact +263772424997" className="w-full object-cover" />
-        </a>
-      </div>
+      <SponsoredAd className="mt-4" />
 
     </div>
   );

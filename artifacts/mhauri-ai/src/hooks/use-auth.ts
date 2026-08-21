@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 
 export type UserRole = "farmer" | "agribusiness" | "extension_officer" | "researcher" | "ngo";
+export type AdminRole = "owner" | "price_editor" | "ad_manager";
 
 export interface AuthUser {
   id: number;
   email: string;
   name: string;
   role: UserRole;
+  adminRole: AdminRole | null;
   location: string | null;
   reputationScore: number;
 }

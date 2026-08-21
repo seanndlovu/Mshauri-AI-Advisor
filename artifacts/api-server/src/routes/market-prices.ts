@@ -1,186 +1,408 @@
 import { Router, type IRouter } from "express";
-import { eq, ilike, desc } from "drizzle-orm";
-import { db, marketPricesTable } from "@workspace/db";
+import { and, desc, eq, ilike } from "drizzle-orm";
+import {
+  db,
+  marketPriceBatchesTable,
+  marketPriceBatchEntriesTable,
+  type MarketPriceBatch,
+  type MarketPriceBatchEntry,
+} from "@workspace/db";
+import { requirePriceAdmin } from "../lib/admin-access";
+import { parseMarketPriceWorkbook, type ImportedPriceEntry } from "../lib/market-price-import";
+import { hasTrustedMutationOrigin } from "../lib/trusted-origins";
 
-const router: IRouter = Router();
+export type MarketPricesDatabase = Pick<typeof db, "select" | "insert" | "update" | "delete" | "transaction">;
+export type MarketPricesRouterOptions = {
+  database?: MarketPricesDatabase;
+  requirePriceAdmin?: typeof requirePriceAdmin;
+};
 
-function formatPrice(p: typeof marketPricesTable.$inferSelect) {
-  return {
-    ...p,
-    createdAt: p.createdAt.toISOString(),
-    updatedAt: p.updatedAt.toISOString(),
-  };
-}
+export function createMarketPricesRouter(options: MarketPricesRouterOptions = {}): IRouter {
+  const database = options.database ?? db;
+  const authorizePriceAdmin = options.requirePriceAdmin ?? requirePriceAdmin;
+  const router: IRouter = Router();
 
-router.get("/market-prices", async (req, res): Promise<void> => {
-  const commodity = req.query.commodity as string | undefined;
-  const market = req.query.market as string | undefined;
-
-  let prices;
-  if (commodity) {
-    prices = await db
-      .select()
-      .from(marketPricesTable)
-      .where(ilike(marketPricesTable.commodity, `%${commodity}%`))
-      .orderBy(desc(marketPricesTable.priceDate));
-  } else if (market) {
-    prices = await db
-      .select()
-      .from(marketPricesTable)
-      .where(ilike(marketPricesTable.market, `%${market}%`))
-      .orderBy(desc(marketPricesTable.priceDate));
-  } else {
-    prices = await db.select().from(marketPricesTable).orderBy(desc(marketPricesTable.priceDate));
-  }
-
-  res.json(prices.map(formatPrice));
-});
-
-router.post("/market-prices", async (req, res): Promise<void> => {
-  const body = req.body as {
-    commodity: string;
-    unit?: string;
-    priceUsd: string;
-    market?: string;
-    priceDate: string;
-    notes?: string;
-  };
-
-  const [created] = await db
-    .insert(marketPricesTable)
-    .values({
-      commodity: body.commodity,
-      unit: body.unit ?? "kg",
-      priceUsd: body.priceUsd,
-      market: body.market ?? "GMB",
-      priceDate: body.priceDate,
-      notes: body.notes ?? null,
-    })
-    .returning();
-
-  res.status(201).json(formatPrice(created));
-});
-
-router.patch("/market-prices/:id", async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
-  if (isNaN(id)) {
-    res.status(400).json({ error: "Invalid id" });
+router.use("/admin/market-price-batches", (req, res, next) => {
+  if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") {
+    next();
     return;
   }
-
-  const body = req.body as {
-    commodity?: string;
-    unit?: string;
-    priceUsd?: string;
-    market?: string;
-    priceDate?: string;
-    notes?: string;
-  };
-
-  const [updated] = await db
-    .update(marketPricesTable)
-    .set({ ...body, updatedAt: new Date() })
-    .where(eq(marketPricesTable.id, id))
-    .returning();
-
-  if (!updated) {
-    res.status(404).json({ error: "Price entry not found" });
+  if (!hasTrustedMutationOrigin(req)) {
+    res.status(403).json({ error: "This request must come from the trusted Mshauri application." });
     return;
   }
-  res.json(formatPrice(updated));
+  next();
 });
 
-router.delete("/market-prices/:id", async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
-  if (isNaN(id)) {
-    res.status(400).json({ error: "Invalid id" });
-    return;
-  }
-  await db.delete(marketPricesTable).where(eq(marketPricesTable.id, id));
-  res.sendStatus(204);
-});
-
-/* ─── Live Prices Scraper (ZimPriceCheck) ─────────────────── */
-interface LivePrice {
-  item: string;
-  quantity: string;
-  priceUsd: number;
-  priceZig: number;
-  category: string;
-  source: "zimpricecheck";
-}
-
-let liveCache: { data: LivePrice[]; fetchedAt: number } | null = null;
-const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+type PriceEntryInput = Partial<ImportedPriceEntry>;
 
 function classifyCategory(item: string): string {
-  const l = item.toLowerCase();
-  if (/maize|wheat|sorghum|millet|rice|groundnut|soya|sugar bean|cow pea|popcorn|mapfunde|mhunga|mumhare|nyemba|nzungu/.test(l))
-    return "Grains & Staples";
-  if (/broiler|roadrunner|guinea|layer|kapenta|matemba|mopane|caterpillar|eggs|egg|matemba/.test(l))
-    return "Protein";
-  if (/dried|cooked|dehulled/.test(l))
-    return "Dried & Processed";
-  if (/apple|avocado|banana|lemon|orange|pineapple|pawpaw|strawberry|watermelon|masawu|matohwe|mauyu|sugarcane/.test(l))
-    return "Fruits";
+  const name = item.toLowerCase();
+  if (/maize|wheat|sorghum|millet|rice|groundnut|soya|bean|cow pea/.test(name)) return "Grains & Staples";
+  if (/broiler|roadrunner|guinea|layer|kapenta|matemba|egg/.test(name)) return "Protein";
+  if (/dried|cooked|dehulled/.test(name)) return "Dried & Processed";
+  if (/apple|avocado|banana|lemon|orange|pineapple|pawpaw|strawberry|watermelon/.test(name)) return "Fruits";
   return "Vegetables";
 }
 
-router.get("/market-prices/live", async (req, res): Promise<void> => {
-  const force = req.query.force === "1";
-  if (!force && liveCache && (Date.now() - liveCache.fetchedAt) < CACHE_TTL) {
-    res.json({ data: liveCache.data, fetchedAt: new Date(liveCache.fetchedAt).toISOString(), cached: true });
+function formatBatch(batch: MarketPriceBatch, entryCount: number) {
+  return {
+    ...batch,
+    entryCount,
+    createdAt: batch.createdAt.toISOString(),
+    updatedAt: batch.updatedAt.toISOString(),
+    publishedAt: batch.publishedAt?.toISOString() ?? null,
+  };
+}
+
+function formatEntry(entry: MarketPriceBatchEntry) {
+  return {
+    ...entry,
+    createdAt: entry.createdAt.toISOString(),
+    updatedAt: entry.updatedAt.toISOString(),
+  };
+}
+
+function formatPublicEntry(entry: MarketPriceBatchEntry) {
+  return {
+    ...formatEntry(entry),
+    item: entry.commodity,
+    quantity: [entry.grade, entry.unit].filter(Boolean).join(" · "),
+    category: classifyCategory(entry.commodity),
+  };
+}
+
+function getId(value: string | string[] | undefined): number | null {
+  const id = Number(Array.isArray(value) ? value[0] : value);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+function isDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+function asMoney(value: unknown): string | null {
+  if (value === null || value === undefined || value === "") return null;
+  const amount = Number(String(value).replace(/[$,\s]/g, ""));
+  return Number.isFinite(amount) && amount >= 0 ? amount.toFixed(2) : null;
+}
+
+function validateEntry(input: PriceEntryInput, batch: MarketPriceBatch): { entry?: ImportedPriceEntry; error?: string } {
+  const commodity = input.commodity?.trim() ?? "";
+  const market = input.market?.trim() ?? "";
+  const unit = input.unit?.trim() ?? "";
+  const observedDate = input.observedDate?.trim() || batch.observedDate;
+  const priceUsd = asMoney(input.priceUsd);
+  const priceZig = asMoney(input.priceZig);
+  if (!commodity || !market || !unit) return { error: "Commodity, market, and unit are required." };
+  if (!priceUsd && !priceZig) return { error: "Enter a valid USD or ZiG price." };
+  if (!isDate(observedDate)) return { error: "Observed date must use YYYY-MM-DD." };
+
+  return {
+    entry: {
+      commodity,
+      grade: input.grade?.trim() || null,
+      market,
+      unit,
+      priceUsd,
+      priceZig,
+      observedDate,
+      source: input.source?.trim() || batch.source,
+      notes: input.notes?.trim() || null,
+    },
+  };
+}
+
+async function getBatchWithEntries(batchId: number) {
+  const [batch] = await database.select().from(marketPriceBatchesTable).where(eq(marketPriceBatchesTable.id, batchId)).limit(1);
+  if (!batch) return null;
+  const entries = await database
+    .select()
+    .from(marketPriceBatchEntriesTable)
+    .where(eq(marketPriceBatchEntriesTable.batchId, batchId))
+    .orderBy(marketPriceBatchEntriesTable.market, marketPriceBatchEntriesTable.commodity);
+  return { batch, entries };
+}
+
+router.get("/market-prices", async (req, res): Promise<void> => {
+  const [edition] = await database
+    .select()
+    .from(marketPriceBatchesTable)
+    .where(eq(marketPriceBatchesTable.status, "published"))
+    .orderBy(desc(marketPriceBatchesTable.publishedAt))
+    .limit(1);
+
+  if (!edition) {
+    res.json({ data: [], edition: null });
+    return;
+  }
+
+  const commodity = typeof req.query.commodity === "string" ? req.query.commodity : "";
+  const market = typeof req.query.market === "string" ? req.query.market : "";
+  const filters = [eq(marketPriceBatchEntriesTable.batchId, edition.id)];
+  if (commodity) filters.push(ilike(marketPriceBatchEntriesTable.commodity, `%${commodity}%`));
+  if (market) filters.push(ilike(marketPriceBatchEntriesTable.market, `%${market}%`));
+  const entries = await database
+    .select()
+    .from(marketPriceBatchEntriesTable)
+    .where(and(...filters))
+    .orderBy(marketPriceBatchEntriesTable.market, marketPriceBatchEntriesTable.commodity);
+
+  res.json({
+    data: entries.map(formatPublicEntry),
+    edition: formatBatch(edition, entries.length),
+  });
+});
+
+router.get("/admin/market-price-template", async (req, res): Promise<void> => {
+  const user = await authorizePriceAdmin(req, res);
+  if (!user) return;
+  const sample = [
+    "Commodity,Grade,Unit,Market,Price USD,Price ZiG,Observed Date,Source,Notes",
+    "Maize,Grade A,50 kg bag,GMB,12.50,0,2026-08-21,Mshauri price desk,Sample row - replace before upload",
+  ].join("\n");
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", 'attachment; filename="mshauri-market-price-template.csv"');
+  res.send(sample);
+});
+
+router.get("/admin/market-price-batches", async (req, res): Promise<void> => {
+  const user = await authorizePriceAdmin(req, res);
+  if (!user) return;
+  const [batches, entries] = await Promise.all([
+    database.select().from(marketPriceBatchesTable).orderBy(desc(marketPriceBatchesTable.createdAt)),
+    database.select({ batchId: marketPriceBatchEntriesTable.batchId }).from(marketPriceBatchEntriesTable),
+  ]);
+  const counts = new Map<number, number>();
+  entries.forEach((entry) => counts.set(entry.batchId, (counts.get(entry.batchId) ?? 0) + 1));
+  res.json({ batches: batches.map((batch) => formatBatch(batch, counts.get(batch.id) ?? 0)) });
+});
+
+router.get("/admin/market-price-batches/:id", async (req, res): Promise<void> => {
+  const user = await authorizePriceAdmin(req, res);
+  if (!user) return;
+  const batchId = getId(req.params.id);
+  if (!batchId) {
+    res.status(400).json({ error: "Invalid price batch." });
+    return;
+  }
+  const result = await getBatchWithEntries(batchId);
+  if (!result) {
+    res.status(404).json({ error: "Price batch not found." });
+    return;
+  }
+  res.json({
+    batch: formatBatch(result.batch, result.entries.length),
+    entries: result.entries.map(formatEntry),
+  });
+});
+
+router.post("/admin/market-price-batches", async (req, res): Promise<void> => {
+  const user = await authorizePriceAdmin(req, res);
+  if (!user) return;
+  const body = req.body as { name?: string; source?: string; observedDate?: string; fileName?: string; fileData?: string };
+  const name = body.name?.trim() ?? "";
+  const source = body.source?.trim() || "Mshauri price desk";
+  const observedDate = body.observedDate?.trim() ?? "";
+  if (!name || !isDate(observedDate)) {
+    res.status(400).json({ error: "Provide an edition name and a valid observed date." });
+    return;
+  }
+
+  let entries: ImportedPriceEntry[] = [];
+  if (body.fileData || body.fileName) {
+    if (!body.fileData || !body.fileName || !/\.(csv|xlsx)$/i.test(body.fileName)) {
+      res.status(400).json({ error: "Upload a .csv or .xlsx price sheet." });
+      return;
+    }
+    try {
+      const parsed = parseMarketPriceWorkbook(body.fileName, body.fileData, observedDate, source);
+      if (parsed.errors.length) {
+        res.status(422).json({ errors: parsed.errors, imported: 0 });
+        return;
+      }
+      entries = parsed.entries;
+    } catch (error) {
+      req.log.warn({ error }, "Market price import rejected");
+      res.status(400).json({ error: error instanceof Error ? error.message : "The price sheet could not be read." });
+      return;
+    }
+  }
+
+  const result = await database.transaction(async (tx) => {
+    const [batch] = await tx
+      .insert(marketPriceBatchesTable)
+      .values({ name, source, observedDate, createdBy: user.id })
+      .returning();
+    if (entries.length) {
+      await tx.insert(marketPriceBatchEntriesTable).values(entries.map((entry) => ({ ...entry, batchId: batch!.id })));
+    }
+    return batch!;
+  });
+
+  res.status(201).json({ batch: formatBatch(result, entries.length), errors: [], imported: entries.length });
+});
+
+router.post("/admin/market-price-batches/:id/entries", async (req, res): Promise<void> => {
+  const user = await authorizePriceAdmin(req, res);
+  if (!user) return;
+  const batchId = getId(req.params.id);
+  if (!batchId) {
+    res.status(400).json({ error: "Invalid price batch." });
+    return;
+  }
+  const result = await getBatchWithEntries(batchId);
+  if (!result) {
+    res.status(404).json({ error: "Price batch not found." });
+    return;
+  }
+  if (result.batch.status !== "draft") {
+    res.status(409).json({ error: "Create or duplicate a draft before editing prices." });
+    return;
+  }
+  const validated = validateEntry(req.body as PriceEntryInput, result.batch);
+  if (!validated.entry) {
+    res.status(400).json({ error: validated.error });
+    return;
+  }
+  const [entry] = await database.insert(marketPriceBatchEntriesTable).values({ ...validated.entry, batchId }).returning();
+  res.status(201).json({ entry: formatEntry(entry!) });
+});
+
+router.patch("/admin/market-price-batches/:id/entries/:entryId", async (req, res): Promise<void> => {
+  const user = await authorizePriceAdmin(req, res);
+  if (!user) return;
+  const batchId = getId(req.params.id);
+  const entryId = getId(req.params.entryId);
+  if (!batchId || !entryId) {
+    res.status(400).json({ error: "Invalid price batch or entry." });
+    return;
+  }
+  const result = await getBatchWithEntries(batchId);
+  const existing = result?.entries.find((entry) => entry.id === entryId);
+  if (!result || !existing) {
+    res.status(404).json({ error: "Price entry not found." });
+    return;
+  }
+  if (result.batch.status !== "draft") {
+    res.status(409).json({ error: "Create or duplicate a draft before editing prices." });
+    return;
+  }
+  const validated = validateEntry({ ...existing, ...(req.body as PriceEntryInput) }, result.batch);
+  if (!validated.entry) {
+    res.status(400).json({ error: validated.error });
+    return;
+  }
+  const [entry] = await database
+    .update(marketPriceBatchEntriesTable)
+    .set({ ...validated.entry, updatedAt: new Date() })
+    .where(and(eq(marketPriceBatchEntriesTable.id, entryId), eq(marketPriceBatchEntriesTable.batchId, batchId)))
+    .returning();
+  res.json({ entry: formatEntry(entry!) });
+});
+
+router.delete("/admin/market-price-batches/:id/entries/:entryId", async (req, res): Promise<void> => {
+  const user = await authorizePriceAdmin(req, res);
+  if (!user) return;
+  const batchId = getId(req.params.id);
+  const entryId = getId(req.params.entryId);
+  if (!batchId || !entryId) {
+    res.status(400).json({ error: "Invalid price batch or entry." });
+    return;
+  }
+  const [batch] = await database.select().from(marketPriceBatchesTable).where(eq(marketPriceBatchesTable.id, batchId)).limit(1);
+  if (!batch || batch.status !== "draft") {
+    res.status(409).json({ error: "Only draft price editions can be changed." });
+    return;
+  }
+  await database.delete(marketPriceBatchEntriesTable).where(and(eq(marketPriceBatchEntriesTable.id, entryId), eq(marketPriceBatchEntriesTable.batchId, batchId)));
+  res.sendStatus(204);
+});
+
+router.post("/admin/market-price-batches/:id/publish", async (req, res): Promise<void> => {
+  const user = await authorizePriceAdmin(req, res);
+  if (!user) return;
+  const batchId = getId(req.params.id);
+  if (!batchId) {
+    res.status(400).json({ error: "Invalid price batch." });
+    return;
+  }
+  const result = await getBatchWithEntries(batchId);
+  if (!result) {
+    res.status(404).json({ error: "Price batch not found." });
+    return;
+  }
+  if (result.entries.length === 0) {
+    res.status(400).json({ error: "Add at least one price before publishing." });
+    return;
+  }
+  if (result.batch.status !== "draft" && result.batch.status !== "archived") {
+    res.status(409).json({ error: "This edition is already published." });
     return;
   }
 
   try {
-    const r = await fetch(
-      "https://docs.google.com/spreadsheets/d/1Xhm6GEsJTncv_aPhK9Ivo1eq40ZQTxeE3PphNy8uQ_s/gviz/tq?tqx=out:csv",
-      {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; Mshauri/1.0)" },
-        signal: AbortSignal.timeout(12000),
-      }
-    );
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const csv = await r.text();
-
-    const prices: LivePrice[] = [];
-    const lines = csv.split("\n").slice(1); // skip header row
-
-    for (const line of lines) {
-      if (!line.trim()) continue;
-      // Parse quoted CSV fields
-      const cols = (line.match(/"([^"]*)"/g) ?? []).map(c => c.replace(/^"|"$/g, "").trim());
-      if (cols.length < 3) continue;
-      const [item, quantity, usdStr, zigStr = ""] = cols;
-      if (!item) continue;
-      const usdMatch = usdStr.replace(/,/g, "").match(/[\d.]+/);
-      if (!usdMatch) continue;
-      const priceUsd = parseFloat(usdMatch[0]);
-      if (priceUsd === 0) continue;
-      const zigMatch = zigStr.replace(/,/g, "").replace(/\s+/g, "").match(/[\d.]+/);
-      prices.push({
-        item,
-        quantity,
-        priceUsd,
-        priceZig: zigMatch ? parseFloat(zigMatch[0]) : 0,
-        category: classifyCategory(item),
-        source: "zimpricecheck",
-      });
+    const published = await database.transaction(async (tx) => {
+      await tx
+        .update(marketPriceBatchesTable)
+        .set({ status: "archived", updatedAt: new Date() })
+        .where(eq(marketPriceBatchesTable.status, "published"));
+      const [batch] = await tx
+        .update(marketPriceBatchesTable)
+        .set({ status: "published", publishedBy: user.id, publishedAt: new Date(), updatedAt: new Date() })
+        .where(and(eq(marketPriceBatchesTable.id, batchId), eq(marketPriceBatchesTable.status, result.batch.status)))
+        .returning();
+      if (!batch) throw new Error("This edition changed while it was being published. Please refresh and try again.");
+      return batch;
+    });
+    res.json({ batch: formatBatch(published, result.entries.length) });
+  } catch (error) {
+    if ((error as { code?: string }).code === "23505") {
+      res.status(409).json({ error: "Another price edition was published at the same time. Please refresh and try again." });
+      return;
     }
-
-    if (prices.length === 0) throw new Error("No prices parsed");
-
-    liveCache = { data: prices, fetchedAt: Date.now() };
-    res.json({ data: prices, fetchedAt: new Date().toISOString(), cached: false });
-  } catch (err) {
-    req.log.error({ err }, "Live prices fetch failed");
-    if (liveCache) {
-      res.json({ data: liveCache.data, fetchedAt: new Date(liveCache.fetchedAt).toISOString(), cached: true, stale: true });
-    } else {
-      res.status(502).json({ error: "Could not fetch live prices" });
-    }
+    throw error;
   }
 });
 
+router.post("/admin/market-price-batches/:id/duplicate", async (req, res): Promise<void> => {
+  const user = await authorizePriceAdmin(req, res);
+  if (!user) return;
+  const batchId = getId(req.params.id);
+  if (!batchId) {
+    res.status(400).json({ error: "Invalid price batch." });
+    return;
+  }
+  const result = await getBatchWithEntries(batchId);
+  if (!result) {
+    res.status(404).json({ error: "Price batch not found." });
+    return;
+  }
+  const copied = await database.transaction(async (tx) => {
+    const [batch] = await tx
+      .insert(marketPriceBatchesTable)
+      .values({
+        name: `${result.batch.name} copy`,
+        source: result.batch.source,
+        observedDate: result.batch.observedDate,
+        createdBy: user.id,
+      })
+      .returning();
+    if (result.entries.length) {
+      await tx.insert(marketPriceBatchEntriesTable).values(result.entries.map(({ id, batchId: _, createdAt, updatedAt, ...entry }) => ({
+        ...entry,
+        batchId: batch!.id,
+      })));
+    }
+    return batch!;
+  });
+  res.status(201).json({ batch: formatBatch(copied, result.entries.length) });
+});
+
+  return router;
+}
+
+const router = createMarketPricesRouter();
 export { router as marketPricesRouter };

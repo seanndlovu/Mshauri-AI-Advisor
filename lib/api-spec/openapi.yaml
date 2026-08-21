@@ -314,7 +314,7 @@ paths:
     get:
       operationId: listMarketPrices
       tags: [market]
-      summary: List commodity prices
+      summary: List prices from the currently published edition
       parameters:
         - name: commodity
           in: query
@@ -328,68 +328,11 @@ paths:
             type: string
       responses:
         "200":
-          description: List of market prices
+          description: Published market-price entries and edition metadata
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/MarketPrice"
-    post:
-      operationId: createMarketPrice
-      tags: [market]
-      summary: Add a commodity price entry
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/MarketPriceInput"
-      responses:
-        "201":
-          description: Created price entry
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/MarketPrice"
-
-  /market-prices/{id}:
-    patch:
-      operationId: updateMarketPrice
-      tags: [market]
-      summary: Update a price entry
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/MarketPriceInput"
-      responses:
-        "200":
-          description: Updated price entry
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/MarketPrice"
-    delete:
-      operationId: deleteMarketPrice
-      tags: [market]
-      summary: Delete a price entry
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "204":
-          description: Deleted
+                $ref: "#/components/schemas/MarketPricesResponse"
 
   /broadcasts:
     get:
@@ -685,21 +628,29 @@ components:
         isActive:
           type: boolean
 
-    MarketPrice:
+    PublicMarketPrice:
       type: object
-      required: [id, commodity, unit, priceUsd, market, priceDate, createdAt, updatedAt]
+      required: [id, batchId, commodity, unit, market, observedDate, source, createdAt, updatedAt, item, quantity, category]
       properties:
         id:
           type: integer
+        batchId:
+          type: integer
         commodity:
           type: string
+        grade:
+          type: ["string", "null"]
         unit:
           type: string
         priceUsd:
-          type: string
+          type: ["string", "null"]
+        priceZig:
+          type: ["string", "null"]
         market:
           type: string
-        priceDate:
+        observedDate:
+          type: string
+        source:
           type: string
         notes:
           type: ["string", "null"]
@@ -707,24 +658,53 @@ components:
           type: string
         updatedAt:
           type: string
+        item:
+          type: string
+        quantity:
+          type: string
+        category:
+          type: string
 
-    MarketPriceInput:
+    MarketPriceEdition:
       type: object
-      required: [commodity, priceUsd, priceDate]
+      required: [id, name, source, observedDate, status, entryCount, createdAt, updatedAt]
       properties:
-        commodity:
+        id:
+          type: integer
+        name:
           type: string
-          minLength: 1
-        unit:
+        source:
           type: string
-        priceUsd:
+        observedDate:
           type: string
-        market:
+        status:
           type: string
-        priceDate:
+          enum: [draft, published, archived]
+        createdBy:
+          type: ["integer", "null"]
+        publishedBy:
+          type: ["integer", "null"]
+        publishedAt:
+          type: ["string", "null"]
+        entryCount:
+          type: integer
+        createdAt:
           type: string
-        notes:
+        updatedAt:
           type: string
+
+    MarketPricesResponse:
+      type: object
+      required: [data, edition]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicMarketPrice"
+        edition:
+          oneOf:
+            - $ref: "#/components/schemas/MarketPriceEdition"
+            - type: "null"
 
     Broadcast:
       type: object

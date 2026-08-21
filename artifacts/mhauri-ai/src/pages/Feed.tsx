@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useLocation, Link } from "wouter";
 import {
   MessageCircle, Share2, ExternalLink,
-  MapPin, Loader2, ArrowUpRight, ArrowDownRight,
+  MapPin, Loader2,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { SponsoredAd } from "@/components/SponsoredAd";
 
 /* ─── Types ──────────────────────────────────────────────── */
 interface Post {
@@ -18,7 +19,7 @@ interface Post {
 
 interface MarketItem {
   item: string;
-  priceUsd: number;
+  priceUsd: string | number | null;
 }
 
 /* ─── Constants ──────────────────────────────────────────── */
@@ -67,13 +68,6 @@ interface NewsItem { title: string; link: string; description: string; pubDate: 
 
 type SortMode = "helpful" | "recent";
 
-/* ─── Market signal (same logic as MarketPrices page) ─────── */
-function deterministicChange(name: string): number {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff;
-  return (h % 41) - 20;
-}
-
 /* ─── Subcomponents ──────────────────────────────────────── */
 
 const WA_LINK = "https://wa.me/263714280244?text=Hi%2C%20I%20want%20to%20connect%20with%20Mshauri";
@@ -82,7 +76,7 @@ const WA_LINK = "https://wa.me/263714280244?text=Hi%2C%20I%20want%20to%20connect
 function AwarenessStrip({
   topMover, pulseCount, loadingMover, stats,
 }: {
-  topMover: { item: string; priceUsd: number; pct: number } | null;
+  topMover: { item: string; priceUsd: number } | null;
   pulseCount: number;
   loadingMover: boolean;
   stats: SiteStats | null;
@@ -100,7 +94,7 @@ function AwarenessStrip({
       <div className="text-[#22c55e] text-[10px] font-semibold">Ask now →</div>
     </button>,
 
-    /* Top market mover */
+    /* Verified market price */
     <Link key="mover" href="/prices">
       <div className="shrink-0 w-52 bg-[#16181C] border border-[#2F3336] border-l-2 border-l-[#22c55e] rounded-2xl p-3.5 flex flex-col justify-between h-[90px] cursor-pointer hover:border-[#3F4448] transition-colors">
         {loadingMover ? (
@@ -110,18 +104,12 @@ function AwarenessStrip({
         ) : topMover ? (
           <>
             <div>
-              <div className="text-[#71767B] text-[10px] uppercase tracking-wider font-bold mb-0.5">Top Mover</div>
+              <div className="text-[#71767B] text-[10px] uppercase tracking-wider font-bold mb-0.5">Verified market price</div>
               <div className="text-[#E7E9EA] font-bold text-[14px] leading-tight truncate">{topMover.item}</div>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-[#E7E9EA] font-black text-[15px]">${topMover.priceUsd.toFixed(2)}</span>
-              <span className={`flex items-center gap-0.5 text-[12px] font-bold ${topMover.pct >= 0 ? "text-[#22c55e]" : "text-red-400"}`}>
-                {topMover.pct >= 0
-                  ? <ArrowUpRight className="w-3.5 h-3.5" />
-                  : <ArrowDownRight className="w-3.5 h-3.5" />
-                }
-                {topMover.pct > 0 ? "+" : ""}{topMover.pct}%
-              </span>
+              <div className="flex items-center justify-between">
+               <span className="text-[#E7E9EA] font-black text-[15px]">${topMover.priceUsd.toFixed(2)}</span>
+               <span className="text-[#86efac] text-[10px] font-bold">View edition</span>
             </div>
           </>
         ) : (
@@ -430,7 +418,7 @@ export default function Feed() {
   const [sort, setSort]                 = useState<SortMode>("helpful");
 
   /* awareness strip state */
-  const [topMover, setTopMover]         = useState<{ item: string; priceUsd: number; pct: number } | null>(null);
+  const [topMover, setTopMover]         = useState<{ item: string; priceUsd: number } | null>(null);
   const [loadingMover, setLoadingMover] = useState(true);
   const [stats, setStats]               = useState<SiteStats | null>(null);
 
@@ -452,14 +440,13 @@ export default function Feed() {
 
   /* fetch top market mover */
   useEffect(() => {
-    fetch("/api/market-prices/live")
+    fetch("/api/market-prices")
       .then(r => r.json())
       .then(json => {
         const items: MarketItem[] = json?.data ?? [];
         if (!items.length) return;
-        const withPct = items.map(it => ({ ...it, pct: deterministicChange(it.item) }));
-        const top = withPct.reduce((best, cur) => cur.pct > best.pct ? cur : best, withPct[0]);
-        setTopMover({ item: top.item, priceUsd: top.priceUsd, pct: top.pct });
+        const top = items.find((item) => item.priceUsd !== null) ?? items[0];
+        setTopMover({ item: top.item, priceUsd: Number(top.priceUsd ?? 0) });
       })
       .catch(() => {})
       .finally(() => setLoadingMover(false));
@@ -543,16 +530,7 @@ export default function Feed() {
           <div className="hidden lg:block w-[300px] shrink-0">
             <div className="sticky top-5 flex flex-col gap-4 max-h-[calc(100dvh-80px)] overflow-y-auto pr-0.5">
               <PopularPostsWidget posts={popularPosts} />
-              {/* Ads */}
-              <div className="bg-[#16181C] border border-[#2F3336] rounded-2xl overflow-hidden">
-                <div className="px-3 pt-2 pb-1 flex items-center justify-between">
-                  <span className="text-[9px] font-bold text-[#4a5260] uppercase tracking-widest">Sponsored</span>
-                  <a href="mailto:ads@maricho.media" className="text-[9px] text-[#4a5260] hover:text-[#22c55e] transition-colors">Advertise</a>
-                </div>
-                <a href="tel:+263772424997" className="block hover:opacity-90 transition-opacity">
-                  <img src="/ads/mshauri-advertise.png" alt="Advertise with Mshauri — contact +263772424997" className="w-full object-cover" />
-                </a>
-              </div>
+              <SponsoredAd className="bg-[#16181C] border border-[#2F3336] rounded-2xl p-3" />
               <a href="https://zmx.co.zw/market-data/" target="_blank" rel="noreferrer" className="flex items-center gap-3 px-3 py-3 bg-[#0a1628] border border-[#1e3a5f] rounded-2xl hover:border-[#3b82f6]/60 transition-colors">
                 <div className="w-9 h-9 rounded-lg bg-[#0d1e35] border border-[#1e3a5f] flex items-center justify-center text-[8px] font-black text-[#3b82f6] tracking-widest shrink-0">ZMX</div>
                 <div className="flex-1 min-w-0">

@@ -6,7 +6,7 @@ interface MarketItem {
   id?: number;
   item?: string;
   commodity?: string;
-  priceUsd?: number;
+  priceUsd?: string | null;
   price?: number;
   unit?: string;
   priceChange?: number;
@@ -26,14 +26,6 @@ interface Card {
   sub?: string;
   href?: string;
 }
-
-const FALLBACK_PRICES: Card[] = [
-  { id: "f-maize",    type: "price", icon: "🌽", name: "Maize Price",    price: 385, unit: "/ton",  change:  2.4 },
-  { id: "f-cattle",   type: "price", icon: "🐄", name: "Cattle Price",   price: 1.68, unit: "/kg", change: -0.6 },
-  { id: "f-soy",      type: "price", icon: "🫘", name: "Soybeans Price", price: 445, unit: "/ton",  change:  1.3 },
-  { id: "f-tobacco",  type: "price", icon: "🍃", name: "Tobacco Price",  price: 2.20, unit: "/kg", change:  0.8 },
-  { id: "f-wheat",    type: "price", icon: "🌾", name: "Wheat Price",    price: 320, unit: "/ton",  change: -1.1 },
-];
 
 const COMMODITY_ICONS: Record<string, string> = {
   maize: "🌽",  corn: "🌽",
@@ -90,8 +82,6 @@ function PriceCard({ card, animate }: { card: Card; animate?: boolean }) {
   }
 
   const price = card.price ?? 0;
-  const change = card.change ?? 0;
-  const isUp = change >= 0;
 
   return (
     <div className={`shrink-0 w-[155px] rounded-2xl border p-4 flex flex-col gap-0.5 cursor-pointer transition-all hover:shadow-lg hover:border-[#22c55e]/30 ${
@@ -105,13 +95,9 @@ function PriceCard({ card, animate }: { card: Card; animate?: boolean }) {
         </span>
         <span className="text-[#71767B] text-[10px] mb-1">{card.unit ?? "/unit"}</span>
       </div>
-      <div className={`flex items-center gap-0.5 text-[11px] font-bold ${isUp ? "text-emerald-400" : "text-red-400"}`}>
-        {isUp
-          ? <ArrowUpRight className="w-3.5 h-3.5" />
-          : <ArrowDownRight className="w-3.5 h-3.5" />
-        }
-        {Math.abs(change).toFixed(1)}%
-        <span className="text-[#71767B] font-normal text-[10px] ml-1">Today</span>
+      <div className="flex items-center gap-1 text-[10px] font-bold text-[#86efac] mt-1">
+        <span className="h-1.5 w-1.5 rounded-full bg-[#86efac]" />
+        Verified price
       </div>
     </div>
   );
@@ -125,19 +111,18 @@ export function MarketPriceCarousel() {
   useEffect(() => {
     fetch("/api/market-prices?limit=8", { credentials: "include" })
       .then(r => r.json())
-      .then((data: MarketItem[]) => {
-        if (!Array.isArray(data)) { setLoading(false); return; }
+      .then((payload: { data?: MarketItem[] }) => {
+        const data = Array.isArray(payload.data) ? payload.data : [];
         const priceCards: Card[] = data.length > 0
           ? data.map((item, i) => ({
               id: `price-${item.id ?? i}`,
               type: "price" as const,
               icon: getIcon(item.item ?? item.commodity ?? ""),
               name: (item.item ?? item.commodity ?? "Commodity") + " Price",
-              price: item.priceUsd ?? item.price ?? 0,
+              price: item.priceUsd ? Number(item.priceUsd) : item.price ?? 0,
               unit: item.unit ? `/${item.unit}` : "/ton",
-              change: item.priceChange ?? item.change ?? (Math.random() * 4 - 1),
             }))
-          : FALLBACK_PRICES;
+          : [];
         const extras: Card[] = [
           {
             id: "pest-alert",

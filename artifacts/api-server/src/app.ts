@@ -6,6 +6,7 @@ import router from "./routes";
 import { logger } from "./lib/logger";
 import { seedKnowledgeSources } from "./lib/seed-sources";
 import { fetchAllActiveSources } from "./lib/source-fetcher";
+import { isTrustedOrigin } from "./lib/trusted-origins";
 
 const app: Express = express();
 
@@ -29,7 +30,16 @@ app.use(
   }),
 );
 
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || isTrustedOrigin(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(null, false);
+  },
+  credentials: true,
+}));
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ extended: true, limit: "20mb" }));
 

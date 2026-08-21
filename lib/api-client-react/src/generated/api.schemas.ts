@@ -146,27 +146,58 @@ export interface FarmerUpdate {
   isActive?: boolean;
 }
 
-export interface MarketPrice {
+export interface PublicMarketPrice {
   id: number;
+  batchId: number;
   commodity: string;
+  /** @nullable */
+  grade?: string | null;
   unit: string;
-  priceUsd: string;
+  /** @nullable */
+  priceUsd?: string | null;
+  /** @nullable */
+  priceZig?: string | null;
   market: string;
-  priceDate: string;
+  observedDate: string;
+  source: string;
   /** @nullable */
   notes?: string | null;
   createdAt: string;
   updatedAt: string;
+  item: string;
+  quantity: string;
+  category: string;
 }
 
-export interface MarketPriceInput {
-  /** @minLength 1 */
-  commodity: string;
-  unit?: string;
-  priceUsd: string;
-  market?: string;
-  priceDate: string;
-  notes?: string;
+export type MarketPriceEditionStatus = typeof MarketPriceEditionStatus[keyof typeof MarketPriceEditionStatus];
+
+
+export const MarketPriceEditionStatus = {
+  draft: 'draft',
+  published: 'published',
+  archived: 'archived',
+} as const;
+
+export interface MarketPriceEdition {
+  id: number;
+  name: string;
+  source: string;
+  observedDate: string;
+  status: MarketPriceEditionStatus;
+  /** @nullable */
+  createdBy?: number | null;
+  /** @nullable */
+  publishedBy?: number | null;
+  /** @nullable */
+  publishedAt?: string | null;
+  entryCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketPricesResponse {
+  data: PublicMarketPrice[];
+  edition: MarketPriceEdition | null;
 }
 
 export type BroadcastStatus = typeof BroadcastStatus[keyof typeof BroadcastStatus];

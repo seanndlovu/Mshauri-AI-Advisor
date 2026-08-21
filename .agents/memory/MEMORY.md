@@ -1,7 +1,4 @@
 - [OpenAPI YAML duplicate-key gotcha](openapi-yaml-dupe-key.md) — orval says "Failed to resolve input" when YAML has duplicate mapping keys (e.g. two `description:` lines at same indent level in the `tags:` block).
-- [Seed script transitive deps](seed-transitive-deps.md) — scripts/tsx can't resolve workspace transitive deps (e.g. drizzle-orm via @workspace/db); use raw pg for seed scripts instead.
-- [Session auth cookie production](session-auth-config.md) — express-session needs sameSite:none + secure:true in production for Replit's HTTPS proxy; dev uses sameSite:lax.
-- [WhatsApp token runtime](whatsapp-token.md) — WHATSAPP_ACCESS_TOKEN must be read at request time via getWhatsAppConfig(), not cached at startup.
-- [Dashboard layout architecture](dashboard-layout.md) — Home.tsx owns its 2-column (content+right sidebar) layout inside AppLayout's main slot; AppLayout stays as left-sidebar+main only; don't add right-sidebar slot to AppLayout.
-- [Game stats dual storage](game-stats-storage.md) — DailyQuiz writes to localStorage("mshauri_game") for guests; POST /api/game/complete syncs for logged-in users; gameStatsTable in community.ts schema.
+- [Workspace script dependencies](seed-transitive-deps.md) — one-off scripts must run from the workspace that declares their dependencies, not the repository root.
+- [Replit development origin checks](replit-dev-trusted-origin.md) — the browser origin can differ from a proxy-forwarded request host in development; trust REPLIT_DEV_DOMAIN only outside production.
 - [VPS PostgreSQL retry safety](vps-postgresql-retry-safety.md) — repeatable deploys must reconcile existing role credentials, database ownership, and public-schema access before applying Drizzle changes.

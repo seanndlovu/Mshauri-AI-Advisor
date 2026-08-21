@@ -30,6 +30,10 @@ set -a
 source "$ENV_FILE"
 set +a
 
+ADS_UPLOAD_DIR="${ADS_UPLOAD_DIR:-/var/lib/mshauri/ads}"
+mkdir -p "$ADS_UPLOAD_DIR"
+export ADS_UPLOAD_DIR
+
 if [ -z "${DB_PASS:-}" ] || [ -z "${SESSION_SECRET:-}" ]; then
   echo "❌  DB_PASS and SESSION_SECRET must be set in $ENV_FILE" >&2
   exit 1
@@ -39,7 +43,7 @@ DB_NAME="${DB_NAME:-mshauri}"
 DB_USER="${DB_USER:-mshauri}"
 source "$REPO_DIR/deploy/postgres-setup.sh"
 configure_postgres
-export SESSION_SECRET NODE_ENV PORT
+export SESSION_SECRET NODE_ENV PORT ADS_UPLOAD_DIR
 
 echo "[2/4] Installing dependencies..."
 pnpm install --frozen-lockfile

@@ -40,3 +40,38 @@ uri = "file://deploy/FRESH-VPS-INSTALLATION-GUIDE.html"
 type = "text"
 title = "Fresh Mshauri VPS Installation Guide"
 description = "Validated production setup for the Ubuntu 22.04 VPS at 64.247.178.45. Open it and select Save as PDF."
+
+[[outputs]]
+id = "AoPuybcKn83XEMh6gihEK"
+uri = "file://deliverables/Mshauri-Fresh-VPS-Installation-Guide.pdf"
+type = "pdf"
+title = "Mshauri VPS Installation Guide (PDF)"
+description = "Share-ready PDF with the current tested deployment steps."
+
+[[outputs]]
+id = "__-Gh4K9lj4xJxogx7qQX"
+uri = "file://deliverables/Mshauri-Fresh-VPS-Installation-Guide.docx"
+type = "word_document"
+title = "Mshauri VPS Installation Guide (Word)"
+description = "Editable Word document with the current tested deployment steps."
+
+[[outputs]]
+id = "MP3Wpm3L8AbRZqkzGDh4M"
+uri = "file://deliverables/Mshauri-Fresh-VPS-Installation-Guide.html"
+type = "text"
+title = "Mshauri VPS Installation Guide (HTML)"
+description = "Browser-friendly guide with a Save as PDF button."
+
+[[outputs]]
+id = "BYZA3GgjEmWpHMeMQP9Rs"
+uri = "file://deliverables/Mshauri-VPS-Database-Fix-Instructions.pdf"
+type = "pdf"
+title = "Mshauri VPS Instructions with Main Website Button"
+description = "Updated PDF with a prominent clickable Visit Maricho Media button linking to https://marichomedia.com/."
+
+[[outputs]]
+id = "Sid1pV5D5CYvBV3k9Kzr_"
+uri = "file://Mshauri_Market_Prices_Upload_Template.xlsx"
+type = "table"
+title = "Mshauri Market Prices Upload Template"
+description = "Ready-to-fill market-price workbook with importer-compatible headers, validation, instructions, and separate example rows."

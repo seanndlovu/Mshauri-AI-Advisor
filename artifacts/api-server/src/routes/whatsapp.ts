@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, desc, sql, and } from "drizzle-orm";
-import { db, conversationsTable, messagesTable, farmersTable, analyticsEventsTable, communitiesTable, postsTable, whatsappSubscriptionsTable } from "@workspace/db";
+import { db, conversationsTable, messagesTable, farmersTable, analyticsEventsTable, communitiesTable, postsTable, whatsappSubscriptionsTable, marketPriceBatchesTable, marketPriceBatchEntriesTable } from "@workspace/db";
 import type { Farmer } from "@workspace/db";
 import OpenAI from "openai";
 import { logger } from "../lib/logger";
@@ -238,15 +238,28 @@ Powered by Maricho Media 🌾`;
 
 async function getMarketPricesWhatsApp(): Promise<string> {
   try {
-    const { marketPricesTable } = await import("@workspace/db");
+    const [edition] = await db
+      .select()
+      .from(marketPriceBatchesTable)
+      .where(eq(marketPriceBatchesTable.status, "published"))
+      .orderBy(desc(marketPriceBatchesTable.publishedAt))
+      .limit(1);
+    if (!edition) return "No verified market price edition is available right now. Please check back after the next update.";
+
     const prices = await db
       .select()
-      .from(marketPricesTable)
-      .orderBy(desc(marketPricesTable.priceDate))
+      .from(marketPriceBatchEntriesTable)
+      .where(eq(marketPriceBatchEntriesTable.batchId, edition.id))
+      .orderBy(marketPriceBatchEntriesTable.market, marketPriceBatchEntriesTable.commodity)
       .limit(10);
-    if (prices.length === 0) return "No market prices available right now. Check back soon.";
-    const lines = prices.map(p => `• ${p.commodity}: $${p.priceUsd}/${p.unit} (${p.market})`);
-    return `Zimbabwe Market Prices\n\n${lines.join("\n")}\n\nPrices updated regularly. Ask me about any specific crop!`;
+    if (prices.length === 0) return "No verified market prices are available in the current edition.";
+    const lines = prices.map((p) => {
+      const values = [p.priceUsd ? `US$${p.priceUsd}` : null, p.priceZig ? `${p.priceZig} ZiG` : null]
+        .filter(Boolean)
+        .join(" / ");
+      return `• ${p.commodity}: ${values}/${p.unit} (${p.market})`;
+    });
+    return `Zimbabwe Market Prices\n${edition.name}\n\n${lines.join("\n")}\n\nAsk me about any specific crop!`;
   } catch {
     return "Market prices are temporarily unavailable. Please try again shortly.";
   }

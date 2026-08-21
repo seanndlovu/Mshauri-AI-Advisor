@@ -40,6 +40,12 @@ set -a
 source "$ENV_FILE"
 set +a
 
+# Keep staff-uploaded advert creatives outside the Git checkout so code updates
+# cannot replace them. The directory is created with the current PM2 user's ownership.
+ADS_UPLOAD_DIR="${ADS_UPLOAD_DIR:-/var/lib/mshauri/ads}"
+mkdir -p "$ADS_UPLOAD_DIR"
+export ADS_UPLOAD_DIR
+
 # ── database ──────────────────────────────────────────────────────
 echo "[1/5] Setting up PostgreSQL user & database..."
 DB_NAME="${DB_NAME:-mshauri}"
@@ -48,7 +54,7 @@ require_value DB_PASS
 require_value SESSION_SECRET
 source "$REPO_DIR/deploy/postgres-setup.sh"
 configure_postgres
-export SESSION_SECRET NODE_ENV PORT
+export SESSION_SECRET NODE_ENV PORT ADS_UPLOAD_DIR
 
 # ── install & build ───────────────────────────────────────────────
 echo "[2/5] Installing dependencies..."

@@ -1,5 +1,5 @@
 import { eq, and } from "drizzle-orm";
-import { db, articlesTable, knowledgeSourcesTable, marketPricesTable } from "@workspace/db";
+import { db, articlesTable, knowledgeSourcesTable } from "@workspace/db";
 import { logger } from "./logger";
 
 const FETCH_TIMEOUT_MS = 15_000;
@@ -82,41 +82,6 @@ async function scrapeWebSource(sourceId: number, name: string, url: string, cate
   return `scraped ${Math.min(chunks.length, 20)} chunks`;
 }
 
-async function importMarketPricesCsv(url: string): Promise<string> {
-  const csv = await fetchWithTimeout(url);
-  const lines = csv.split("\n").filter((l) => l.trim());
-  if (lines.length < 2) throw new Error("CSV has no data rows");
-
-  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
-  const commodityIdx = headers.findIndex((h) => h.includes("commodity") || h.includes("crop") || h.includes("product"));
-  const priceIdx = headers.findIndex((h) => h.includes("price") || h.includes("usd") || h.includes("amount"));
-  const unitIdx = headers.findIndex((h) => h.includes("unit") || h.includes("measure"));
-  const marketIdx = headers.findIndex((h) => h.includes("market") || h.includes("location"));
-  const dateIdx = headers.findIndex((h) => h.includes("date") || h.includes("period"));
-
-  if (commodityIdx === -1 || priceIdx === -1) throw new Error("CSV missing required columns (commodity/price)");
-
-  let imported = 0;
-  for (const line of lines.slice(1)) {
-    const cols = line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
-    const commodity = cols[commodityIdx];
-    const priceRaw = cols[priceIdx];
-    if (!commodity || !priceRaw) continue;
-    const priceNum = parseFloat(priceRaw.replace(/[^0-9.]/g, ""));
-    if (isNaN(priceNum)) continue;
-
-    await db.insert(marketPricesTable).values({
-      commodity,
-      priceUsd: priceNum.toString(),
-      unit: unitIdx >= 0 ? (cols[unitIdx] || "kg") : "kg",
-      market: marketIdx >= 0 ? (cols[marketIdx] || "GMB") : "GMB",
-      priceDate: dateIdx >= 0 ? (cols[dateIdx] || new Date().toISOString().split("T")[0]) : new Date().toISOString().split("T")[0],
-    });
-    imported++;
-  }
-  return `imported ${imported} price rows`;
-}
-
 async function scrapeYoutubeChannel(sourceId: number, name: string, channelUrl: string): Promise<string> {
   const html = await fetchWithTimeout(channelUrl);
 
@@ -179,7 +144,7 @@ export async function fetchSource(sourceId: number): Promise<void> {
         detail = await scrapeWebSource(source.id, source.name, source.url, source.category);
         break;
       case "csv_import":
-        detail = await importMarketPricesCsv(source.url);
+        detail = "disabled — verified market prices are published through the Market Price Desk";
         break;
       case "youtube_rss":
         detail = await scrapeYoutubeChannel(source.id, source.name, source.url);
@@ -211,7 +176,7 @@ export async function fetchAllActiveSources(): Promise<void> {
     .where(eq(knowledgeSourcesTable.isActive, true));
 
   for (const source of sources) {
-    if (source.type === "live_search" || source.type === "perplexity") continue;
+    if (source.type === "live_search" || source.type === "perplexity" || source.category === "market_prices") continue;
 
     const needsRefresh =
       !source.lastFetched ||
