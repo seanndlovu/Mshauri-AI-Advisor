@@ -26,6 +26,7 @@ const {
   adsTable,
   marketPriceBatchesTable,
   marketPriceBatchEntriesTable,
+  staffAccessAuditTable,
 } = schema;
 
 type FakeDatabaseOptions = {
@@ -34,6 +35,7 @@ type FakeDatabaseOptions = {
   batches?: Record<string, unknown>[];
   entries?: Record<string, unknown>[];
   ads?: Record<string, unknown>[];
+  audits?: Record<string, unknown>[];
 };
 
 function createFakeDatabase({
@@ -42,6 +44,7 @@ function createFakeDatabase({
   batches = [],
   entries = [],
   ads = [],
+  audits = [],
 }: FakeDatabaseOptions = {}) {
   function conditionValue(conditions: unknown[], column: unknown): unknown {
     const expectedName = (column as { name?: string })?.name;
@@ -84,6 +87,7 @@ function createFakeDatabase({
       );
     }
     if (table === adsTable) return ads;
+    if (table === staffAccessAuditTable) return audits;
     if (table === marketPriceBatchesTable) {
       const id = conditionValue(conditions, marketPriceBatchesTable.id);
       const status = conditionValue(conditions, marketPriceBatchesTable.status);
@@ -164,6 +168,22 @@ function createFakeDatabase({
     },
     insert(table: unknown) {
       let values: Record<string, unknown> = {};
+      let applied = false;
+      const apply = () => {
+        if (applied) return [];
+        applied = true;
+        if (table === staffAccessAuditTable) {
+          const inserted = { id: audits.length + 1, createdAt: new Date(), ...values };
+          audits.push(inserted);
+          return [inserted];
+        }
+        if (table !== usersTable) return [];
+        const existing = users.find((candidate) => candidate.email === values.email);
+        if (existing) return [];
+        const inserted = { id: users.length + 1, adminRole: null, ...values };
+        users.push(inserted);
+        return [inserted];
+      };
       const query = {
         values(nextValues: Record<string, unknown>) {
           values = nextValues;
@@ -173,12 +193,13 @@ function createFakeDatabase({
           return query;
         },
         returning() {
-          if (table !== usersTable) return Promise.resolve([]);
-          const existing = users.find((candidate) => candidate.email === values.email);
-          if (existing) return Promise.resolve([]);
-          const inserted = { id: users.length + 1, adminRole: null, ...values };
-          users.push(inserted);
-          return Promise.resolve([inserted]);
+          return Promise.resolve(apply());
+        },
+        then<TResult1 = unknown[], TResult2 = never>(
+          onfulfilled?: ((value: unknown[]) => TResult1 | PromiseLike<TResult1>) | null,
+          onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+        ) {
+          return Promise.resolve(apply()).then(onfulfilled, onrejected);
         },
       };
       return query;
@@ -396,7 +417,8 @@ test("only the configured verified account can bootstrap the first Owner once", 
       updatedAt: new Date(),
     },
   ];
-  const database = createFakeDatabase({ users });
+  const audits: Record<string, unknown>[] = [];
+  const database = createFakeDatabase({ users, audits });
   const readTestClerkAuth = (req: express.Request) => {
     const email = req.header("x-test-clerk-email");
     return email ? ({ userId: `clerk-${email}`, sessionClaims: {} } as never) : null;
@@ -492,6 +514,16 @@ test("only the configured verified account can bootstrap the first Owner once", 
   assert.equal(firstClaim.status, 201);
   assert.equal(users[0].adminRole, "owner");
   assert.equal(repeatedClaim.status, 409);
+  assert.equal(audits.length, 1);
+  assert.deepEqual(
+    {
+      actorUserId: audits[0].actorUserId,
+      targetUserId: audits[0].targetUserId,
+      previousRole: audits[0].previousRole,
+      newRole: audits[0].newRole,
+    },
+    { actorUserId: 1, targetUserId: 1, previousRole: null, newRole: "owner" },
+  );
 });
 
 test("Owners can assign staff roles without ever removing the final Owner", async () => {
@@ -533,7 +565,8 @@ test("Owners can assign staff roles without ever removing the final Owner", asyn
       updatedAt: new Date(),
     },
   ];
-  const database = createFakeDatabase({ users });
+  const audits: Record<string, unknown>[] = [];
+  const database = createFakeDatabase({ users, audits });
   const resolveCurrentUser = createCurrentUserResolver(database as never, () => null, async () => ({}));
   const access = createAdminAccess(database as never, resolveCurrentUser);
   const router = createStaffRouter({
@@ -560,6 +593,7 @@ test("Owners can assign staff roles without ever removing the final Owner", asyn
   const invalidRole = await mutation(3, "super_admin", 2);
   const nonOwnerList = await requestRouter(router, "/admin/staff", {}, 3);
   const nonOwnerMutation = await mutation(3, "ad_manager", 3);
+  const history = await requestRouter(router, "/admin/staff/audit-history", {}, 2);
 
   assert.equal(finalOwnerRemoval.status, 409);
   assert.equal(assignPriceEditor.status, 200);
@@ -571,6 +605,9 @@ test("Owners can assign staff roles without ever removing the final Owner", asyn
   assert.equal(nonOwnerMutation.status, 403);
   assert.equal(users[0].adminRole, null);
   assert.equal(users[1].adminRole, "owner");
+  assert.equal(audits.length, 3, "only successful role changes are audited");
+  assert.equal(history.status, 200);
+  assert.equal((history.body as { entries: unknown[] }).entries.length, 3);
 });
 
 test("publishing an edition archives the previous edition and exposes only the new one", async () => {

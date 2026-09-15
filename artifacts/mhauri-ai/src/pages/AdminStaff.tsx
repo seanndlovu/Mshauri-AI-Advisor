@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, type FormEvent, type ReactNode } from 'react';
 import {
   Shield, AlertCircle, Loader2, Check, X,
-  Users, Key, Search, UserMinus, UserCheck, ShieldAlert
+  Users, Key, Search, UserMinus, UserCheck, ShieldAlert, History
 } from 'lucide-react';
 import { useAuth, type AdminRole } from '@/hooks/use-auth';
 
@@ -30,6 +30,19 @@ interface StaffList {
   currentUserId: number;
 }
 
+interface AuditEntry {
+  id: number;
+  actorUserId: number;
+  actorName: string;
+  actorEmail: string;
+  targetUserId: number;
+  targetName: string;
+  targetEmail: string;
+  previousRole: StaffRole;
+  newRole: StaffRole;
+  createdAt: string;
+}
+
 // --- API Wrapper ---
 const api = {
   getBootstrapStatus: async (): Promise<BootstrapStatus> => {
@@ -51,6 +64,11 @@ const api = {
   getStaff: async (): Promise<StaffList> => {
     const res = await fetch('/api/admin/staff', { credentials: 'include' });
     if (!res.ok) throw new Error('Failed to fetch staff directory');
+    return res.json();
+  },
+  getAuditHistory: async (): Promise<{ entries: AuditEntry[] }> => {
+    const res = await fetch('/api/admin/staff/audit-history', { credentials: 'include' });
+    if (!res.ok) throw new Error('Failed to fetch staff access history');
     return res.json();
   },
   updateStaffRole: async (userId: number, adminRole: StaffRole) => {
@@ -77,6 +95,19 @@ function formatDate(dateStr: string | null) {
   } catch {
     return dateStr;
   }
+}
+
+function formatDateTime(dateStr: string) {
+  return new Date(dateStr).toLocaleString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
+  });
+}
+
+function roleLabel(role: StaffRole) {
+  if (role === 'owner') return 'Owner';
+  if (role === 'price_editor') return 'Market Price Editor';
+  if (role === 'ad_manager') return 'Ad Manager';
+  return 'No staff access';
 }
 
 // --- Shared UI Components ---
@@ -314,19 +345,23 @@ function StaffDirectory() {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState<StaffRole | 'all'>('all');
+  const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([]);
+  const [auditLoading, setAuditLoading] = useState(true);
   
   const [editingUser, setEditingUser] = useState<StaffUser | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.getStaff();
-      setData(res);
+      const [staff, audit] = await Promise.all([api.getStaff(), api.getAuditHistory()]);
+      setData(staff);
+      setAuditEntries(audit.entries);
       setError('');
     } catch (err: unknown) {
       setError(errorMessage(err, 'Failed to fetch staff directory'));
     } finally {
       setLoading(false);
+      setAuditLoading(false);
     }
   }, []);
 
@@ -476,6 +511,54 @@ function StaffDirectory() {
         )}
       </div>
 
+      <section className="mt-8 bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+        <div className="p-5 border-b border-border bg-secondary/10">
+          <h2 className="text-lg font-black text-foreground flex items-center gap-2">
+            <History className="w-5 h-5 text-primary" />
+            Staff Access History
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1 font-medium">
+            Permanent, read-only record of Owner setup and staff role changes.
+          </p>
+        </div>
+        {auditLoading ? (
+          <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+        ) : auditEntries.length === 0 ? (
+          <p className="p-10 text-center text-sm text-muted-foreground font-medium">No staff access changes have been recorded yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-secondary/40 text-muted-foreground uppercase tracking-wider text-[11px] font-black">
+                <tr>
+                  <th className="px-6 py-4">When</th>
+                  <th className="px-6 py-4">Changed by</th>
+                  <th className="px-6 py-4">Account</th>
+                  <th className="px-6 py-4">Access change</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {auditEntries.map(entry => (
+                  <tr key={entry.id} data-testid={`row-audit-${entry.id}`}>
+                    <td className="px-6 py-4 whitespace-nowrap text-muted-foreground font-medium">{formatDateTime(entry.createdAt)}</td>
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-foreground">{entry.actorName}</div>
+                      <div className="text-xs text-muted-foreground">{entry.actorEmail}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-foreground">{entry.targetName}</div>
+                      <div className="text-xs text-muted-foreground">{entry.targetEmail}</div>
+                    </td>
+                    <td className="px-6 py-4 font-medium text-foreground">
+                      {roleLabel(entry.previousRole)} <span className="text-muted-foreground mx-1">→</span> {roleLabel(entry.newRole)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
       {editingUser && data && (
         <RoleModal 
           user={editingUser} 
@@ -497,6 +580,9 @@ function StaffDirectory() {
                 ...prev,
                 users: prev.users.map(u => u.id === updatedUser.id ? updatedUser : u)
               };
+            });
+            api.getAuditHistory().then(audit => setAuditEntries(audit.entries)).catch(() => {
+              setError('Role changed, but the access history could not be refreshed.');
             });
           }}
         />

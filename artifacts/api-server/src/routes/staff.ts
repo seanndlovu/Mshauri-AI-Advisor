@@ -1,6 +1,6 @@
-import { asc, eq, sql } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
 import { Router, type IRouter, type Request, type Response } from "express";
-import { db, usersTable } from "@workspace/db";
+import { db, staffAccessAuditTable, usersTable } from "@workspace/db";
 import { requireOwner as defaultRequireOwner } from "../lib/admin-access";
 import { getCurrentUser, getVerifiedClerkUser } from "../lib/current-user";
 import { logger } from "../lib/logger";
@@ -113,11 +113,24 @@ export function createStaffRouter(options: {
         return { status: "not_eligible" as const };
       }
 
+      const previousRole = registeredUser.adminRole;
       const [updated] = await tx
         .update(usersTable)
         .set({ adminRole: "owner", updatedAt: new Date() })
         .where(eq(usersTable.id, registeredUser.id))
         .returning();
+      if (updated) {
+        await tx.insert(staffAccessAuditTable).values({
+          actorUserId: registeredUser.id,
+          actorName: registeredUser.name,
+          actorEmail: registeredUser.email,
+          targetUserId: registeredUser.id,
+          targetName: registeredUser.name,
+          targetEmail: registeredUser.email,
+          previousRole,
+          newRole: "owner",
+        });
+      }
       return updated
         ? { status: "updated" as const, user: updated }
         : { status: "not_eligible" as const };
@@ -147,6 +160,18 @@ export function createStaffRouter(options: {
       .orderBy(asc(usersTable.name), asc(usersTable.email));
 
     return res.json({ users: users.map(publicStaffUser), currentUserId: owner.id });
+  });
+
+  router.get("/admin/staff/audit-history", async (req, res) => {
+    const owner = await requireOwner(req, res);
+    if (!owner) return;
+
+    const entries = await database
+      .select()
+      .from(staffAccessAuditTable)
+      .orderBy(desc(staffAccessAuditTable.createdAt));
+
+    return res.json({ entries });
   });
 
   router.patch("/admin/staff/:userId", async (req, res) => {
@@ -195,12 +220,27 @@ export function createStaffRouter(options: {
       }
 
       const previousRole = target.adminRole;
+      if (previousRole === adminRole) {
+        return { status: "unchanged" as const, user: target };
+      }
       const [updated] = await tx
         .update(usersTable)
         .set({ adminRole, updatedAt: new Date() })
         .where(eq(usersTable.id, userId))
         .returning();
 
+      if (updated) {
+        await tx.insert(staffAccessAuditTable).values({
+          actorUserId: activeOwner.id,
+          actorName: activeOwner.name,
+          actorEmail: activeOwner.email,
+          targetUserId: target.id,
+          targetName: target.name,
+          targetEmail: target.email,
+          previousRole,
+          newRole: updated.adminRole,
+        });
+      }
       return updated
         ? { status: "updated" as const, user: updated, previousRole }
         : { status: "not_found" as const };
@@ -216,6 +256,9 @@ export function createStaffRouter(options: {
       return res.status(409).json({
         error: "Assign another Owner before removing or changing the final Owner.",
       });
+    }
+    if (result.status === "unchanged") {
+      return res.json({ user: publicStaffUser(result.user) });
     }
 
     logger.info(

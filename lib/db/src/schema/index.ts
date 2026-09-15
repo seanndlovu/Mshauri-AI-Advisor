@@ -7,5 +7,6 @@ export * from "./broadcasts";
 export * from "./analytics";
 export * from "./contacts";
 export * from "./users";
+export * from "./staff-access-audit";
 export * from "./community";
 export * from "./whatsapp-subscriptions";
