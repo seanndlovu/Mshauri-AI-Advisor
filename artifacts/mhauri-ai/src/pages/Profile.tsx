@@ -56,12 +56,12 @@ function GuestView() {
           Sign in to save your conversations, track your questions, and build your reputation among Zimbabwean farmers.
         </p>
         <div className="flex gap-3 w-full max-w-xs">
-          <Link href="/login" className="flex-1">
+          <Link href="/sign-in" className="flex-1">
             <button className="w-full px-5 py-3 border border-border rounded-full text-foreground hover:bg-muted transition-colors font-semibold text-[14px]">
               Sign In
             </button>
           </Link>
-          <Link href="/register" className="flex-1">
+          <Link href="/sign-up" className="flex-1">
             <button className="w-full px-5 py-3 bg-[#22c55e] hover:bg-[#16a34a] rounded-full text-white transition-colors font-bold text-[14px]">
               Create Account
             </button>
@@ -188,6 +188,16 @@ export default function Profile() {
               </div>
               <ChevronRight className="w-4 h-4 text-[#71767B]" />
             </button>
+
+            <Link href="/account-security">
+              <div className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/[0.03] transition-colors border-t border-[#2F3336]">
+                <div className="text-left">
+                  <div className="text-[#E7E9EA] text-[14px] font-medium">Account security</div>
+                  <div className="text-[#71767B] text-[12px]">Change your password or manage Google sign-in</div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[#71767B]" />
+              </div>
+            </Link>
 
             <button onClick={openSettings}
               className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/[0.03] transition-colors">

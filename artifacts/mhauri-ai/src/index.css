@@ -1,8 +1,49 @@
+@layer theme, base, clerk, components, utilities;
 @import "tailwindcss";
+@import "@clerk/themes/shadcn.css";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
+
+/* Clerk's generated selectors can outrank theme variables after its stylesheet
+   loads, so keep critical authentication text readable in both app themes. */
+.cl-cardBox,
+.cl-cardBox * {
+  color: #e8f5e9 !important;
+}
+
+.cl-headerTitle,
+.cl-socialButtonsBlockButtonText,
+.cl-formFieldLabel,
+.cl-identityPreviewText,
+.cl-formFieldInput,
+.cl-otpCodeFieldInput {
+  color: #e8f5e9 !important;
+}
+
+.cl-headerSubtitle,
+.cl-dividerText,
+.cl-footerActionText,
+.cl-formFieldHintText {
+  color: #9ccaa2 !important;
+}
+
+.cl-socialButtonsBlockButton {
+  color: #e8f5e9 !important;
+  background: #162616 !important;
+  border-color: #2a4030 !important;
+}
+
+.cl-formFieldInput {
+  background: #111e11 !important;
+  border-color: #2a4030 !important;
+}
+
+.cl-formFieldInput::placeholder {
+  color: #7aad80 !important;
+  opacity: 1;
+}
 
 @theme inline {
   --color-background: hsl(var(--background));

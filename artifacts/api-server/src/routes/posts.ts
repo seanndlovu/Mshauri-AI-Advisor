@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, desc, sql } from "drizzle-orm";
 import { db, postsTable, commentsTable, communitiesTable, usersTable } from "@workspace/db";
+import { getCurrentUser } from "../lib/current-user";
 
 const router: IRouter = Router();
 
@@ -35,7 +36,7 @@ router.get("/posts", async (req, res): Promise<void> => {
 });
 
 router.post("/posts", async (req, res): Promise<void> => {
-  const userId = req.session?.userId ?? null;
+  const userId = (await getCurrentUser(req))?.id ?? null;
   const { communityId, type, title, content, location, imageUrl, videoUrl, linkUrl } = req.body as {
     communityId: number;
     type: string;
@@ -89,7 +90,7 @@ router.delete("/posts/:id", async (req, res): Promise<void> => {
   const id = parseInt(req.params.id, 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
 
-  const userId = req.session?.userId;
+  const userId = (await getCurrentUser(req))?.id;
   const [post] = await db.select().from(postsTable).where(eq(postsTable.id, id)).limit(1);
   if (!post) { res.status(404).json({ error: "Post not found" }); return; }
   if (post.userId !== userId) { res.status(403).json({ error: "Not authorized" }); return; }
@@ -125,7 +126,7 @@ router.post("/posts/:id/comments", async (req, res): Promise<void> => {
   const postId = parseInt(req.params.id, 10);
   if (isNaN(postId)) { res.status(400).json({ error: "Invalid id" }); return; }
 
-  const userId = req.session?.userId ?? null;
+  const userId = (await getCurrentUser(req))?.id ?? null;
   const { content } = req.body as { content: string };
   if (!content?.trim()) { res.status(400).json({ error: "content is required" }); return; }
 

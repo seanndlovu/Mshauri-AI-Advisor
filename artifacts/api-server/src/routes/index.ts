@@ -15,6 +15,7 @@ import { newsRouter } from "./news";
 import { gameRouter } from "./game";
 import { zmxRouter } from "./zmx";
 import { adsRouter } from "./ads";
+import { staffRouter } from "./staff";
 
 const router: IRouter = Router();
 
@@ -34,5 +35,6 @@ router.use(newsRouter);
 router.use(gameRouter);
 router.use(zmxRouter);
 router.use(adsRouter);
+router.use(staffRouter);
 
 export default router;

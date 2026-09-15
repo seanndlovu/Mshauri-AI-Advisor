@@ -6,6 +6,7 @@ import {
   ChevronUp, ChevronDown, Settings,
   Users, BookOpen, LayoutDashboard, Zap, Sparkles,
   Bell, ChevronDown as ChevronDownIcon, Plus, X, ExternalLink,
+  Shield, Megaphone, BarChart2,
 } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -140,7 +141,7 @@ function TopHeader({ onPlayQuiz }: { onPlayQuiz: () => void }) {
         /* Not logged in — show Log In + Sign Up */
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button
-            onClick={() => setLocation("/login")}
+            onClick={() => setLocation("/sign-in")}
             style={{
               padding: "6px 14px", borderRadius: 999, border: "1px solid rgba(34,197,94,0.3)",
               background: "transparent", color: "#7aad80", fontSize: 12, fontWeight: 600,
@@ -152,7 +153,7 @@ function TopHeader({ onPlayQuiz }: { onPlayQuiz: () => void }) {
             Log In
           </button>
           <button
-            onClick={() => setLocation("/register")}
+            onClick={() => setLocation("/sign-up")}
             style={{
               padding: "6px 14px", borderRadius: 999, border: "none",
               background: "linear-gradient(135deg, #16a34a, #22c55e)",
@@ -541,6 +542,26 @@ function SidebarContent({ onNavigate, onPlayQuiz }: { onNavigate?: () => void; o
           <NavLink key={path} path={path} label={label} icon={icon} exact={exact} onClick={onNavigate} />
         ))}
       </nav>
+
+      {user?.adminRole && (
+        <>
+          <div className="mx-3 border-t border-[#343536] my-2" />
+          <div className="px-3 mb-1">
+            <span className="text-[10px] font-bold text-[#818384] uppercase tracking-wider">Admin Desk</span>
+          </div>
+          <nav className="px-2 mb-2 flex flex-col gap-0.5">
+            {(user.adminRole === 'owner' || user.adminRole === 'price_editor') && (
+              <NavLink path="/admin/market-prices" label="Market Prices" icon={BarChart2} onClick={onNavigate} />
+            )}
+            {(user.adminRole === 'owner' || user.adminRole === 'ad_manager') && (
+              <NavLink path="/admin/ads" label="Ads Manager" icon={Megaphone} onClick={onNavigate} />
+            )}
+            {user.adminRole === 'owner' && (
+              <NavLink path="/admin/staff" label="Staff Access" icon={Shield} onClick={onNavigate} />
+            )}
+          </nav>
+        </>
+      )}
 
       <GameSidebarBlock onPlayNow={onPlayQuiz} />
 

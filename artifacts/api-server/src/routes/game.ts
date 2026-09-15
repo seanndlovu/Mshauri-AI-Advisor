@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, gameStatsTable } from "@workspace/db";
+import { getCurrentUser } from "../lib/current-user";
 
 const router: IRouter = Router();
 
@@ -34,7 +35,7 @@ function todayDate() {
 }
 
 router.get("/game/stats", async (req, res): Promise<void> => {
-  const userId = req.session?.userId;
+  const userId = (await getCurrentUser(req))?.id;
   if (!userId) { res.json(null); return; }
   const [row] = await db.select().from(gameStatsTable).where(eq(gameStatsTable.userId, userId)).limit(1);
   if (!row) { res.json({ xp: 0, level: 1, levelTitle: "Seed Farmer", streak: 0, totalGames: 0, lastPlayedDate: null, levelInfo: getLevelInfo(0) }); return; }
@@ -42,7 +43,7 @@ router.get("/game/stats", async (req, res): Promise<void> => {
 });
 
 router.post("/game/complete", async (req, res): Promise<void> => {
-  const userId = req.session?.userId;
+  const userId = (await getCurrentUser(req))?.id;
   const { xpEarned } = req.body as { xpEarned: number };
   if (!userId || typeof xpEarned !== "number") { res.status(400).json({ error: "invalid" }); return; }
 

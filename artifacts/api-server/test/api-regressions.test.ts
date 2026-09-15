@@ -12,10 +12,12 @@ process.env.CORS_ORIGINS = "https://app.mshauri.test";
 delete process.env.DOMAIN;
 delete process.env.REPLIT_DEV_DOMAIN;
 
-const [{ createAdminAccess }, { createAdsRouter }, { createMarketPricesRouter }, schema] = await Promise.all([
+const [{ createAdminAccess }, { createCurrentUserResolver }, { createAdsRouter }, { createMarketPricesRouter }, { createStaffRouter }, schema] = await Promise.all([
   import("../src/lib/admin-access"),
+  import("../src/lib/current-user"),
   import("../src/routes/ads"),
   import("../src/routes/market-prices"),
+  import("../src/routes/staff"),
   import("@workspace/db"),
 ]);
 
@@ -28,6 +30,7 @@ const {
 
 type FakeDatabaseOptions = {
   user?: { id: number; adminRole: "owner" | "price_editor" | "ad_manager" | null };
+  users?: Record<string, unknown>[];
   batches?: Record<string, unknown>[];
   entries?: Record<string, unknown>[];
   ads?: Record<string, unknown>[];
@@ -35,18 +38,27 @@ type FakeDatabaseOptions = {
 
 function createFakeDatabase({
   user,
+  users = user ? [user] : [],
   batches = [],
   entries = [],
   ads = [],
 }: FakeDatabaseOptions = {}) {
   function conditionValue(conditions: unknown[], column: unknown): unknown {
+    const expectedName = (column as { name?: string })?.name;
     for (const condition of conditions) {
       const chunks = (condition as { queryChunks?: unknown[] })?.queryChunks;
       if (!chunks) continue;
 
       let matchingColumn = false;
       for (const chunk of chunks) {
-        if (chunk === column) {
+        if (
+          chunk === column
+          || (
+            expectedName
+            && (chunk as { name?: string })?.name === expectedName
+            && (chunk as { columnType?: string })?.columnType !== undefined
+          )
+        ) {
           matchingColumn = true;
           continue;
         }
@@ -63,7 +75,13 @@ function createFakeDatabase({
   function matchingRows(table: unknown, conditions: unknown[]) {
     if (table === usersTable) {
       const userId = conditionValue(conditions, usersTable.id);
-      return user && user.id === userId ? [user] : [];
+      const email = conditionValue(conditions, usersTable.email);
+      const adminRole = conditionValue(conditions, usersTable.adminRole);
+      return users.filter((candidate) =>
+        (userId === undefined || candidate.id === userId)
+        && (email === undefined || candidate.email === email)
+        && (adminRole === undefined || candidate.adminRole === adminRole)
+      );
     }
     if (table === adsTable) return ads;
     if (table === marketPriceBatchesTable) {
@@ -144,8 +162,32 @@ function createFakeDatabase({
 
       return query;
     },
+    insert(table: unknown) {
+      let values: Record<string, unknown> = {};
+      const query = {
+        values(nextValues: Record<string, unknown>) {
+          values = nextValues;
+          return query;
+        },
+        onConflictDoNothing() {
+          return query;
+        },
+        returning() {
+          if (table !== usersTable) return Promise.resolve([]);
+          const existing = users.find((candidate) => candidate.email === values.email);
+          if (existing) return Promise.resolve([]);
+          const inserted = { id: users.length + 1, adminRole: null, ...values };
+          users.push(inserted);
+          return Promise.resolve([inserted]);
+        },
+      };
+      return query;
+    },
     transaction<T>(callback: (transaction: unknown) => Promise<T>) {
       return callback(this);
+    },
+    execute() {
+      return Promise.resolve([]);
     },
   };
 }
@@ -182,7 +224,10 @@ async function requestRouter(
 
 function routerForRole(role: "owner" | "price_editor" | "ad_manager") {
   const database = createFakeDatabase({ user: { id: 1, adminRole: role } });
-  const access = createAdminAccess(database as never);
+  const access = createAdminAccess(
+    database as never,
+    createCurrentUserResolver(database as never, () => null, async () => ({})),
+  );
   return {
     prices: createMarketPricesRouter({
       database: database as never,
@@ -212,6 +257,68 @@ test("staff roles only access their assigned admin desk", async () => {
   }
 });
 
+test("Clerk identity is canonical when Clerk and legacy sessions conflict", async () => {
+  const owner = { id: 1, email: "owner@example.com", adminRole: "owner" as const };
+  const member = { id: 2, email: "member@example.com", adminRole: null };
+  const database = createFakeDatabase({ users: [owner, member] });
+  const resolveCurrentUser = createCurrentUserResolver(
+    database as never,
+    (req) => {
+      const email = req.header("x-test-clerk-email");
+      return email
+        ? ({ userId: `clerk-${email}`, sessionClaims: {} } as never)
+        : null;
+    },
+    async (clerkUserId) => ({
+      primaryEmailAddress: {
+        emailAddress: clerkUserId.replace(/^clerk-/, ""),
+        verification: { status: "verified" },
+      },
+    }),
+  );
+  const access = createAdminAccess(database as never, resolveCurrentUser);
+  const router = createAdsRouter({
+    database: database as never,
+    requireAdAdmin: access.requireAdAdmin,
+  });
+
+  const legacyOwner = await requestRouter(router, "/admin/ads", {}, owner.id);
+  const clerkMember = await requestRouter(router, "/admin/ads", {
+    headers: { "x-test-clerk-email": member.email },
+  });
+  const conflictingSessions = await requestRouter(router, "/admin/ads", {
+    headers: { "x-test-clerk-email": member.email },
+  }, owner.id);
+
+  assert.equal(legacyOwner.status, 200);
+  assert.equal(clerkMember.status, 403);
+  assert.equal(conflictingSessions.status, 403, "retained legacy owner session must not override Clerk member");
+});
+
+test("default Clerk claims provision a normal user from verified profile data", async () => {
+  const users: Record<string, unknown>[] = [];
+  const database = createFakeDatabase({ users });
+  const resolveCurrentUser = createCurrentUserResolver(
+    database as never,
+    () => ({ userId: "clerk-new-user", sessionClaims: {} } as never),
+    async () => ({
+      primaryEmailAddress: {
+        emailAddress: "new.user@example.com",
+        verification: { status: "verified" },
+      },
+      firstName: "New",
+      lastName: "User",
+    }),
+  );
+
+  const resolved = await resolveCurrentUser({ session: {} } as never);
+
+  assert.equal(resolved?.email, "new.user@example.com");
+  assert.equal(resolved?.name, "New User");
+  assert.equal(resolved?.role, "farmer");
+  assert.equal(resolved?.adminRole, null);
+});
+
 test("admin mutations reject untrusted origins before authentication", async () => {
   const database = createFakeDatabase();
   const access = createAdminAccess(database as never);
@@ -232,16 +339,26 @@ test("admin mutations reject untrusted origins before authentication", async () 
       }),
       path: "/admin/ads",
     },
+    {
+      name: "staff access",
+      router: createStaffRouter({
+        database: database as never,
+        requireOwner: access.requireOwner,
+      }),
+      path: "/admin/staff/1",
+      method: "PATCH",
+    },
   ];
 
   for (const route of protectedRoutes) {
-    const missing = await requestRouter(route.router, route.path, { method: "POST" });
+    const method = route.method ?? "POST";
+    const missing = await requestRouter(route.router, route.path, { method });
     const hostile = await requestRouter(route.router, route.path, {
-      method: "POST",
+      method,
       headers: { Origin: "https://attacker.example" },
     });
     const configured = await requestRouter(route.router, route.path, {
-      method: "POST",
+      method,
       headers: { Origin: "https://app.mshauri.test" },
     });
 
@@ -249,6 +366,211 @@ test("admin mutations reject untrusted origins before authentication", async () 
     assert.equal(hostile.status, 403, `${route.name} rejects hostile origins`);
     assert.equal(configured.status, 401, `${route.name} reaches authentication for the configured origin`);
   }
+});
+
+test("only the configured verified account can bootstrap the first Owner once", async () => {
+  process.env.OWNER_BOOTSTRAP_EMAIL = "trusted.owner@example.com";
+  const users = [
+    {
+      id: 1,
+      email: "trusted.owner@example.com",
+      name: "Trusted Owner",
+      role: "farmer",
+      adminRole: null,
+      passwordHash: null,
+      location: null,
+      reputationScore: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      id: 2,
+      email: "member@example.com",
+      name: "Member",
+      role: "farmer",
+      adminRole: null,
+      passwordHash: null,
+      location: null,
+      reputationScore: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ];
+  const database = createFakeDatabase({ users });
+  const readTestClerkAuth = (req: express.Request) => {
+    const email = req.header("x-test-clerk-email");
+    return email ? ({ userId: `clerk-${email}`, sessionClaims: {} } as never) : null;
+  };
+  const readVerifiedClerkUser = async (clerkUserId: string) => ({
+    primaryEmailAddress: {
+      emailAddress: clerkUserId.replace(/^clerk-/, ""),
+      verification: { status: "verified" },
+    },
+  });
+  const resolveCurrentUser = createCurrentUserResolver(
+    database as never,
+    readTestClerkAuth,
+    readVerifiedClerkUser,
+  );
+  const resolveBootstrapUser = createCurrentUserResolver(
+    database as never,
+    readTestClerkAuth,
+    readVerifiedClerkUser,
+    true,
+  );
+  const router = createStaffRouter({
+    database: database as never,
+    resolveCurrentUser,
+    resolveBootstrapUser,
+  });
+  const unverifiedResolver = createCurrentUserResolver(
+    database as never,
+    readTestClerkAuth,
+    async () => ({
+      primaryEmailAddress: {
+        emailAddress: "trusted.owner@example.com",
+        verification: { status: "unverified" },
+      },
+    }),
+    true,
+  );
+  const unverifiedRouter = createStaffRouter({
+    database: database as never,
+    resolveCurrentUser: unverifiedResolver,
+    resolveBootstrapUser: unverifiedResolver,
+  });
+
+  const signedOut = await requestRouter(router, "/admin/staff/bootstrap-owner", {
+    method: "POST",
+    headers: { Origin: "https://app.mshauri.test" },
+  });
+  const wrongAccount = await requestRouter(router, "/admin/staff/bootstrap-owner", {
+    method: "POST",
+    headers: {
+      Origin: "https://app.mshauri.test",
+      "x-test-clerk-email": "member@example.com",
+    },
+  });
+  const hostileOrigin = await requestRouter(router, "/admin/staff/bootstrap-owner", {
+    method: "POST",
+    headers: {
+      Origin: "https://attacker.example",
+      "x-test-clerk-email": "trusted.owner@example.com",
+    },
+  });
+  const legacyOnly = await requestRouter(router, "/admin/staff/bootstrap-owner", {
+    method: "POST",
+    headers: { Origin: "https://app.mshauri.test" },
+  }, 1);
+  const unverifiedClerk = await requestRouter(unverifiedRouter, "/admin/staff/bootstrap-owner", {
+    method: "POST",
+    headers: {
+      Origin: "https://app.mshauri.test",
+      "x-test-clerk-email": "trusted.owner@example.com",
+    },
+  }, 1);
+  const firstClaim = await requestRouter(router, "/admin/staff/bootstrap-owner", {
+    method: "POST",
+    headers: {
+      Origin: "https://app.mshauri.test",
+      "x-test-clerk-email": "trusted.owner@example.com",
+    },
+  });
+  const repeatedClaim = await requestRouter(router, "/admin/staff/bootstrap-owner", {
+    method: "POST",
+    headers: {
+      Origin: "https://app.mshauri.test",
+      "x-test-clerk-email": "trusted.owner@example.com",
+    },
+  });
+
+  assert.equal(signedOut.status, 401);
+  assert.equal(wrongAccount.status, 403);
+  assert.equal(hostileOrigin.status, 403);
+  assert.equal(legacyOnly.status, 401);
+  assert.equal(unverifiedClerk.status, 401, "unverified Clerk identity must override a retained legacy session");
+  assert.equal(firstClaim.status, 201);
+  assert.equal(users[0].adminRole, "owner");
+  assert.equal(repeatedClaim.status, 409);
+});
+
+test("Owners can assign staff roles without ever removing the final Owner", async () => {
+  const users = [
+    {
+      id: 1,
+      email: "owner@example.com",
+      name: "Owner",
+      role: "farmer",
+      adminRole: "owner",
+      passwordHash: null,
+      location: null,
+      reputationScore: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      id: 2,
+      email: "manager@example.com",
+      name: "Manager",
+      role: "farmer",
+      adminRole: null,
+      passwordHash: null,
+      location: null,
+      reputationScore: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      id: 3,
+      email: "member@example.com",
+      name: "Member",
+      role: "farmer",
+      adminRole: null,
+      passwordHash: null,
+      location: null,
+      reputationScore: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ];
+  const database = createFakeDatabase({ users });
+  const resolveCurrentUser = createCurrentUserResolver(database as never, () => null, async () => ({}));
+  const access = createAdminAccess(database as never, resolveCurrentUser);
+  const router = createStaffRouter({
+    database: database as never,
+    resolveCurrentUser,
+    requireOwner: access.requireOwner,
+  });
+  const mutation = (userId: number, adminRole: unknown, actorId = 1) => requestRouter(
+    router,
+    `/admin/staff/${userId}`,
+    {
+      method: "PATCH",
+      headers: { Origin: "https://app.mshauri.test", "Content-Type": "application/json" },
+      body: JSON.stringify({ adminRole }),
+    },
+    actorId,
+  );
+
+  const finalOwnerRemoval = await mutation(1, null);
+  const assignPriceEditor = await mutation(2, "price_editor");
+  const assignSecondOwner = await mutation(2, "owner");
+  const transferOwnership = await mutation(1, null);
+  const removeNewFinalOwner = await mutation(2, null, 2);
+  const invalidRole = await mutation(3, "super_admin", 2);
+  const nonOwnerList = await requestRouter(router, "/admin/staff", {}, 3);
+  const nonOwnerMutation = await mutation(3, "ad_manager", 3);
+
+  assert.equal(finalOwnerRemoval.status, 409);
+  assert.equal(assignPriceEditor.status, 200);
+  assert.equal(assignSecondOwner.status, 200);
+  assert.equal(transferOwnership.status, 200);
+  assert.equal(removeNewFinalOwner.status, 409);
+  assert.equal(invalidRole.status, 400);
+  assert.equal(nonOwnerList.status, 403);
+  assert.equal(nonOwnerMutation.status, 403);
+  assert.equal(users[0].adminRole, null);
+  assert.equal(users[1].adminRole, "owner");
 });
 
 test("publishing an edition archives the previous edition and exposes only the new one", async () => {
@@ -301,7 +623,10 @@ test("publishing an edition archives the previous edition and exposes only the n
     batches: [draftBatch, publishedBatch],
     entries: [draftEntry, publishedEntry],
   });
-  const access = createAdminAccess(database as never);
+  const access = createAdminAccess(
+    database as never,
+    createCurrentUserResolver(database as never, () => null, async () => ({})),
+  );
   const router = createMarketPricesRouter({
     database: database as never,
     requirePriceAdmin: access.requirePriceAdmin,

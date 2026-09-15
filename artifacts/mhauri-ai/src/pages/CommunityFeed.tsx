@@ -191,10 +191,10 @@ export default function CommunityFeed() {
               <p className="text-[#E7E9EA] text-sm">Log in to post or join this community.</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <Link href="/login">
+              <Link href="/sign-in">
                 <button className="px-3 py-1.5 rounded-full border border-[#2F3336] text-[#E7E9EA] text-[12px] font-bold hover:bg-white/5">Log In</button>
               </Link>
-              <Link href="/register">
+              <Link href="/sign-up">
                 <button className="px-3 py-1.5 rounded-full bg-[#22c55e] text-white text-[12px] font-bold hover:bg-[#16a34a]">Sign Up</button>
               </Link>
               <button onClick={() => setShowLoginPrompt(false)} className="p-1.5 rounded-full text-[#71767B] hover:bg-white/5 text-sm">

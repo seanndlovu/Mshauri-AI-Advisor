@@ -11,6 +11,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@clerk/express": "^2.1.67",
+    "@clerk/shared": "^4.31.1",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
     "bcryptjs": "^3.0.3",
@@ -19,6 +21,7 @@
     "drizzle-orm": "catalog:",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
+    "http-proxy-middleware": "^4.2.0",
     "mammoth": "^1.12.0",
     "openai": "^6.42.0",
     "pdf-parse": "^2.4.5",

@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, desc, sql } from "drizzle-orm";
-import { db, communitiesTable, postsTable, usersTable } from "@workspace/db";
+import { db, communitiesTable, postsTable } from "@workspace/db";
+import { getCurrentUser } from "../lib/current-user";
 
 const router: IRouter = Router();
 
@@ -40,8 +41,6 @@ router.get("/communities/:slug/posts", async (req, res): Promise<void> => {
 });
 
 router.post("/communities", async (req, res): Promise<void> => {
-  const userId = (req.session as any)?.userId ?? null;
-
   const { name, slug, description } = req.body as { name?: string; slug?: string; description?: string };
   if (!name?.trim() || !slug?.trim() || !description?.trim()) {
     res.status(400).json({ error: "name, slug, and description are required" });
@@ -70,10 +69,7 @@ router.post("/communities", async (req, res): Promise<void> => {
 });
 
 router.post("/communities/my", async (req, res): Promise<void> => {
-  const userId = (req.session as any)?.userId;
-  if (!userId) { res.status(401).json({ error: "Unauthorised" }); return; }
-
-  const [user] = await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+  const user = await getCurrentUser(req);
   if (!user) { res.status(404).json({ error: "User not found" }); return; }
 
   const slug = ("u-" + user.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")).slice(0, 25);

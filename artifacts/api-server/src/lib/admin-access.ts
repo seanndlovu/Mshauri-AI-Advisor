@@ -1,10 +1,12 @@
 import type { Request, Response } from "express";
-import { eq } from "drizzle-orm";
-import { db, usersTable, type User } from "@workspace/db";
+import { db, type User } from "@workspace/db";
+import { getCurrentUser } from "./current-user";
 
 export type PriceAdminRole = "owner" | "price_editor";
 export type AdAdminRole = "owner" | "ad_manager";
+export type OwnerRole = "owner";
 export type AdminAccessDatabase = Pick<typeof db, "select">;
+export type CurrentUserResolver = typeof getCurrentUser;
 
 export function canManagePrices(role: string | null | undefined): role is PriceAdminRole {
   return role === "owner" || role === "price_editor";
@@ -14,22 +16,23 @@ export function canManageAds(role: string | null | undefined): role is AdAdminRo
   return role === "owner" || role === "ad_manager";
 }
 
-export function createAdminAccess(database: AdminAccessDatabase) {
+export function isOwner(role: string | null | undefined): role is OwnerRole {
+  return role === "owner";
+}
+
+export function createAdminAccess(
+  database: AdminAccessDatabase,
+  resolveCurrentUser: CurrentUserResolver = getCurrentUser,
+) {
   async function requireAdmin(
     req: Request,
     res: Response,
     canManage: (role: string | null | undefined) => boolean,
     area: string,
   ): Promise<User | null> {
-    const userId = req.session.userId;
-    if (!userId) {
-      res.status(401).json({ error: `Please sign in to manage ${area}.` });
-      return null;
-    }
-
-    const [existing] = await database.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+    const existing = await resolveCurrentUser(req);
     if (!existing) {
-      res.status(401).json({ error: "Your account could not be found." });
+      res.status(401).json({ error: `Please sign in to manage ${area}.` });
       return null;
     }
 
@@ -48,8 +51,11 @@ export function createAdminAccess(database: AdminAccessDatabase) {
     requireAdAdmin(req: Request, res: Response): Promise<User | null> {
       return requireAdmin(req, res, canManageAds, "advertising campaigns");
     },
+    requireOwner(req: Request, res: Response): Promise<User | null> {
+      return requireAdmin(req, res, isOwner, "staff access");
+    },
   };
 }
 
 const adminAccess = createAdminAccess(db);
-export const { requirePriceAdmin, requireAdAdmin } = adminAccess;
+export const { requirePriceAdmin, requireAdAdmin, requireOwner } = adminAccess;
