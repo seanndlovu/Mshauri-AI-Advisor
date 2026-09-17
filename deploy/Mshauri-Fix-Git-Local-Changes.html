@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Mshauri VPS Fix — Git Local Changes Error</title>
+  <style>
+    @page { size: A4; margin: 18mm 17mm 20mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #17231d; font: 13px/1.55 Arial, sans-serif; }
+    h1, h2, h3 { line-height: 1.2; page-break-after: avoid; }
+    h1 { margin: 12px 0 7px; font-size: 27px; }
+    h2 { margin: 27px 0 11px; padding-bottom: 6px; border-bottom: 2px solid #dce8df; color: #16803a; font-size: 18px; }
+    h3 { margin: 17px 0 6px; font-size: 14px; }
+    p, li { orphans: 3; widows: 3; }
+    li { margin: 4px 0; }
+    .brand { display: inline-block; padding: 5px 13px; border-radius: 7px; background: #16803a; color: #fff; font-weight: 800; }
+    .subtitle { margin: 0; color: #526158; }
+    .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 20px 0; }
+    .meta div { padding: 10px; border: 1px solid #dce8df; border-radius: 7px; }
+    .meta small { display: block; color: #526158; font-size: 9px; font-weight: bold; text-transform: uppercase; }
+    .meta strong { font: 11px/1.4 Consolas, monospace; }
+    .note, .warning, .danger { margin: 12px 0; padding: 12px 14px; border-radius: 7px; page-break-inside: avoid; }
+    .note { border: 1px solid #b9e2c2; background: #f4faf5; }
+    .warning { border: 1px solid #f1cf94; background: #fff7e8; }
+    .danger { border: 1px solid #e5b5b5; background: #fff2f2; }
+    pre { margin: 8px 0 13px; padding: 13px 15px; border-radius: 7px; background: #142019; color: #e7f6e9; font: 11px/1.6 Consolas, monospace; white-space: pre-wrap; page-break-inside: avoid; }
+    code { padding: 1px 4px; border-radius: 3px; background: #edf4ee; color: #125c2b; font: 11px Consolas, monospace; }
+    .step { display: grid; grid-template-columns: 31px 1fr; gap: 11px; margin: 18px 0; page-break-inside: avoid; }
+    .number { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 50%; background: #16803a; color: #fff; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 11px; }
+    th, td { padding: 8px; border: 1px solid #dce8df; vertical-align: top; }
+    th { background: #f5f8f5; text-align: left; }
+    footer { margin-top: 35px; padding-top: 10px; border-top: 1px solid #dce8df; color: #526158; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <span class="brand">Mshauri</span>
+  <h1>Fixing the VPS Git Update Error</h1>
+  <p class="subtitle">Safe instructions for the “local changes would be overwritten by merge” error</p>
+  <div class="meta">
+    <div><small>Repository folder</small><strong>/var/www/mshauri</strong></div>
+    <div><small>Conflicting file</small><strong>pnpm-workspace.yaml</strong></div>
+  </div>
+
+  <div class="danger">
+    <strong>Error shown on the VPS:</strong>
+    <pre>error: Your local changes to the following files would be overwritten by merge:
+  pnpm-workspace.yaml
+Please commit your changes or stash them before you merge.
+Aborting</pre>
+  </div>
+
+  <h2>What this means</h2>
+  <p>The VPS has a local edit to <code>pnpm-workspace.yaml</code>. GitHub also has a newer version of that file. Git stops the update instead of silently deleting the VPS edit.</p>
+  <p>This file is part of the application source code. VPS-only settings such as passwords, Clerk keys, session secrets and the Owner email belong in <code>deploy/.env.production</code>, not in <code>pnpm-workspace.yaml</code>.</p>
+
+  <h2>Recommended safe fix</h2>
+  <div class="step">
+    <span class="number">1</span>
+    <div>
+      <h3>Enter the Mshauri folder</h3>
+      <pre>cd /var/www/mshauri</pre>
+    </div>
+  </div>
+  <div class="step">
+    <span class="number">2</span>
+    <div>
+      <h3>Back up the local change</h3>
+      <p>This saves a copy outside the repository before restoring the GitHub version.</p>
+      <pre>git diff -- pnpm-workspace.yaml &gt; /root/pnpm-workspace-local-change.diff
+ls -lh /root/pnpm-workspace-local-change.diff</pre>
+    </div>
+  </div>
+  <div class="step">
+    <span class="number">3</span>
+    <div>
+      <h3>Confirm the file is the only change</h3>
+      <pre>git status --short</pre>
+      <p>You should see <code>pnpm-workspace.yaml</code> as the conflicting modified file.</p>
+    </div>
+  </div>
+  <div class="step">
+    <span class="number">4</span>
+    <div>
+      <h3>Restore only the conflicting source file</h3>
+      <pre>git restore pnpm-workspace.yaml</pre>
+      <p>This does not remove <code>deploy/.env.production</code> because that file is separate and should remain local to the VPS.</p>
+    </div>
+  </div>
+  <div class="step">
+    <span class="number">5</span>
+    <div>
+      <h3>Run the normal update</h3>
+      <pre>bash deploy/3-update.sh</pre>
+      <p>The script pulls the current code, installs packages, builds the application, applies database changes and restarts the API.</p>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+  <h2>After the update</h2>
+  <p>Check that the API restarted successfully:</p>
+  <pre>pm2 status
+pm2 logs mshauri-api --lines 50</pre>
+  <p>Check the website:</p>
+  <pre>curl -I https://mshauri.marichomedia.com</pre>
+  <p>Then open the website in a browser and sign in.</p>
+
+  <h2>If the error appears again</h2>
+  <p>Run these commands and review all modified files:</p>
+  <pre>cd /var/www/mshauri
+git status --short
+git diff --stat</pre>
+  <div class="warning">
+    <strong>Stop if files other than <code>pnpm-workspace.yaml</code> are modified.</strong>
+    Do not restore or delete those files until their purpose is confirmed. In particular, do not delete <code>deploy/.env.production</code> or any advert upload directory.
+  </div>
+
+  <h2>Do not use this shortcut</h2>
+  <pre>git reset --hard</pre>
+  <p>Do not use a hard reset as the first fix. It can delete local tracked changes and make recovery harder. The recommended procedure backs up and restores only the known conflicting file.</p>
+
+  <h2>Optional: inspect the saved change</h2>
+  <pre>less /root/pnpm-workspace-local-change.diff</pre>
+  <p>If the file contains a useful project change that should be kept, send the diff to the developer for review rather than editing it directly on the production VPS.</p>
+
+  <h2>Quick version</h2>
+  <pre>cd /var/www/mshauri
+git diff -- pnpm-workspace.yaml &gt; /root/pnpm-workspace-local-change.diff
+git restore pnpm-workspace.yaml
+bash deploy/3-update.sh
+pm2 status</pre>
+
+  <footer>Prepared for Maricho Media · Mshauri AI Advisor · September 2026</footer>
+</body>
+</html>

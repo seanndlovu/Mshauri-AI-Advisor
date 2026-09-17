@@ -1,4 +1,4 @@
-import { asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, ilike, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db, staffAccessAuditTable, usersTable } from "@workspace/db";
 import { requireOwner as defaultRequireOwner } from "../lib/admin-access";
@@ -8,6 +8,8 @@ import { hasTrustedMutationOrigin } from "../lib/trusted-origins";
 
 const STAFF_ACCESS_LOCK_ID = 761_943_211;
 const STAFF_ROLES = new Set(["owner", "price_editor", "ad_manager"]);
+const AUDIT_DEFAULT_PAGE_SIZE = 20;
+const AUDIT_MAX_PAGE_SIZE = 100;
 
 type StaffRole = "owner" | "price_editor" | "ad_manager";
 type ResolveCurrentUser = typeof getCurrentUser;
@@ -23,6 +25,56 @@ function requestedRole(value: unknown): StaffRole | null | undefined {
   return typeof value === "string" && STAFF_ROLES.has(value)
     ? value as StaffRole
     : undefined;
+}
+
+function singleQueryValue(value: unknown): string | undefined {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value) && typeof value[0] === "string") return value[0];
+  return undefined;
+}
+
+function positiveInteger(value: unknown, fallback: number): number | null {
+  if (value === undefined) return fallback;
+  const parsed = Number(singleQueryValue(value));
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function calendarBoundary(value: unknown, endOfDay: boolean): Date | null | undefined {
+  if (value === undefined) return undefined;
+  const raw = singleQueryValue(value);
+  if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
+  const date = new Date(`${raw}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}Z`);
+  const [year, month, day] = raw.split("-").map(Number);
+  return Number.isNaN(date.getTime())
+    || date.getUTCFullYear() !== year
+    || date.getUTCMonth() + 1 !== month
+    || date.getUTCDate() !== day
+    ? null
+    : date;
+}
+
+type AuditCursor = { createdAt: string; id: number };
+
+function decodeAuditCursor(value: unknown): { createdAt: Date; id: number } | null | undefined {
+  if (value === undefined) return undefined;
+  const raw = singleQueryValue(value);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(Buffer.from(raw, "base64url").toString("utf8")) as AuditCursor;
+    const createdAt = new Date(parsed.createdAt);
+    return Number.isSafeInteger(parsed.id) && parsed.id > 0 && !Number.isNaN(createdAt.getTime())
+      ? { createdAt, id: parsed.id }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function encodeAuditCursor(entry: { createdAt: Date; id: number }): string {
+  return Buffer.from(JSON.stringify({
+    createdAt: entry.createdAt.toISOString(),
+    id: entry.id,
+  })).toString("base64url");
 }
 
 function requireTrustedMutation(req: Request, res: Response): boolean {
@@ -166,12 +218,89 @@ export function createStaffRouter(options: {
     const owner = await requireOwner(req, res);
     if (!owner) return;
 
-    const entries = await database
+    const requestedPageSize = positiveInteger(req.query.pageSize, AUDIT_DEFAULT_PAGE_SIZE);
+    const cursor = decodeAuditCursor(req.query.cursor);
+    const actor = singleQueryValue(req.query.actor)?.trim();
+    const target = singleQueryValue(req.query.target)?.trim();
+    const roleValue = singleQueryValue(req.query.role);
+    const role = roleValue === "none"
+      ? null
+      : roleValue === undefined
+        ? undefined
+        : requestedRole(roleValue);
+    const from = calendarBoundary(req.query.from, false);
+    const to = calendarBoundary(req.query.to, true);
+
+    if (
+      requestedPageSize === null
+      || requestedPageSize > AUDIT_MAX_PAGE_SIZE
+      || cursor === null
+      || (roleValue !== undefined && roleValue !== "none" && role === undefined)
+      || from === null
+      || to === null
+      || (from && to && from > to)
+    ) {
+      return res.status(400).json({
+        error: `Use a page size up to ${AUDIT_MAX_PAGE_SIZE}, a valid cursor, a valid staff role, and a valid date range.`,
+      });
+    }
+
+    const filters = [
+      actor
+        ? or(
+            ilike(staffAccessAuditTable.actorName, `%${actor}%`),
+            ilike(staffAccessAuditTable.actorEmail, `%${actor}%`),
+          )
+        : undefined,
+      target
+        ? or(
+            ilike(staffAccessAuditTable.targetName, `%${target}%`),
+            ilike(staffAccessAuditTable.targetEmail, `%${target}%`),
+          )
+        : undefined,
+      roleValue === "none"
+        ? or(
+            isNull(staffAccessAuditTable.previousRole),
+            isNull(staffAccessAuditTable.newRole),
+          )
+        : role
+          ? or(
+              eq(staffAccessAuditTable.previousRole, role),
+              eq(staffAccessAuditTable.newRole, role),
+            )
+          : undefined,
+      from ? gte(staffAccessAuditTable.createdAt, from) : undefined,
+      to ? lte(staffAccessAuditTable.createdAt, to) : undefined,
+      cursor
+        ? or(
+            lt(staffAccessAuditTable.createdAt, cursor.createdAt),
+            and(
+              eq(staffAccessAuditTable.createdAt, cursor.createdAt),
+              lt(staffAccessAuditTable.id, cursor.id),
+            ),
+          )
+        : undefined,
+    ].filter((filter) => filter !== undefined);
+    const where = filters.length > 0 ? and(...filters) : undefined;
+    const pageSize = requestedPageSize;
+
+    const rows = await database
       .select()
       .from(staffAccessAuditTable)
-      .orderBy(desc(staffAccessAuditTable.createdAt));
+      .where(where)
+      .orderBy(desc(staffAccessAuditTable.createdAt), desc(staffAccessAuditTable.id))
+      .limit(pageSize + 1);
+    const hasMore = rows.length > pageSize;
+    const entries = hasMore ? rows.slice(0, pageSize) : rows;
+    const lastEntry = entries.at(-1);
 
-    return res.json({ entries });
+    return res.json({
+      entries,
+      pagination: {
+        pageSize,
+        nextCursor: hasMore && lastEntry ? encodeAuditCursor(lastEntry) : null,
+      },
+    });
   });
 
   router.patch("/admin/staff/:userId", async (req, res) => {

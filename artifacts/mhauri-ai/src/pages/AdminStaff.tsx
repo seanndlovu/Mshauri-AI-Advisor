@@ -43,6 +43,22 @@ interface AuditEntry {
   createdAt: string;
 }
 
+interface AuditFilters {
+  actor: string;
+  target: string;
+  role: StaffRole | 'all';
+  from: string;
+  to: string;
+}
+
+interface AuditHistory {
+  entries: AuditEntry[];
+  pagination: {
+    pageSize: number;
+    nextCursor: string | null;
+  };
+}
+
 // --- API Wrapper ---
 const api = {
   getBootstrapStatus: async (): Promise<BootstrapStatus> => {
@@ -66,8 +82,15 @@ const api = {
     if (!res.ok) throw new Error('Failed to fetch staff directory');
     return res.json();
   },
-  getAuditHistory: async (): Promise<{ entries: AuditEntry[] }> => {
-    const res = await fetch('/api/admin/staff/audit-history', { credentials: 'include' });
+  getAuditHistory: async (cursor: string | null, filters: AuditFilters): Promise<AuditHistory> => {
+    const params = new URLSearchParams({ pageSize: '20' });
+    if (cursor) params.set('cursor', cursor);
+    if (filters.actor.trim()) params.set('actor', filters.actor.trim());
+    if (filters.target.trim()) params.set('target', filters.target.trim());
+    if (filters.role !== 'all') params.set('role', filters.role ?? 'none');
+    if (filters.from) params.set('from', filters.from);
+    if (filters.to) params.set('to', filters.to);
+    const res = await fetch(`/api/admin/staff/audit-history?${params}`, { credentials: 'include' });
     if (!res.ok) throw new Error('Failed to fetch staff access history');
     return res.json();
   },
@@ -347,27 +370,55 @@ function StaffDirectory() {
   const [filterRole, setFilterRole] = useState<StaffRole | 'all'>('all');
   const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([]);
   const [auditLoading, setAuditLoading] = useState(true);
+  const [auditError, setAuditError] = useState('');
+  const [auditPage, setAuditPage] = useState(1);
+  const [auditCursors, setAuditCursors] = useState<(string | null)[]>([null]);
+  const [auditNextCursor, setAuditNextCursor] = useState<string | null>(null);
+  const [auditFilters, setAuditFilters] = useState<AuditFilters>({
+    actor: '',
+    target: '',
+    role: 'all',
+    from: '',
+    to: '',
+  });
+  const [appliedAuditFilters, setAppliedAuditFilters] = useState<AuditFilters>(auditFilters);
   
   const [editingUser, setEditingUser] = useState<StaffUser | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [staff, audit] = await Promise.all([api.getStaff(), api.getAuditHistory()]);
+      const staff = await api.getStaff();
       setData(staff);
-      setAuditEntries(audit.entries);
       setError('');
     } catch (err: unknown) {
       setError(errorMessage(err, 'Failed to fetch staff directory'));
     } finally {
       setLoading(false);
-      setAuditLoading(false);
     }
   }, []);
+
+  const loadAuditHistory = useCallback(async () => {
+    setAuditLoading(true);
+    setAuditError('');
+    try {
+      const audit = await api.getAuditHistory(auditCursors[auditPage - 1] ?? null, appliedAuditFilters);
+      setAuditEntries(audit.entries);
+      setAuditNextCursor(audit.pagination.nextCursor);
+    } catch (err: unknown) {
+      setAuditError(errorMessage(err, 'Failed to fetch staff access history'));
+    } finally {
+      setAuditLoading(false);
+    }
+  }, [appliedAuditFilters, auditCursors, auditPage]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    loadAuditHistory();
+  }, [loadAuditHistory]);
 
   const filteredUsers = useMemo(() => {
     if (!data) return [];
@@ -521,10 +572,79 @@ function StaffDirectory() {
             Permanent, read-only record of Owner setup and staff role changes.
           </p>
         </div>
+        <form
+          className="p-5 border-b border-border grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            setAuditPage(1);
+            setAuditCursors([null]);
+            setAppliedAuditFilters(auditFilters);
+          }}
+        >
+          <input
+            type="search"
+            placeholder="Actor name or email"
+            value={auditFilters.actor}
+            onChange={(event) => setAuditFilters(current => ({ ...current, actor: event.target.value }))}
+            className="bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground"
+            data-testid="input-audit-actor"
+          />
+          <input
+            type="search"
+            placeholder="Account name or email"
+            value={auditFilters.target}
+            onChange={(event) => setAuditFilters(current => ({ ...current, target: event.target.value }))}
+            className="bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground"
+            data-testid="input-audit-target"
+          />
+          <select
+            value={auditFilters.role === null ? 'none' : auditFilters.role}
+            onChange={(event) => setAuditFilters(current => ({
+              ...current,
+              role: event.target.value === 'none' ? null : event.target.value as AdminRole | 'all',
+            }))}
+            className="bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground"
+            data-testid="select-audit-role"
+          >
+            <option value="all">All roles</option>
+            <option value="owner">Owner</option>
+            <option value="price_editor">Market Price Editor</option>
+            <option value="ad_manager">Ad Manager</option>
+            <option value="none">No staff access</option>
+          </select>
+          <input
+            type="date"
+            aria-label="History from date"
+            value={auditFilters.from}
+            max={auditFilters.to || undefined}
+            onChange={(event) => setAuditFilters(current => ({ ...current, from: event.target.value }))}
+            className="bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground"
+            data-testid="input-audit-from"
+          />
+          <div className="flex gap-2">
+            <input
+              type="date"
+              aria-label="History to date"
+              value={auditFilters.to}
+              min={auditFilters.from || undefined}
+              onChange={(event) => setAuditFilters(current => ({ ...current, to: event.target.value }))}
+              className="min-w-0 flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground"
+              data-testid="input-audit-to"
+            />
+            <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-bold">
+              Filter
+            </button>
+          </div>
+        </form>
+        {auditError && (
+          <div className="m-5 p-3 bg-red-500/10 border border-red-500/20 text-red-500 rounded-lg text-sm font-medium">
+            {auditError}
+          </div>
+        )}
         {auditLoading ? (
           <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
         ) : auditEntries.length === 0 ? (
-          <p className="p-10 text-center text-sm text-muted-foreground font-medium">No staff access changes have been recorded yet.</p>
+          <p className="p-10 text-center text-sm text-muted-foreground font-medium">No staff access changes match these filters.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
@@ -557,6 +677,38 @@ function StaffDirectory() {
             </table>
           </div>
         )}
+        {!auditLoading && !auditError && (auditPage > 1 || auditNextCursor) && (
+          <div className="p-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
+            <span className="text-muted-foreground font-medium">Newest changes appear first</span>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                disabled={auditPage <= 1}
+                onClick={() => setAuditPage(page => page - 1)}
+                className="px-4 py-2 border border-border rounded-full font-bold disabled:opacity-40"
+                data-testid="button-audit-previous"
+              >
+                Previous
+              </button>
+              <span className="text-muted-foreground font-medium">
+                Page {auditPage}
+              </span>
+              <button
+                type="button"
+                disabled={!auditNextCursor}
+                onClick={() => {
+                  if (!auditNextCursor) return;
+                  setAuditCursors(cursors => [...cursors.slice(0, auditPage), auditNextCursor]);
+                  setAuditPage(page => page + 1);
+                }}
+                className="px-4 py-2 border border-border rounded-full font-bold disabled:opacity-40"
+                data-testid="button-audit-next"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       {editingUser && data && (
@@ -581,9 +733,12 @@ function StaffDirectory() {
                 users: prev.users.map(u => u.id === updatedUser.id ? updatedUser : u)
               };
             });
-            api.getAuditHistory().then(audit => setAuditEntries(audit.entries)).catch(() => {
-              setError('Role changed, but the access history could not be refreshed.');
-            });
+            if (auditPage === 1) {
+              loadAuditHistory();
+            } else {
+              setAuditPage(1);
+              setAuditCursors([null]);
+            }
           }}
         />
       )}

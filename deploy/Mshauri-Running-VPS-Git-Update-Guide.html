@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Mshauri — Running VPS Git Update Guide</title>
+  <style>
+    @page { size: A4; margin: 17mm 16mm 19mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #17231d; font: 13px/1.55 Arial, sans-serif; }
+    h1, h2, h3 { line-height: 1.2; page-break-after: avoid; }
+    h1 { margin: 12px 0 7px; font-size: 27px; }
+    h2 { margin: 27px 0 11px; padding-bottom: 6px; border-bottom: 2px solid #dce8df; color: #16803a; font-size: 18px; }
+    h3 { margin: 16px 0 6px; font-size: 14px; }
+    p, li { orphans: 3; widows: 3; }
+    li { margin: 4px 0; }
+    .brand { display: inline-block; padding: 5px 13px; border-radius: 7px; background: #16803a; color: #fff; font-weight: 800; }
+    .subtitle { margin: 0; color: #526158; }
+    .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 20px 0; }
+    .meta div { padding: 9px 10px; border: 1px solid #dce8df; border-radius: 7px; }
+    .meta small { display: block; color: #526158; font-size: 9px; font-weight: bold; text-transform: uppercase; }
+    .meta strong { display: block; font: 10px/1.4 Consolas, monospace; overflow-wrap: anywhere; }
+    .note, .warning, .danger { margin: 12px 0; padding: 12px 14px; border-radius: 7px; page-break-inside: avoid; }
+    .note { border: 1px solid #b9e2c2; background: #f4faf5; }
+    .warning { border: 1px solid #f1cf94; background: #fff7e8; }
+    .danger { border: 1px solid #e5b5b5; background: #fff2f2; }
+    pre { margin: 8px 0 13px; padding: 12px 14px; border-radius: 7px; background: #142019; color: #e7f6e9; font: 11px/1.6 Consolas, monospace; white-space: pre-wrap; page-break-inside: avoid; }
+    code { padding: 1px 4px; border-radius: 3px; background: #edf4ee; color: #125c2b; font: 11px Consolas, monospace; }
+    .step { display: grid; grid-template-columns: 30px 1fr; gap: 11px; margin: 16px 0; page-break-inside: avoid; }
+    .number { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 50%; background: #16803a; color: #fff; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 11px; }
+    th, td { padding: 8px; border: 1px solid #dce8df; vertical-align: top; }
+    th { background: #f5f8f5; text-align: left; }
+    .page-break { page-break-before: always; }
+    footer { margin-top: 32px; padding-top: 10px; border-top: 1px solid #dce8df; color: #526158; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <span class="brand">Mshauri</span>
+  <h1>Updating an Already-Running VPS</h1>
+  <p class="subtitle">Final technician instructions for GitHub updates and the local-change error</p>
+  <div class="meta">
+    <div><small>VPS</small><strong>64.247.178.45</strong></div>
+    <div><small>Domain</small><strong>mshauri.marichomedia.com</strong></div>
+    <div><small>Repository</small><strong>github.com/seanndlovu/Mshauri-AI-Advisor</strong></div>
+  </div>
+
+  <div class="note"><strong>This guide is for an existing installation.</strong> Do not clone Mshauri again and do not run the first-time installer. The routine update script is already inside the repository at <code>deploy/3-update.sh</code>.</div>
+
+  <h2>1. What caused the error?</h2>
+  <p>The VPS ran <code>git pull --ff-only origin main</code>. Git fetched newer commits, then stopped because the VPS had a local edit to:</p>
+  <pre>pnpm-workspace.yaml</pre>
+  <p>The newer GitHub commit also changes that file. Git refuses to overwrite the VPS copy because doing so could delete local work. This is a protection, not a GitHub or Mshauri application failure.</p>
+  <div class="danger"><strong>Important:</strong> the VPS should keep server-specific values in <code>deploy/.env.production</code>. It should not customize <code>pnpm-workspace.yaml</code>. That source file should normally match GitHub.</div>
+
+  <h2>2. One-time repair for the error</h2>
+  <div class="step">
+    <span class="number">1</span>
+    <div><h3>Connect to the running VPS</h3><pre>ssh root@64.247.178.45</pre></div>
+  </div>
+  <div class="step">
+    <span class="number">2</span>
+    <div><h3>Enter the existing repository</h3><pre>cd /var/www/mshauri</pre><p>If that path is different on your VPS, use the folder that contains <code>deploy/3-update.sh</code>.</p></div>
+  </div>
+  <div class="step">
+    <span class="number">3</span>
+    <div><h3>Back up the local file change</h3><pre>git diff -- pnpm-workspace.yaml &gt; /root/pnpm-workspace-local-change.diff
+ls -lh /root/pnpm-workspace-local-change.diff</pre></div>
+  </div>
+  <div class="step">
+    <span class="number">4</span>
+    <div><h3>Check all local changes</h3><pre>git status --short</pre><p>Continue only if the known conflicting source file is <code>pnpm-workspace.yaml</code>. If other important files are listed, stop and review them before restoring anything.</p></div>
+  </div>
+  <div class="step">
+    <span class="number">5</span>
+    <div><h3>Restore the GitHub version of that file</h3><pre>git restore pnpm-workspace.yaml</pre><p>This restores only the conflicting source file. It does not remove the production environment file or advert uploads.</p></div>
+  </div>
+  <div class="step">
+    <span class="number">6</span>
+    <div><h3>Run the update script</h3><pre>bash deploy/3-update.sh</pre></div>
+  </div>
+
+  <div class="page-break"></div>
+  <h2>3. What the update script does</h2>
+  <p><code>deploy/3-update.sh</code> is the only command needed for normal application updates. It:</p>
+  <ol>
+    <li>Pulls the latest code from the GitHub <code>main</code> branch.</li>
+    <li>Preserves the VPS environment configuration.</li>
+    <li>Reconciles PostgreSQL access.</li>
+    <li>Installs packages with the locked versions.</li>
+    <li>Runs the TypeScript library checks.</li>
+    <li>Builds the API and frontend.</li>
+    <li>Applies database schema changes.</li>
+    <li>Restarts the API through PM2.</li>
+  </ol>
+  <div class="warning"><strong>Do not run these for a normal update:</strong> <code>deploy/1-install-vps.sh</code>, <code>deploy/2-setup-app.sh</code>, or <code>git clone</code>. Those are for first-time VPS setup.</div>
+
+  <h2>4. Every time you commit new changes</h2>
+  <h3>On your development computer or Replit</h3>
+  <p>Commit and push the changes to the GitHub <code>main</code> branch. Confirm the push completed before updating the VPS.</p>
+  <h3>On the VPS</h3>
+  <pre>ssh root@64.247.178.45
+cd /var/www/mshauri
+bash deploy/3-update.sh</pre>
+  <p>You do not need to run <code>git pull</code> separately because the update script performs the pull itself.</p>
+
+  <h2>5. Verify every update</h2>
+  <pre>cd /var/www/mshauri
+git log -1 --oneline
+pm2 status
+pm2 logs mshauri-api --lines 50
+sudo nginx -t
+curl -I https://mshauri.marichomedia.com</pre>
+  <p>Expected results:</p>
+  <ul>
+    <li><code>git log</code> shows the latest GitHub commit.</li>
+    <li>PM2 shows <code>mshauri-api</code> online.</li>
+    <li>Nginx reports a successful configuration test.</li>
+    <li>The website responds over HTTPS.</li>
+  </ul>
+
+  <div class="page-break"></div>
+  <h2>6. If an update fails</h2>
+  <h3>Check the repository state</h3>
+  <pre>cd /var/www/mshauri
+git status --short
+git diff --stat</pre>
+  <div class="danger"><strong>Do not use <code>git reset --hard</code> as a first fix.</strong> It can delete local tracked changes. Do not restore files until you know what they contain.</div>
+
+  <h3>If only <code>pnpm-workspace.yaml</code> is listed</h3>
+  <pre>git diff -- pnpm-workspace.yaml &gt; /root/pnpm-workspace-local-change.diff
+git restore pnpm-workspace.yaml
+bash deploy/3-update.sh</pre>
+
+  <h3>If other files are listed</h3>
+  <p>Stop and save the details:</p>
+  <pre>git status --short
+git diff --stat
+git diff -- deploy/.env.production</pre>
+  <p>Do not commit production secrets or use a forced reset. The production environment file should remain local to the VPS. Advert uploads should remain outside the Git checkout.</p>
+
+  <h3>If the API does not restart</h3>
+  <pre>pm2 status
+pm2 logs mshauri-api --lines 100
+pm2 restart mshauri-api --update-env</pre>
+  <p>If the log reports missing environment values or database access errors, check <code>deploy/.env.production</code> and PostgreSQL configuration before retrying the update.</p>
+
+  <h2>7. Quick update card</h2>
+  <pre># Use after every successful GitHub push
+ssh root@64.247.178.45
+cd /var/www/mshauri
+bash deploy/3-update.sh
+pm2 status</pre>
+
+  <footer>Prepared for Maricho Media · Mshauri AI Advisor · September 2026</footer>
+</body>
+</html>

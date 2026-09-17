@@ -19,7 +19,10 @@ export default function LegacyLogin() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const body = await response.json() as { error?: string };
+      const contentType = response.headers.get("content-type") ?? "";
+      const body = contentType.includes("application/json")
+        ? await response.json() as { error?: string }
+        : { error: "The authentication server returned an unexpected response. Please use secure sign-in or try again later." };
       if (!response.ok) throw new Error(body.error || "Sign-in failed");
       setLocation("/");
       window.location.reload();
@@ -33,7 +36,7 @@ export default function LegacyLogin() {
   return (
     <div className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-background px-4">
       <div className="ms-blob ms-blob-1 fixed" style={{ top: "-120px", left: "30%" }} />
-      <form onSubmit={submit} className="relative z-10 w-full max-w-md rounded-2xl border border-[#1a3020] bg-[#0f1e0f] p-8 shadow-2xl">
+      <form onSubmit={submit} className="legacy-login-form relative z-10 w-full max-w-md rounded-2xl border border-[#1a3020] bg-[#0f1e0f] p-8 shadow-2xl">
         <img src="/mshauri-logo.png" alt="Mshauri" className="mx-auto mb-4 h-16 w-16 object-contain" />
         <h1 className="text-center text-2xl font-black text-[#e8f5e9]">Existing Mshauri account</h1>
         <p className="mb-6 mt-2 text-center text-sm text-[#7aad80]">Sign in with the password you already use.</p>

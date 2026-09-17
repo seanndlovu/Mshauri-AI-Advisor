@@ -20,31 +20,36 @@ function formatUser(user: User) {
 }
 
 router.post("/auth/legacy-login", async (req, res): Promise<void> => {
-  const { email, password } = req.body as { email: string; password: string };
+  try {
+    const { email, password } = req.body as { email: string; password: string };
 
-  if (!email || !password) {
-    res.status(400).json({ error: "email and password are required" });
-    return;
-  }
+    if (!email || !password) {
+      res.status(400).json({ error: "email and password are required" });
+      return;
+    }
 
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase())).limit(1);
-  if (!user) {
-    res.status(401).json({ error: "Invalid email or password" });
-    return;
-  }
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase())).limit(1);
+    if (!user) {
+      res.status(401).json({ error: "Invalid email or password" });
+      return;
+    }
 
-  if (!user.passwordHash) {
-    res.status(409).json({ error: "This account uses Google or Clerk email sign-in." });
-    return;
-  }
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) {
-    res.status(401).json({ error: "Invalid email or password" });
-    return;
-  }
+    if (!user.passwordHash) {
+      res.status(409).json({ error: "This account uses Google or Clerk email sign-in." });
+      return;
+    }
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) {
+      res.status(401).json({ error: "Invalid email or password" });
+      return;
+    }
 
-  req.session.userId = user.id;
-  res.json(formatUser(user));
+    req.session.userId = user.id;
+    res.json(formatUser(user));
+  } catch (error) {
+    logger.error({ err: error }, "Legacy sign-in failed unexpectedly");
+    res.status(500).json({ error: "Legacy sign-in is temporarily unavailable. Use secure sign-in or try again later." });
+  }
 });
 
 router.post("/auth/legacy-logout", (req, res): void => {

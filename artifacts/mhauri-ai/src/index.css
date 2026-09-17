@@ -45,6 +45,25 @@
   opacity: 1;
 }
 
+.legacy-login-form input {
+  color: #e8f5e9 !important;
+  caret-color: #e8f5e9 !important;
+  -webkit-text-fill-color: #e8f5e9 !important;
+}
+
+.legacy-login-form input::placeholder {
+  color: #7aad80 !important;
+  opacity: 1;
+}
+
+.legacy-login-form input:-webkit-autofill,
+.legacy-login-form input:-webkit-autofill:hover,
+.legacy-login-form input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #e8f5e9 !important;
+  -webkit-box-shadow: 0 0 0 1000px #111e11 inset !important;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 @theme inline {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));

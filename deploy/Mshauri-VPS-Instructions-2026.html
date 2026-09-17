@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Mshauri VPS Installation and Update Instructions</title>
+  <style>
+    @page { size: A4; margin: 18mm 16mm 20mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #17231d; font: 13px/1.55 Arial, sans-serif; }
+    h1, h2, h3 { line-height: 1.2; page-break-after: avoid; }
+    h1 { margin: 12px 0 7px; font-size: 28px; }
+    h2 { margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #dce8df; color: #16803a; font-size: 18px; }
+    h3 { margin: 18px 0 6px; font-size: 14px; }
+    p, li { orphans: 3; widows: 3; }
+    li { margin: 4px 0; }
+    .brand { display: inline-block; padding: 5px 13px; border-radius: 7px; background: #16803a; color: #fff; font-weight: 800; }
+    .subtitle { margin: 0; color: #526158; }
+    .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 20px 0; }
+    .meta div { padding: 10px; border: 1px solid #dce8df; border-radius: 7px; }
+    .meta small { display: block; color: #526158; font-size: 9px; font-weight: bold; text-transform: uppercase; }
+    .meta strong { font: 11px/1.4 Consolas, monospace; overflow-wrap: anywhere; }
+    .note, .warning { margin: 12px 0; padding: 11px 13px; border-radius: 7px; page-break-inside: avoid; }
+    .note { border: 1px solid #b9e2c2; background: #f4faf5; }
+    .warning { border: 1px solid #f1cf94; background: #fff7e8; }
+    pre { margin: 8px 0 13px; padding: 12px 14px; border-radius: 7px; background: #142019; color: #e7f6e9; font: 11px/1.55 Consolas, monospace; white-space: pre-wrap; page-break-inside: avoid; }
+    code { padding: 1px 4px; border-radius: 3px; background: #edf4ee; color: #125c2b; font: 11px Consolas, monospace; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 11px; }
+    th, td { padding: 8px; border: 1px solid #dce8df; vertical-align: top; }
+    th { background: #f5f8f5; text-align: left; }
+    .page-break { page-break-before: always; }
+    footer { margin-top: 35px; padding-top: 10px; border-top: 1px solid #dce8df; color: #526158; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <span class="brand">Mshauri</span>
+  <h1>VPS Installation and Update Instructions</h1>
+  <p class="subtitle">Technician guide for the Maricho Media production server</p>
+  <div class="meta">
+    <div><small>Server</small><strong>64.247.178.45</strong></div>
+    <div><small>Domain</small><strong>mshauri.marichomedia.com</strong></div>
+    <div><small>Repository</small><strong>github.com/seanndlovu/Mshauri-AI-Advisor</strong></div>
+  </div>
+
+  <div class="note"><strong>For an existing installation:</strong> go directly to “Routine Git update” on page 4. The repository contains the update script at <code>deploy/3-update.sh</code>.</div>
+  <div class="warning"><strong>Security:</strong> never commit <code>deploy/.env.production</code>, database passwords, Clerk keys, session secrets, or the configured Owner email to Git.</div>
+
+  <h2>1. Point the domain to the VPS</h2>
+  <p>Create or update this DNS record for <strong>marichomedia.com</strong>:</p>
+  <pre>Type: A
+Name: mshauri
+Value: 64.247.178.45
+TTL: 300 or Auto</pre>
+  <p>Confirm it resolves correctly:</p>
+  <pre>nslookup mshauri.marichomedia.com</pre>
+
+  <h2>2. Connect and download Mshauri</h2>
+  <pre>ssh root@64.247.178.45
+mkdir -p /var/www
+cd /var/www
+git clone https://github.com/seanndlovu/Mshauri-AI-Advisor.git mshauri
+cd /var/www/mshauri</pre>
+  <p>If the repository already exists, do not clone it again:</p>
+  <pre>cd /var/www/mshauri
+git pull --ff-only origin main</pre>
+
+  <h2>3. Install server software</h2>
+  <p>Run this once on a new Ubuntu VPS:</p>
+  <pre>cd /var/www/mshauri
+sudo bash deploy/1-install-vps.sh</pre>
+  <p>This installs Node.js, pnpm, PM2, PostgreSQL, Nginx and Certbot.</p>
+
+  <div class="page-break"></div>
+  <h2>4. Configure the production environment</h2>
+  <pre>cd /var/www/mshauri
+cp deploy/.env.example deploy/.env.production
+nano deploy/.env.production</pre>
+  <p>Complete the values described in the file. Authentication requires the production Clerk credentials and these settings:</p>
+  <table>
+    <tr><th>Setting</th><th>Purpose</th></tr>
+    <tr><td><code>CLERK_SECRET_KEY</code></td><td>Server-side Clerk authentication key.</td></tr>
+    <tr><td><code>VITE_CLERK_PUBLISHABLE_KEY</code></td><td>Public Clerk key used by the web application.</td></tr>
+    <tr><td><code>SESSION_SECRET</code></td><td>Long random value used to secure server sessions.</td></tr>
+    <tr><td><code>OWNER_BOOTSTRAP_EMAIL</code></td><td>Verified email permitted to claim the first Owner role. Configure the approved first Owner email.</td></tr>
+    <tr><td><code>APP_ORIGIN</code></td><td><code>https://mshauri.marichomedia.com</code></td></tr>
+  </table>
+  <p>Generate a session secret if needed:</p>
+  <pre>openssl rand -hex 32</pre>
+  <div class="warning">Use Clerk <strong>production</strong> keys on the VPS. Add <code>mshauri.marichomedia.com</code> to the production Clerk instance and configure the permitted redirect/origin settings there.</div>
+
+  <h2>5. Build and launch the first installation</h2>
+  <pre>cd /var/www/mshauri
+bash deploy/2-setup-app.sh</pre>
+  <p>The setup script installs packages, configures PostgreSQL, builds the API and website, applies the database schema, configures Nginx and starts the API with PM2.</p>
+
+  <h2>6. Enable HTTPS</h2>
+  <p>Only continue after DNS resolves to the VPS:</p>
+  <pre>sudo certbot --nginx -d mshauri.marichomedia.com
+sudo nginx -t
+sudo systemctl reload nginx</pre>
+
+  <h2>7. Verify the first installation</h2>
+  <pre>pm2 status
+pm2 logs mshauri-api --lines 50
+sudo nginx -t
+curl -I https://mshauri.marichomedia.com</pre>
+  <p>Open <code>https://mshauri.marichomedia.com</code> in a browser and test sign-in.</p>
+
+  <div class="page-break"></div>
+  <h2>8. Activate Owner and staff access</h2>
+  <ol>
+    <li>Sign in using the verified Clerk or Google account matching <code>OWNER_BOOTSTRAP_EMAIL</code>.</li>
+    <li>Open <code>https://mshauri.marichomedia.com/admin/staff</code>.</li>
+    <li>Claim the first Owner role.</li>
+    <li>Additional staff must register or sign in once with their own verified email.</li>
+    <li>The Owner can then assign Owner, Market Price Editor, Ad Manager, or No Staff Access.</li>
+  </ol>
+  <div class="note">The final remaining Owner cannot be removed or downgraded. Staff continue to use their own personal login details; assigning a role does not create or reveal a password.</div>
+
+  <h2>9. Staff-access audit history</h2>
+  <p>The current release permanently records staff role changes in PostgreSQL. The update script applies the required database schema automatically. Owners can review the history from the Staff Access area.</p>
+
+  <h2>10. Routine Git update</h2>
+  <p>After new code has been pushed to GitHub:</p>
+  <pre>ssh root@64.247.178.45
+cd /var/www/mshauri
+bash deploy/3-update.sh</pre>
+  <p>The script performs the following work:</p>
+  <ul>
+    <li>Runs <code>git pull --ff-only</code>.</li>
+    <li>Reconciles PostgreSQL access and installs dependencies.</li>
+    <li>Builds the API and frontend.</li>
+    <li>Applies database schema changes.</li>
+    <li>Restarts <code>mshauri-api</code> with PM2.</li>
+  </ul>
+  <p>Verify the update:</p>
+  <pre>pm2 status
+pm2 logs mshauri-api --lines 50
+curl -I https://mshauri.marichomedia.com</pre>
+
+  <div class="warning"><strong>If <code>git pull --ff-only</code> fails:</strong> do not run a forced reset until any local VPS changes have been reviewed and backed up. Check <code>git status</code> and preserve <code>deploy/.env.production</code> and uploaded advert files.</div>
+
+  <div class="page-break"></div>
+  <h2>11. Useful maintenance commands</h2>
+  <table>
+    <tr><th>Purpose</th><th>Command</th></tr>
+    <tr><td>API status</td><td><code>pm2 status</code></td></tr>
+    <tr><td>API logs</td><td><code>pm2 logs mshauri-api</code></td></tr>
+    <tr><td>Restart API</td><td><code>pm2 restart mshauri-api --update-env</code></td></tr>
+    <tr><td>Test Nginx</td><td><code>sudo nginx -t</code></td></tr>
+    <tr><td>Reload Nginx</td><td><code>sudo systemctl reload nginx</code></td></tr>
+    <tr><td>PostgreSQL status</td><td><code>sudo systemctl status postgresql</code></td></tr>
+    <tr><td>Certificate status</td><td><code>sudo certbot certificates</code></td></tr>
+    <tr><td>Find update script</td><td><code>sudo find / -type f -path "*/deploy/3-update.sh" 2&gt;/dev/null</code></td></tr>
+  </table>
+
+  <h2>12. Common problems</h2>
+  <table>
+    <tr><th>Problem</th><th>Action</th></tr>
+    <tr><td><code>deploy/3-update.sh</code> not found</td><td>Enter the cloned repository directory first, normally <code>/var/www/mshauri</code>.</td></tr>
+    <tr><td>API is offline</td><td>Run <code>pm2 logs mshauri-api --lines 100</code> and check environment/database errors.</td></tr>
+    <tr><td>Database schema error after update</td><td>Run <code>bash deploy/3-update.sh</code> again after fixing the reported database configuration.</td></tr>
+    <tr><td>Clerk login fails</td><td>Check production Clerk keys, domain configuration, HTTPS, and application origin.</td></tr>
+    <tr><td>First Owner cannot claim access</td><td>Confirm the signed-in Clerk identity is verified and exactly matches <code>OWNER_BOOTSTRAP_EMAIL</code>.</td></tr>
+    <tr><td>Port 80 already in use</td><td>Check <code>sudo lsof -i :80</code>; disable Apache if it conflicts with Nginx.</td></tr>
+  </table>
+
+  <footer>Prepared for Maricho Media · Mshauri AI Advisor · Updated September 2026</footer>
+</body>
+</html>

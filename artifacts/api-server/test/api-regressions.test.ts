@@ -101,10 +101,15 @@ function createFakeDatabase({
   }
 
   return {
-    select() {
+    select(selection?: Record<string, unknown>) {
       let table: unknown;
       let conditions: unknown[] = [];
-      const rows = () => matchingRows(table, conditions);
+      let limit: number | undefined;
+      const rows = () => {
+        const matches = matchingRows(table, conditions);
+        if (selection && "total" in selection) return [{ total: matches.length }];
+        return matches.slice(0, limit);
+      };
 
       const query = {
         from(nextTable: unknown) {
@@ -118,8 +123,9 @@ function createFakeDatabase({
         orderBy() {
           return query;
         },
-        limit(limit: number) {
-          return Promise.resolve(rows().slice(0, limit));
+        limit(nextLimit: number) {
+          limit = nextLimit;
+          return query;
         },
         then<TResult1 = unknown[], TResult2 = never>(
           onfulfilled?: ((value: unknown[]) => TResult1 | PromiseLike<TResult1>) | null,
@@ -608,6 +614,10 @@ test("Owners can assign staff roles without ever removing the final Owner", asyn
   assert.equal(audits.length, 3, "only successful role changes are audited");
   assert.equal(history.status, 200);
   assert.equal((history.body as { entries: unknown[] }).entries.length, 3);
+  assert.deepEqual((history.body as { pagination: unknown }).pagination, {
+    pageSize: 20,
+    nextCursor: null,
+  });
 });
 
 test("publishing an edition archives the previous edition and exposes only the new one", async () => {
