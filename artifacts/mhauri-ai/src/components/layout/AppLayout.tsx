@@ -617,7 +617,10 @@ function SidebarContent({ onNavigate, onPlayQuiz }: { onNavigate?: () => void; o
               <NavLink path="/admin/ads" label="Ads Manager" icon={Megaphone} onClick={onNavigate} />
             )}
             {user.adminRole === 'owner' && (
-              <NavLink path="/admin/staff" label="Staff Access" icon={Shield} onClick={onNavigate} />
+              <>
+                <NavLink path="/analytics" label="Analytics" icon={BarChart2} onClick={onNavigate} />
+                <NavLink path="/admin/staff" label="Staff Access" icon={Shield} onClick={onNavigate} />
+              </>
             )}
           </nav>
         </>

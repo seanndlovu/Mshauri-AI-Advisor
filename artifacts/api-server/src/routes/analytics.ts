@@ -1,10 +1,14 @@
 import { Router, type IRouter } from "express";
 import { eq, gte, sql } from "drizzle-orm";
 import { anonymousUsageEventsTable, db, analyticsEventsTable, farmersTable } from "@workspace/db";
+import { requireOwner } from "../lib/admin-access";
 
 const router: IRouter = Router();
 
 router.get("/analytics/summary", async (req, res): Promise<void> => {
+  const owner = await requireOwner(req, res);
+  if (!owner) return;
+
   const daysRaw = req.query.days as string | undefined;
   const days = Math.min(Math.max(parseInt(daysRaw ?? "30", 10) || 30, 1), 365);
 

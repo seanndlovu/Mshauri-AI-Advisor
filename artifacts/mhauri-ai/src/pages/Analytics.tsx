@@ -15,7 +15,7 @@ export default function Analytics() {
   const [days, setDays] = useState(30);
   const queryClient = useQueryClient();
 
-  const { data: summary, isLoading, isFetching } = useGetAnalyticsSummary({
+  const { data: summary, isLoading, isFetching, isError } = useGetAnalyticsSummary({
     days
   });
 
@@ -66,6 +66,17 @@ export default function Analytics() {
 
       <div className="flex-1 overflow-auto p-6">
         <div className="flex flex-col gap-6 max-w-6xl mx-auto">
+          {isError && (
+            <Card className="border-red-500/30">
+              <CardContent className="p-5">
+                <p className="font-semibold text-red-600">Analytics is only available to the Mshauri Owner.</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Sign in with the verified Owner account, then use Admin Desk → Analytics.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Top Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <StatCard
