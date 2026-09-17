@@ -8,42 +8,46 @@ const SECTIONS = [
   },
   {
     title: "2. Information We Collect",
-    body: `We may collect:\n• Account information — name, email address, province, and role when you register\n• Conversation data — messages, questions, and AI chat history\n• Content you submit — posts, comments, images, audio, video, and documents\n• Usage data — pages visited, features used, timestamps, and interaction patterns\n• Device and technical data — IP address, browser type, and operating system\n• WhatsApp data — phone number, messages, and interactions through our WhatsApp bot`,
+    body: `We may collect:\n• Account information — name, email address, province, and role when you register\n• Conversation data — messages, questions, and AI chat history\n• Content you submit — posts, comments, images, audio, video, and documents\n• Optional anonymous usage data — popular features and farming-topic patterns when you allow analytics\n• Device and technical data — IP address, browser type, and operating system\n• WhatsApp data — phone number, messages, and interactions through our WhatsApp bot`,
   },
   {
     title: "3. How We Use Your Information",
     body: `We use your information to:\n• Provide and operate the Mshauri AI platform\n• Personalise agricultural advice and recommendations\n• Improve and train our AI models with anonymised or aggregated data\n• Send service notifications, security alerts, and account updates\n• Conduct research, analytics, and platform development\n• Prevent fraud, abuse, and unauthorised access\n• Comply with applicable laws and regulations`,
   },
   {
-    title: "4. AI Training",
+    title: "4. Your Privacy Choices",
+    body: `Keep Mshauri working — To provide your account and the core Mshauri service, we use account details, authentication, and basic app operation.\n\nHelp us improve Mshauri — If you choose to allow analytics, we use anonymous usage patterns, such as popular features and farming topics, to make the app more useful. This does not include your password or private conversation content.\n\nOptional marketing messages — If you choose to receive them, we may send useful farming tips, market updates, and relevant Mshauri news by email or WhatsApp. You can unsubscribe at any time.\n\nYou can review or change the optional choices from your profile settings. Choosing not to allow analytics or marketing does not remove your account or existing Mshauri content.`,
+  },
+  {
+    title: "5. AI Training",
     body: `Content you submit — including conversations, uploaded images, audio recordings, voice notes, documents, and feedback — may be used to improve, train, evaluate, and develop Mshauri AI. Where practical, Maricho Media may aggregate, anonymise, or pseudonymise information before using it for AI training and research. You may request information about the use of your personal data by contacting privacy@marichomedia.com.`,
   },
   {
-    title: "5. Data Sharing",
+    title: "6. Data Sharing",
     body: `We do not sell your personal information. We may share data with:\n• Cloud and infrastructure providers necessary to operate the platform\n• AI and analytics service providers under appropriate data processing agreements\n• Law enforcement or government bodies where required by law\n• Successor entities in the event of a merger, acquisition, or sale of assets\n\nAll third-party service providers are required to handle your data securely and in accordance with this policy.`,
   },
   {
-    title: "6. Data Retention",
+    title: "7. Data Retention",
     body: `We retain your personal information for as long as your account is active or as required to provide the Services. When account data is no longer needed, we delete or anonymise it in accordance with our data retention schedule. Conversation histories may be retained for AI improvement and safety purposes in anonymised form.`,
   },
   {
-    title: "7. Your Rights",
+    title: "8. Your Rights",
     body: `Subject to applicable law, you have the right to:\n• Access personal information we hold about you\n• Request correction of inaccurate information\n• Request deletion of your personal information\n• Withdraw consent where processing is consent-based\n• Object to certain uses of your information\n\nTo exercise any of these rights, contact us at privacy@marichomedia.com.`,
   },
   {
-    title: "8. Security",
+    title: "9. Security",
     body: `We implement appropriate technical and organisational measures to protect your personal information against unauthorised access, loss, destruction, or alteration. However, no internet transmission is completely secure and we cannot guarantee absolute security.`,
   },
   {
-    title: "9. Children",
+    title: "10. Children",
     body: `Mshauri AI is not directed at children under the age of 13. We do not knowingly collect personal information from children. If you believe a child has provided us with personal information, please contact us immediately at privacy@marichomedia.com.`,
   },
   {
-    title: "10. Changes to This Policy",
+    title: "11. Changes to This Policy",
     body: `We may update this Privacy Policy from time to time. Updated versions will be published on the platform and will become effective upon publication. Continued use of the Services after changes take effect constitutes acceptance of the revised policy. We encourage you to review this policy periodically.`,
   },
   {
-    title: "11. Contact",
+    title: "12. Contact",
     body: `Five Talents (Pvt) Ltd. / Maricho Media\nZimbabwe\nEmail: privacy@marichomedia.com\nWebsite: mshauri.marichomedia.com`,
   },
 ];

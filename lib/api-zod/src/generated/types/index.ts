@@ -11,6 +11,7 @@ export * from './addEmailContactInput';
 export * from './addWhatsappContact409';
 export * from './addWhatsappContactInput';
 export * from './analyticsSummary';
+export * from './analyticsSummaryAnonymousFeatureUsageItem';
 export * from './analyticsSummaryLanguageBreakdown';
 export * from './analyticsSummaryMessagesPerDayItem';
 export * from './analyticsSummaryTopEventTypesItem';

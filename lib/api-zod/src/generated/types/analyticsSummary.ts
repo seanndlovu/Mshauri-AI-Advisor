@@ -5,6 +5,7 @@
  * Mhauri AI Agriculture Assistant API
  * OpenAPI spec version: 0.1.0
  */
+import type { AnalyticsSummaryAnonymousFeatureUsageItem } from './analyticsSummaryAnonymousFeatureUsageItem';
 import type { AnalyticsSummaryLanguageBreakdown } from './analyticsSummaryLanguageBreakdown';
 import type { AnalyticsSummaryMessagesPerDayItem } from './analyticsSummaryMessagesPerDayItem';
 import type { AnalyticsSummaryTopEventTypesItem } from './analyticsSummaryTopEventTypesItem';
@@ -15,4 +16,5 @@ export interface AnalyticsSummary {
   languageBreakdown: AnalyticsSummaryLanguageBreakdown;
   messagesPerDay: AnalyticsSummaryMessagesPerDayItem[];
   topEventTypes: AnalyticsSummaryTopEventTypesItem[];
+  anonymousFeatureUsage: AnalyticsSummaryAnonymousFeatureUsageItem[];
 }

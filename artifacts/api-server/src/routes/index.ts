@@ -16,6 +16,7 @@ import { gameRouter } from "./game";
 import { zmxRouter } from "./zmx";
 import { adsRouter } from "./ads";
 import { staffRouter } from "./staff";
+import privacyRouter from "./privacy";
 
 const router: IRouter = Router();
 
@@ -36,5 +37,6 @@ router.use(gameRouter);
 router.use(zmxRouter);
 router.use(adsRouter);
 router.use(staffRouter);
+router.use(privacyRouter);
 
 export default router;

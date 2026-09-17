@@ -734,7 +734,7 @@ components:
 
     AnalyticsSummary:
       type: object
-      required: [totalMessages, totalFarmers, languageBreakdown, messagesPerDay, topEventTypes]
+      required: [totalMessages, totalFarmers, languageBreakdown, messagesPerDay, topEventTypes, anonymousFeatureUsage]
       properties:
         totalMessages:
           type: integer
@@ -761,6 +761,16 @@ components:
             required: [eventType, count]
             properties:
               eventType:
+                type: string
+              count:
+                type: integer
+        anonymousFeatureUsage:
+          type: array
+          items:
+            type: object
+            required: [feature, count]
+            properties:
+              feature:
                 type: string
               count:
                 type: integer

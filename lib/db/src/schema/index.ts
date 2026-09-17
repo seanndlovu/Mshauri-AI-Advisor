@@ -10,3 +10,4 @@ export * from "./users";
 export * from "./staff-access-audit";
 export * from "./community";
 export * from "./whatsapp-subscriptions";
+export * from "./privacy";

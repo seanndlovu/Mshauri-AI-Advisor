@@ -32,6 +32,65 @@ const WA_LINK = "https://wa.me/263714280244?text=Hi%2C%20I%20want%20to%20connect
 
 const CREATE_BUTTON_ROUTES = ["/feed", "/communities"];
 
+const ANALYTICS_FEATURES = [
+  { prefix: "/conversations/", feature: "conversation" },
+  { prefix: "/communities/", feature: "community" },
+  { prefix: "/admin/", feature: "analytics" },
+] as const;
+
+function featureForPath(path: string): string {
+  const matched = ANALYTICS_FEATURES.find(({ prefix }) => path.startsWith(prefix));
+  if (matched) return matched.feature;
+  const feature = path.split("/").filter(Boolean)[0] || "home";
+  return [
+    "feed", "magazine", "prices", "weather", "communities", "profile",
+    "farmers", "broadcasts", "analytics", "whatsapp",
+  ].includes(feature) ? feature : "home";
+}
+
+function PrivacyUsageTracker() {
+  const { user } = useAuth();
+  const [location] = useLocation();
+  const [analyticsConsent, setAnalyticsConsent] = useState(false);
+  const [preferencesLoadedFor, setPreferencesLoadedFor] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setAnalyticsConsent(false);
+      setPreferencesLoadedFor(null);
+      return;
+    }
+    if (preferencesLoadedFor === user.id) return;
+
+    let cancelled = false;
+    fetch("/api/privacy/preferences", { credentials: "include" })
+      .then((response) => response.ok ? response.json() as Promise<{ analyticsConsent: boolean }> : null)
+      .then((preferences) => {
+        if (!cancelled) {
+          setAnalyticsConsent(preferences?.analyticsConsent ?? false);
+          setPreferencesLoadedFor(user.id);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setPreferencesLoadedFor(user.id);
+      });
+
+    return () => { cancelled = true; };
+  }, [preferencesLoadedFor, user]);
+
+  useEffect(() => {
+    if (!user || !analyticsConsent || preferencesLoadedFor !== user.id) return;
+    void fetch("/api/privacy/usage-events", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventType: "page_view", feature: featureForPath(location) }),
+    }).catch(() => undefined);
+  }, [analyticsConsent, location, preferencesLoadedFor, user]);
+
+  return null;
+}
+
 function CreatePostButton() {
   const [location, setLocation] = useLocation();
 
@@ -195,6 +254,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-[100dvh] w-full bg-[#1a1a1b] text-[#d7dadc] overflow-hidden ms-theme-transition">
+      <PrivacyUsageTracker />
       <aside className="hidden md:flex flex-col w-[240px] bg-[#1a1a1b] border-r border-[#343536] shrink-0 h-full overflow-y-auto ms-theme-transition">
         <SidebarContent onPlayQuiz={() => setQuizOpen(true)} />
       </aside>

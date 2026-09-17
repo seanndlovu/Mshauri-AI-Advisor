@@ -58,6 +58,7 @@ SQL
   sudo -u postgres psql -v ON_ERROR_STOP=1 --dbname="$DB_NAME" <<SQL
 ALTER SCHEMA public OWNER TO "$DB_USER";
 GRANT USAGE, CREATE ON SCHEMA public TO "$DB_USER";
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 SQL
 
   echo "Checking the application database login..."

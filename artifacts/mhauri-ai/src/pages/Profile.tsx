@@ -2,6 +2,7 @@ import { useState, FormEvent } from "react";
 import { Link, useLocation } from "wouter";
 import { MapPin, LogOut, Check, X, ChevronRight } from "lucide-react";
 import { useAuth, type UserRole } from "@/hooks/use-auth";
+import PrivacyPreferencesCard from "@/components/PrivacyPreferencesCard";
 
 /* ─── constants ───────────────────────────────────────── */
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -249,6 +250,8 @@ export default function Profile() {
             </button>
           </form>
         )}
+
+        <PrivacyPreferencesCard />
 
         {saved && (
           <p className="text-[#22c55e] text-[13px] text-center mb-3 font-semibold">✓ Settings saved</p>

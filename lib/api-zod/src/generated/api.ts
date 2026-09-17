@@ -344,6 +344,10 @@ export const GetAnalyticsSummaryResponse = zod.object({
   "topEventTypes": zod.array(zod.object({
   "eventType": zod.string(),
   "count": zod.number()
+})),
+  "anonymousFeatureUsage": zod.array(zod.object({
+  "feature": zod.string(),
+  "count": zod.number()
 }))
 })
 

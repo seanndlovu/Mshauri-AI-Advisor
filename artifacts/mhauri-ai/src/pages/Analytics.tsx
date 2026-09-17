@@ -196,6 +196,33 @@ export default function Analytics() {
               )}
             </CardContent>
           </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Anonymous feature interest</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-4 text-xs text-muted-foreground">
+                  Based only on users who allowed anonymous analytics. No account or conversation details are shown.
+                </p>
+                {isLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map(i => <Skeleton key={i} className="h-8 w-full" />)}
+                  </div>
+                ) : !summary?.anonymousFeatureUsage?.length ? (
+                  <div className="h-24 flex items-center justify-center text-muted-foreground">No consented analytics yet</div>
+                ) : (
+                  <div className="space-y-3">
+                    {summary.anonymousFeatureUsage.slice(0, 8).map((item) => (
+                      <div key={item.feature} className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2">
+                        <span className="text-sm font-medium capitalize">{item.feature}</span>
+                        <span className="text-sm text-muted-foreground">{item.count} views</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
         </div>
       </div>
     </div>

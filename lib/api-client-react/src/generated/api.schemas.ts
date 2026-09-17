@@ -237,12 +237,18 @@ export type AnalyticsSummaryTopEventTypesItem = {
   count: number;
 };
 
+export type AnalyticsSummaryAnonymousFeatureUsageItem = {
+  feature: string;
+  count: number;
+};
+
 export interface AnalyticsSummary {
   totalMessages: number;
   totalFarmers: number;
   languageBreakdown: AnalyticsSummaryLanguageBreakdown;
   messagesPerDay: AnalyticsSummaryMessagesPerDayItem[];
   topEventTypes: AnalyticsSummaryTopEventTypesItem[];
+  anonymousFeatureUsage: AnalyticsSummaryAnonymousFeatureUsageItem[];
 }
 
 export type ContactType = typeof ContactType[keyof typeof ContactType];

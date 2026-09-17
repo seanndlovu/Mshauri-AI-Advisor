@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, gte, sql } from "drizzle-orm";
-import { db, analyticsEventsTable, farmersTable } from "@workspace/db";
+import { anonymousUsageEventsTable, db, analyticsEventsTable, farmersTable } from "@workspace/db";
 
 const router: IRouter = Router();
 
@@ -61,6 +61,16 @@ router.get("/analytics/summary", async (req, res): Promise<void> => {
     .groupBy(analyticsEventsTable.eventType)
     .orderBy(sql`COUNT(*) DESC`);
 
+  const anonymousFeatureRows = await db
+    .select({
+      feature: anonymousUsageEventsTable.feature,
+      count: sql<number>`COUNT(*)::int`.as("count"),
+    })
+    .from(anonymousUsageEventsTable)
+    .where(gte(anonymousUsageEventsTable.createdAt, cutoff))
+    .groupBy(anonymousUsageEventsTable.feature)
+    .orderBy(sql`COUNT(*) DESC`);
+
   res.json({
     totalMessages: Number(totalMessagesRow?.count ?? 0),
     totalFarmers: Number(totalFarmersRow?.count ?? 0),
@@ -71,6 +81,10 @@ router.get("/analytics/summary", async (req, res): Promise<void> => {
     })),
     topEventTypes: eventTypeRows.map((r) => ({
       eventType: r.eventType,
+      count: Number(r.count),
+    })),
+    anonymousFeatureUsage: anonymousFeatureRows.map((r) => ({
+      feature: r.feature,
       count: Number(r.count),
     })),
   });
