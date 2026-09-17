@@ -20,6 +20,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AdAnalyticsEventInput,
   AddEmailContact409,
   AddEmailContactInput,
   AddWhatsappContact409,
@@ -1497,6 +1498,77 @@ export function useGetAnalyticsSummary<TData = Awaited<ReturnType<typeof getAnal
 
 
 
+
+export const getRecordAdAnalyticsEventUrl = () => {
+
+
+
+
+  return `/api/ads/events`
+}
+
+/**
+ * @summary Record a consented anonymous advert impression or click
+ */
+export const recordAdAnalyticsEvent = async (adAnalyticsEventInput: AdAnalyticsEventInput, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getRecordAdAnalyticsEventUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      adAnalyticsEventInput,)
+  }
+);}
+
+
+
+
+export const getRecordAdAnalyticsEventMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordAdAnalyticsEvent>>, TError,{data: BodyType<AdAnalyticsEventInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordAdAnalyticsEvent>>, TError,{data: BodyType<AdAnalyticsEventInput>}, TContext> => {
+
+const mutationKey = ['recordAdAnalyticsEvent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordAdAnalyticsEvent>>, {data: BodyType<AdAnalyticsEventInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  recordAdAnalyticsEvent(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordAdAnalyticsEventMutationResult = NonNullable<Awaited<ReturnType<typeof recordAdAnalyticsEvent>>>
+    export type RecordAdAnalyticsEventMutationBody = BodyType<AdAnalyticsEventInput>
+    export type RecordAdAnalyticsEventMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Record a consented anonymous advert impression or click
+ */
+export const useRecordAdAnalyticsEvent = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordAdAnalyticsEvent>>, TError,{data: BodyType<AdAnalyticsEventInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordAdAnalyticsEvent>>,
+        TError,
+        {data: BodyType<AdAnalyticsEventInput>},
+        TContext
+      > => {
+      return useMutation(getRecordAdAnalyticsEventMutationOptions(options));
+    }
 
 export const getListContactsUrl = () => {
 

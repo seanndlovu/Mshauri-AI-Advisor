@@ -3,6 +3,7 @@ export * from "./knowledge";
 export * from "./farmers";
 export * from "./market-prices";
 export * from "./ads";
+export * from "./ad-analytics";
 export * from "./broadcasts";
 export * from "./analytics";
 export * from "./contacts";

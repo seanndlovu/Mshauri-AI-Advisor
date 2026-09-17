@@ -5,7 +5,13 @@
  * Mhauri AI Agriculture Assistant API
  * OpenAPI spec version: 0.1.0
  */
+import type { AdAnalyticsTotals } from './adAnalyticsTotals';
+import type { AdCampaignAnalytics } from './adCampaignAnalytics';
+import type { AdPlacementAnalytics } from './adPlacementAnalytics';
+import type { AnalyticsSummaryAdPerformancePerDayItem } from './analyticsSummaryAdPerformancePerDayItem';
 import type { AnalyticsSummaryAnonymousFeatureUsageItem } from './analyticsSummaryAnonymousFeatureUsageItem';
+import type { AnalyticsSummaryConsentedUsage } from './analyticsSummaryConsentedUsage';
+import type { AnalyticsSummaryConsentedUsagePerDayItem } from './analyticsSummaryConsentedUsagePerDayItem';
 import type { AnalyticsSummaryLanguageBreakdown } from './analyticsSummaryLanguageBreakdown';
 import type { AnalyticsSummaryMessagesPerDayItem } from './analyticsSummaryMessagesPerDayItem';
 import type { AnalyticsSummaryTopEventTypesItem } from './analyticsSummaryTopEventTypesItem';
@@ -17,4 +23,10 @@ export interface AnalyticsSummary {
   messagesPerDay: AnalyticsSummaryMessagesPerDayItem[];
   topEventTypes: AnalyticsSummaryTopEventTypesItem[];
   anonymousFeatureUsage: AnalyticsSummaryAnonymousFeatureUsageItem[];
+  consentedUsage: AnalyticsSummaryConsentedUsage;
+  consentedUsagePerDay: AnalyticsSummaryConsentedUsagePerDayItem[];
+  adTotals: AdAnalyticsTotals;
+  adCampaigns: AdCampaignAnalytics[];
+  adPerformancePerDay: AnalyticsSummaryAdPerformancePerDayItem[];
+  adPlacementPerformance: AdPlacementAnalytics[];
 }

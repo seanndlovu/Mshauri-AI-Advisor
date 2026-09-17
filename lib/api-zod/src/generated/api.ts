@@ -348,7 +348,64 @@ export const GetAnalyticsSummaryResponse = zod.object({
   "anonymousFeatureUsage": zod.array(zod.object({
   "feature": zod.string(),
   "count": zod.number()
+})),
+  "consentedUsage": zod.object({
+  "pageViews": zod.number(),
+  "featureActions": zod.number()
+}),
+  "consentedUsagePerDay": zod.array(zod.object({
+  "date": zod.string(),
+  "pageViews": zod.number(),
+  "featureActions": zod.number()
+})),
+  "adTotals": zod.object({
+  "impressions": zod.number(),
+  "clicks": zod.number(),
+  "uniqueReach": zod.number(),
+  "uniqueClickers": zod.number(),
+  "clickThroughRate": zod.number()
+}),
+  "adCampaigns": zod.array(zod.object({
+  "adId": zod.number(),
+  "campaign": zod.string(),
+  "advertiserName": zod.string(),
+  "status": zod.string(),
+  "placement": zod.string(),
+  "billingModel": zod.enum(['flat', 'cpm', 'cpc']),
+  "currency": zod.string(),
+  "rateCents": zod.number().nullish(),
+  "budgetCents": zod.number().nullish(),
+  "impressions": zod.number(),
+  "clicks": zod.number(),
+  "uniqueReach": zod.number(),
+  "uniqueClickers": zod.number(),
+  "clickThroughRate": zod.number(),
+  "estimatedRevenueCents": zod.number().nullish()
+})),
+  "adPerformancePerDay": zod.array(zod.object({
+  "date": zod.string(),
+  "impressions": zod.number(),
+  "clicks": zod.number()
+})),
+  "adPlacementPerformance": zod.array(zod.object({
+  "placement": zod.string(),
+  "pagePath": zod.string(),
+  "impressions": zod.number(),
+  "clicks": zod.number(),
+  "clickThroughRate": zod.number()
 }))
+})
+
+
+/**
+ * @summary Record a consented anonymous advert impression or click
+ */
+export const RecordAdAnalyticsEventBody = zod.object({
+  "adId": zod.number(),
+  "eventType": zod.enum(['impression', 'click']),
+  "placement": zod.enum(['sidebar_square']),
+  "pagePath": zod.string(),
+  "visitorToken": zod.string()
 })
 
 

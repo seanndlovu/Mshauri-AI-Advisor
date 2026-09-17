@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 // --- Types ---
 type AdStatus = 'draft' | 'active' | 'paused' | 'expired';
 type AdPlacement = 'sidebar_square';
+type BillingModel = 'flat' | 'cpm' | 'cpc';
 
 interface Ad {
   id: number;
@@ -18,6 +19,10 @@ interface Ad {
   altText: string;
   placement: AdPlacement;
   status: AdStatus;
+  billingModel: BillingModel;
+  currency: string;
+  rateCents: number | null;
+  budgetCents: number | null;
   startDate: string | null;
   endDate: string | null;
   createdAt: string;
@@ -100,6 +105,16 @@ function formatDate(dateStr: string | null) {
   }
 }
 
+function centsToInput(cents: number | null | undefined) {
+  return cents === null || cents === undefined ? '' : (cents / 100).toFixed(2);
+}
+
+function inputToCents(value: string) {
+  if (!value.trim()) return null;
+  const amount = Number(value);
+  return Number.isFinite(amount) && amount >= 0 ? Math.round(amount * 100) : null;
+}
+
 // --- Shared UI Components ---
 function Modal({ title, onClose, children, maxWidth = 'max-w-md' }: { title: string; onClose: () => void; children: React.ReactNode; maxWidth?: string }) {
   return (
@@ -151,6 +166,10 @@ function AdModal({ ad, onClose, onSuccess }: { ad: Ad | null; onClose: () => voi
     imageUrl: ad?.imageUrl || '',
     altText: ad?.altText || '',
     status: ad?.status || 'draft',
+    billingModel: ad?.billingModel || 'flat',
+    currency: ad?.currency || 'USD',
+    rate: centsToInput(ad?.rateCents),
+    budget: centsToInput(ad?.budgetCents),
     startDate: ad?.startDate ? ad.startDate.split('T')[0] : '',
     endDate: ad?.endDate ? ad.endDate.split('T')[0] : '',
   });
@@ -166,6 +185,10 @@ function AdModal({ ad, onClose, onSuccess }: { ad: Ad | null; onClose: () => voi
       const payload = {
         ...data,
         placement: 'sidebar_square',
+        billingModel: data.billingModel,
+        currency: data.currency,
+        rateCents: inputToCents(data.rate),
+        budgetCents: inputToCents(data.budget),
         startDate: data.startDate || null,
         endDate: data.endDate || null,
       };
@@ -240,6 +263,36 @@ function AdModal({ ad, onClose, onSuccess }: { ad: Ad | null; onClose: () => voi
               <option value="paused">Paused</option>
                <option value="expired">Expired</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wider">Billing model</label>
+            <select value={data.billingModel} onChange={e=>setData({...data, billingModel: e.target.value as BillingModel})} className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-medium text-foreground">
+              <option value="flat">Flat campaign fee</option>
+              <option value="cpm">CPM · per 1,000 impressions</option>
+              <option value="cpc">CPC · per click</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wider">Rate</label>
+            <input type="number" min="0" step="0.01" value={data.rate} onChange={e=>setData({...data, rate: e.target.value})} className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-medium text-foreground" placeholder="Optional amount" />
+            <p className="text-[11px] text-muted-foreground mt-1.5">Stored as a configurable amount for reporting.</p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wider">Currency</label>
+            <select value={data.currency} onChange={e=>setData({...data, currency: e.target.value})} className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-medium text-foreground">
+              <option value="USD">USD</option>
+              <option value="ZAR">ZAR</option>
+              <option value="ZWG">ZWG</option>
+              <option value="GBP">GBP</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wider">Campaign budget</label>
+            <input type="number" min="0" step="0.01" value={data.budget} onChange={e=>setData({...data, budget: e.target.value})} className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-medium text-foreground" placeholder="Optional amount" />
           </div>
 
            <div>

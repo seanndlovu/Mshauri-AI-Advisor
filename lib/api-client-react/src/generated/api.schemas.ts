@@ -242,6 +242,69 @@ export type AnalyticsSummaryAnonymousFeatureUsageItem = {
   count: number;
 };
 
+export type AnalyticsSummaryConsentedUsage = {
+  pageViews: number;
+  featureActions: number;
+};
+
+export type AnalyticsSummaryConsentedUsagePerDayItem = {
+  date: string;
+  pageViews: number;
+  featureActions: number;
+};
+
+export type AnalyticsSummaryAdPerformancePerDayItem = {
+  date: string;
+  impressions: number;
+  clicks: number;
+};
+
+export interface AdAnalyticsTotals {
+  impressions: number;
+  clicks: number;
+  uniqueReach: number;
+  uniqueClickers: number;
+  clickThroughRate: number;
+}
+
+export type AdCampaignAnalyticsBillingModel = typeof AdCampaignAnalyticsBillingModel[keyof typeof AdCampaignAnalyticsBillingModel];
+
+
+export const AdCampaignAnalyticsBillingModel = {
+  flat: 'flat',
+  cpm: 'cpm',
+  cpc: 'cpc',
+} as const;
+
+export interface AdCampaignAnalytics {
+  adId: number;
+  campaign: string;
+  advertiserName: string;
+  status: string;
+  placement: string;
+  billingModel: AdCampaignAnalyticsBillingModel;
+  currency: string;
+  /** @nullable */
+  rateCents?: number | null;
+  /** @nullable */
+  budgetCents?: number | null;
+  impressions: number;
+  clicks: number;
+  uniqueReach: number;
+  uniqueClickers: number;
+  clickThroughRate: number;
+  /** @nullable */
+  estimatedRevenueCents?: number | null;
+}
+
+export interface AdPlacementAnalytics {
+  placement: string;
+  pagePath: string;
+  impressions: number;
+  clicks: number;
+  clickThroughRate: number;
+}
+
 export interface AnalyticsSummary {
   totalMessages: number;
   totalFarmers: number;
@@ -249,6 +312,35 @@ export interface AnalyticsSummary {
   messagesPerDay: AnalyticsSummaryMessagesPerDayItem[];
   topEventTypes: AnalyticsSummaryTopEventTypesItem[];
   anonymousFeatureUsage: AnalyticsSummaryAnonymousFeatureUsageItem[];
+  consentedUsage: AnalyticsSummaryConsentedUsage;
+  consentedUsagePerDay: AnalyticsSummaryConsentedUsagePerDayItem[];
+  adTotals: AdAnalyticsTotals;
+  adCampaigns: AdCampaignAnalytics[];
+  adPerformancePerDay: AnalyticsSummaryAdPerformancePerDayItem[];
+  adPlacementPerformance: AdPlacementAnalytics[];
+}
+
+export type AdAnalyticsEventInputEventType = typeof AdAnalyticsEventInputEventType[keyof typeof AdAnalyticsEventInputEventType];
+
+
+export const AdAnalyticsEventInputEventType = {
+  impression: 'impression',
+  click: 'click',
+} as const;
+
+export type AdAnalyticsEventInputPlacement = typeof AdAnalyticsEventInputPlacement[keyof typeof AdAnalyticsEventInputPlacement];
+
+
+export const AdAnalyticsEventInputPlacement = {
+  sidebar_square: 'sidebar_square',
+} as const;
+
+export interface AdAnalyticsEventInput {
+  adId: number;
+  eventType: AdAnalyticsEventInputEventType;
+  placement: AdAnalyticsEventInputPlacement;
+  pagePath: string;
+  visitorToken: string;
 }
 
 export type ContactType = typeof ContactType[keyof typeof ContactType];

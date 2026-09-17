@@ -6,12 +6,22 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './adAnalyticsEventInput';
+export * from './adAnalyticsEventInputEventType';
+export * from './adAnalyticsEventInputPlacement';
+export * from './adAnalyticsTotals';
+export * from './adCampaignAnalytics';
+export * from './adCampaignAnalyticsBillingModel';
 export * from './addEmailContact409';
 export * from './addEmailContactInput';
 export * from './addWhatsappContact409';
 export * from './addWhatsappContactInput';
+export * from './adPlacementAnalytics';
 export * from './analyticsSummary';
+export * from './analyticsSummaryAdPerformancePerDayItem';
 export * from './analyticsSummaryAnonymousFeatureUsageItem';
+export * from './analyticsSummaryConsentedUsage';
+export * from './analyticsSummaryConsentedUsagePerDayItem';
 export * from './analyticsSummaryLanguageBreakdown';
 export * from './analyticsSummaryMessagesPerDayItem';
 export * from './analyticsSummaryTopEventTypesItem';

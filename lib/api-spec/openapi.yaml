@@ -386,6 +386,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/AnalyticsSummary"
 
+  /ads/events:
+    post:
+      operationId: recordAdAnalyticsEvent
+      tags: [analytics]
+      summary: Record a consented anonymous advert impression or click
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdAnalyticsEventInput"
+      responses:
+        "204":
+          description: Event accepted or not recorded because analytics consent is unavailable
+
 
   /contacts:
     get:
@@ -734,7 +749,7 @@ components:
 
     AnalyticsSummary:
       type: object
-      required: [totalMessages, totalFarmers, languageBreakdown, messagesPerDay, topEventTypes, anonymousFeatureUsage]
+      required: [totalMessages, totalFarmers, languageBreakdown, messagesPerDay, topEventTypes, anonymousFeatureUsage, consentedUsage, consentedUsagePerDay, adTotals, adCampaigns, adPerformancePerDay, adPlacementPerformance]
       properties:
         totalMessages:
           type: integer
@@ -774,6 +789,127 @@ components:
                 type: string
               count:
                 type: integer
+        consentedUsage:
+          type: object
+          required: [pageViews, featureActions]
+          properties:
+            pageViews:
+              type: integer
+            featureActions:
+              type: integer
+        consentedUsagePerDay:
+          type: array
+          items:
+            type: object
+            required: [date, pageViews, featureActions]
+            properties:
+              date:
+                type: string
+              pageViews:
+                type: integer
+              featureActions:
+                type: integer
+        adTotals:
+          $ref: "#/components/schemas/AdAnalyticsTotals"
+        adCampaigns:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdCampaignAnalytics"
+        adPerformancePerDay:
+          type: array
+          items:
+            type: object
+            required: [date, impressions, clicks]
+            properties:
+              date:
+                type: string
+              impressions:
+                type: integer
+              clicks:
+                type: integer
+        adPlacementPerformance:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdPlacementAnalytics"
+    AdAnalyticsEventInput:
+      type: object
+      required: [adId, eventType, placement, pagePath, visitorToken]
+      properties:
+        adId:
+          type: integer
+        eventType:
+          type: string
+          enum: [impression, click]
+        placement:
+          type: string
+          enum: [sidebar_square]
+        pagePath:
+          type: string
+        visitorToken:
+          type: string
+    AdAnalyticsTotals:
+      type: object
+      required: [impressions, clicks, uniqueReach, uniqueClickers, clickThroughRate]
+      properties:
+        impressions:
+          type: integer
+        clicks:
+          type: integer
+        uniqueReach:
+          type: integer
+        uniqueClickers:
+          type: integer
+        clickThroughRate:
+          type: number
+    AdCampaignAnalytics:
+      type: object
+      required: [adId, campaign, advertiserName, status, placement, billingModel, currency, impressions, clicks, uniqueReach, uniqueClickers, clickThroughRate]
+      properties:
+        adId:
+          type: integer
+        campaign:
+          type: string
+        advertiserName:
+          type: string
+        status:
+          type: string
+        placement:
+          type: string
+        billingModel:
+          type: string
+          enum: [flat, cpm, cpc]
+        currency:
+          type: string
+        rateCents:
+          type: [integer, "null"]
+        budgetCents:
+          type: [integer, "null"]
+        impressions:
+          type: integer
+        clicks:
+          type: integer
+        uniqueReach:
+          type: integer
+        uniqueClickers:
+          type: integer
+        clickThroughRate:
+          type: number
+        estimatedRevenueCents:
+          type: [integer, "null"]
+    AdPlacementAnalytics:
+      type: object
+      required: [placement, pagePath, impressions, clicks, clickThroughRate]
+      properties:
+        placement:
+          type: string
+        pagePath:
+          type: string
+        impressions:
+          type: integer
+        clicks:
+          type: integer
+        clickThroughRate:
+          type: number
     Contact:
       type: object
       required: [type, display, createdAt]

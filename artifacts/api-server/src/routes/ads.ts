@@ -2,9 +2,10 @@ import { Router, type IRouter } from "express";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { desc, eq } from "drizzle-orm";
-import { adsTable, db, type Ad } from "@workspace/db";
+import { and, desc, eq } from "drizzle-orm";
+import { adsTable, adAnalyticsEventsTable, db, privacyPreferencesTable, type Ad } from "@workspace/db";
 import { requireAdAdmin } from "../lib/admin-access";
+import { getVerifiedClerkUser } from "../lib/current-user";
 import { hasTrustedMutationOrigin } from "../lib/trusted-origins";
 const AD_PLACEMENT = "sidebar_square" as const;
 const MAX_AD_UPLOAD_BYTES = 5 * 1024 * 1024;
@@ -17,6 +18,10 @@ export type AdsRouterOptions = {
 };
 
 type AdInput = Partial<Pick<Ad, "name" | "advertiserName" | "targetUrl" | "imageUrl" | "altText" | "placement" | "status">> & {
+  billingModel?: "flat" | "cpm" | "cpc";
+  currency?: string;
+  rateCents?: number | null;
+  budgetCents?: number | null;
   startDate?: string | null;
   endDate?: string | null;
 };
@@ -82,6 +87,10 @@ function validateAd(input: AdInput, existing?: Ad): { value?: Omit<Ad, "id" | "c
     altText: input.altText?.trim() ?? existing?.altText ?? "",
     placement: input.placement ?? existing?.placement ?? AD_PLACEMENT,
     status: input.status ?? existing?.status ?? "draft",
+    billingModel: input.billingModel ?? existing?.billingModel ?? "flat",
+    currency: input.currency?.trim().toUpperCase() ?? existing?.currency ?? "USD",
+    rateCents: input.rateCents ?? existing?.rateCents ?? null,
+    budgetCents: input.budgetCents ?? existing?.budgetCents ?? null,
     startDate: editableDate(input, "startDate", existing),
     endDate: editableDate(input, "endDate", existing),
   };
@@ -90,6 +99,10 @@ function validateAd(input: AdInput, existing?: Ad): { value?: Omit<Ad, "id" | "c
   if (!isWebUrl(value.targetUrl) || (!isWebUrl(value.imageUrl) && !isHostedAdPath(value.imageUrl))) return { error: "Use a complete destination URL and upload a valid advert image." };
   if (value.placement !== AD_PLACEMENT) return { error: "Only the 250 × 250 sidebar-square creative is supported." };
   if (!["draft", "active", "paused", "expired"].includes(value.status)) return { error: "Invalid campaign status." };
+  if (!["flat", "cpm", "cpc"].includes(value.billingModel)) return { error: "Invalid billing model." };
+  if (!/^[A-Z]{3}$/.test(value.currency)) return { error: "Currency must be a three-letter code such as USD." };
+  if (value.rateCents !== null && (!Number.isInteger(value.rateCents) || value.rateCents < 0)) return { error: "Rate must be a non-negative whole number of cents." };
+  if (value.budgetCents !== null && (!Number.isInteger(value.budgetCents) || value.budgetCents < 0)) return { error: "Budget must be a non-negative whole number of cents." };
   if ((value.startDate && !isCalendarDate(value.startDate)) || (value.endDate && !isCalendarDate(value.endDate))) {
     return { error: "Campaign dates must use YYYY-MM-DD." };
   }
@@ -125,6 +138,77 @@ router.get("/ads", async (req, res): Promise<void> => {
     .filter((ad) => (!ad.startDate || ad.startDate <= today) && (!ad.endDate || ad.endDate >= today))
     .filter((ad) => ad.placement === placement);
   res.json({ ad: active[0] ? formatAd(active[0]) : null, specification: { creative: "250x250", display: "217x217" } });
+});
+
+router.post("/ads/events", async (req, res): Promise<void> => {
+  if (!hasTrustedMutationOrigin(req)) {
+    res.status(403).json({ error: "This request must come from the trusted Mshauri application." });
+    return;
+  }
+
+  const user = await getVerifiedClerkUser(req);
+  if (!user) {
+    res.status(401).json({ error: "Not authenticated" });
+    return;
+  }
+
+  const body = req.body as {
+    adId?: unknown;
+    eventType?: unknown;
+    placement?: unknown;
+    pagePath?: unknown;
+    visitorToken?: unknown;
+  };
+  const adId = typeof body.adId === "number" && Number.isInteger(body.adId) ? body.adId : null;
+  if (
+    adId === null
+    || (body.eventType !== "impression" && body.eventType !== "click")
+    || body.placement !== AD_PLACEMENT
+    || typeof body.pagePath !== "string"
+    || !body.pagePath.startsWith("/")
+    || body.pagePath.length > 200
+    || typeof body.visitorToken !== "string"
+    || !/^[a-zA-Z0-9_-]{20,128}$/.test(body.visitorToken)
+  ) {
+    res.status(400).json({ error: "Unsupported advert analytics event." });
+    return;
+  }
+
+  const [preferences] = await db
+    .select({ analyticsConsent: privacyPreferencesTable.analyticsConsent })
+    .from(privacyPreferencesTable)
+    .where(and(
+      eq(privacyPreferencesTable.userId, user.id),
+      eq(privacyPreferencesTable.analyticsConsent, true),
+    ))
+    .limit(1);
+  if (!preferences) {
+    res.status(204).end();
+    return;
+  }
+
+  const [ad] = await db
+    .select({ id: adsTable.id, startDate: adsTable.startDate, endDate: adsTable.endDate })
+    .from(adsTable)
+    .where(and(
+      eq(adsTable.id, adId),
+      eq(adsTable.status, "active"),
+    ))
+    .limit(1);
+  const today = new Date().toISOString().slice(0, 10);
+  if (!ad || (ad.startDate && ad.startDate > today) || (ad.endDate && ad.endDate < today)) {
+    res.status(204).end();
+    return;
+  }
+
+  await db.insert(adAnalyticsEventsTable).values({
+    adId: ad.id,
+    eventType: body.eventType,
+    placement: body.placement,
+    pagePath: body.pagePath,
+    visitorToken: body.visitorToken,
+  });
+  res.status(204).end();
 });
 
 router.get("/ads/uploads/:fileName", async (req, res): Promise<void> => {
