@@ -49,6 +49,7 @@ fi
 # The proxy is served by the same VPS under this path in production.
 export VITE_CLERK_PUBLISHABLE_KEY="${VITE_CLERK_PUBLISHABLE_KEY:-$CLERK_PUBLISHABLE_KEY}"
 export VITE_CLERK_PROXY_URL="${VITE_CLERK_PROXY_URL:-/api/__clerk}"
+export OWNER_BOOTSTRAP_EMAIL="${OWNER_BOOTSTRAP_EMAIL:-ndlovusean@gmail.com}"
 
 DB_NAME="${DB_NAME:-mshauri}"
 DB_USER="${DB_USER:-mshauri}"
@@ -64,8 +65,15 @@ pnpm run typecheck:libs
 pnpm --filter @workspace/api-server run build
 pnpm --filter @workspace/mhauri-ai run build
 
-echo "[4/4] Updating database schema and restarting API server..."
+echo "[4/5] Updating database schema..."
 DATABASE_URL="$DATABASE_URL" pnpm --filter @workspace/db run push
+
+echo "Clearing legacy password credentials while preserving users and content..."
+PGPASSWORD="$DB_PASS" psql --no-password "$DATABASE_URL" \
+  -v ON_ERROR_STOP=1 \
+  -c 'UPDATE "users" SET "password_hash" = NULL WHERE "password_hash" IS NOT NULL;'
+
+echo "Restarting API server..."
 pm2 restart mshauri-api --update-env
 
 echo ""

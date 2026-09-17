@@ -97,6 +97,7 @@ export const getCurrentUser = createCurrentUserResolver(
   db,
   readDefaultClerkAuth,
   readDefaultClerkUser,
+  true,
 );
 
 export const getVerifiedClerkUser = createCurrentUserResolver(

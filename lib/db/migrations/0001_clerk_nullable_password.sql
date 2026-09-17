@@ -1,4 +1,4 @@
--- Clerk manages credentials for new Google and email users. Existing hashes
--- remain populated and usable through the temporary legacy sign-in route.
+-- Clerk manages credentials for Google and email users. The nullable column
+-- remains only for historical compatibility; deployment clears legacy hashes.
 ALTER TABLE "users"
   ALTER COLUMN "password_hash" DROP NOT NULL;

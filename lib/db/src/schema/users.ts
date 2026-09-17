@@ -5,8 +5,7 @@ import { z } from "zod/v4";
 export const usersTable = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
-  // Clerk owns credentials for new accounts. Existing hashes stay available
-  // during the transition so legacy email/password users are not locked out.
+  // Retained as a nullable historical field while Clerk owns authentication.
   passwordHash: text("password_hash"),
   name: text("name").notNull(),
   location: text("location"),

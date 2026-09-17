@@ -43,7 +43,7 @@ export function useAuth() {
   }, [isLoaded, isSignedIn]);
 
   const logout = useCallback(async () => {
-    await fetch("/api/auth/legacy-logout", { method: "POST", credentials: "include" });
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     await signOut({ redirectUrl: import.meta.env.BASE_URL });
     setState({ user: null, loading: false });
   }, [signOut]);
