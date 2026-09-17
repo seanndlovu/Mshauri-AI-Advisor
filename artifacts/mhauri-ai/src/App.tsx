@@ -31,6 +31,7 @@ import Magazine from "@/pages/Magazine";
 import AdminMarketPrices from "@/pages/AdminMarketPrices";
 import AdminAds from "@/pages/AdminAds";
 import AdminStaff from "@/pages/AdminStaff";
+import AdvertiserReport from "@/pages/AdvertiserReport";
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -130,6 +131,7 @@ function Router() {
       <Route path="/legacy-sign-in">{() => { window.location.replace(`${basePath}/sign-in`); return null; }}</Route>
       <Route path="/login">{() => { window.location.replace(`${basePath}/sign-in`); return null; }}</Route>
       <Route path="/register">{() => { window.location.replace(`${basePath}/sign-up`); return null; }}</Route>
+      <Route path="/reports/:token" component={AdvertiserReport} />
       <Route>
         <AppLayout>
           <Switch>

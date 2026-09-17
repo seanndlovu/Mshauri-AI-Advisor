@@ -343,6 +343,71 @@ export interface AdAnalyticsEventInput {
   visitorToken: string;
 }
 
+export interface AdvertiserReportInput {
+  adId: number;
+  /**
+     * @minimum 1
+     * @maximum 365
+     */
+  days: number;
+}
+
+export interface AdvertiserReportCreated {
+  reportPath: string;
+  expiresAt: string;
+}
+
+export type AdvertiserReportCampaign = {
+  name: string;
+  advertiserName: string;
+  placement: string;
+  /** @nullable */
+  startDate: string | null;
+  /** @nullable */
+  endDate: string | null;
+};
+
+export type AdvertiserReportPeriod = {
+  from: string;
+  to: string;
+  days: number;
+};
+
+export type AdvertiserReportMetrics = {
+  impressions: number;
+  clicks: number;
+  measuredReach: number;
+  uniqueClickers: number;
+  clickThroughRate: number;
+  currency: string;
+  /** @nullable */
+  estimatedRevenueCents: number | null;
+};
+
+export type AdvertiserReportDailyPerformanceItem = {
+  date: string;
+  impressions: number;
+  clicks: number;
+};
+
+export type AdvertiserReportPlacementPerformanceItem = {
+  placement: string;
+  pagePath: string;
+  impressions: number;
+  clicks: number;
+  clickThroughRate: number;
+};
+
+export interface AdvertiserReport {
+  version: number;
+  campaign: AdvertiserReportCampaign;
+  period: AdvertiserReportPeriod;
+  metrics: AdvertiserReportMetrics;
+  dailyPerformance: AdvertiserReportDailyPerformanceItem[];
+  placementPerformance: AdvertiserReportPlacementPerformanceItem[];
+  generatedAt: string;
+}
+
 export type ContactType = typeof ContactType[keyof typeof ContactType];
 
 

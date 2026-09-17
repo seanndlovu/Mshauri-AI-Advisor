@@ -253,6 +253,49 @@ html.dark {
   color-scheme: dark;
 }
 
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  .report-shell {
+    min-height: auto !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .report-toolbar {
+    display: none !important;
+  }
+
+  .report-paper {
+    max-width: none !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  .report-metric,
+  .report-paper section,
+  .report-paper footer {
+    break-inside: avoid;
+  }
+
+  .report-metric {
+    background: #f7fbf6 !important;
+  }
+
+  .report-paper thead {
+    display: table-header-group;
+  }
+
+  .report-paper tr {
+    break-inside: avoid;
+  }
+}
+
 /* ═══════════════════════════════════════════════
    COMPONENT CSS VARS — auto-switch with theme
 ═══════════════════════════════════════════════ */

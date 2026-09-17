@@ -410,6 +410,65 @@ export const RecordAdAnalyticsEventBody = zod.object({
 
 
 /**
+ * @summary Create an immutable advertiser performance report
+ */
+export const createAdvertiserReportBodyDaysMax = 365;
+
+
+
+export const CreateAdvertiserReportBody = zod.object({
+  "adId": zod.number(),
+  "days": zod.number().min(1).max(createAdvertiserReportBodyDaysMax)
+})
+
+
+/**
+ * @summary Get a public read-only advertiser report
+ */
+export const GetAdvertiserReportParams = zod.object({
+  "token": zod.coerce.string()
+})
+
+export const GetAdvertiserReportResponse = zod.object({
+  "version": zod.number(),
+  "campaign": zod.object({
+  "name": zod.string(),
+  "advertiserName": zod.string(),
+  "placement": zod.string(),
+  "startDate": zod.string().nullable(),
+  "endDate": zod.string().nullable()
+}),
+  "period": zod.object({
+  "from": zod.coerce.date(),
+  "to": zod.coerce.date(),
+  "days": zod.number()
+}),
+  "metrics": zod.object({
+  "impressions": zod.number(),
+  "clicks": zod.number(),
+  "measuredReach": zod.number(),
+  "uniqueClickers": zod.number(),
+  "clickThroughRate": zod.number(),
+  "currency": zod.string(),
+  "estimatedRevenueCents": zod.number().nullable()
+}),
+  "dailyPerformance": zod.array(zod.object({
+  "date": zod.coerce.date(),
+  "impressions": zod.number(),
+  "clicks": zod.number()
+})),
+  "placementPerformance": zod.array(zod.object({
+  "placement": zod.string(),
+  "pagePath": zod.string(),
+  "impressions": zod.number(),
+  "clicks": zod.number(),
+  "clickThroughRate": zod.number()
+})),
+  "generatedAt": zod.coerce.date()
+})
+
+
+/**
  * @summary List all contacts (anonymised)
  */
 export const ListContactsResponseItem = zod.object({

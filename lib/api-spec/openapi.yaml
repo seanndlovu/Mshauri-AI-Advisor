@@ -401,6 +401,44 @@ paths:
         "204":
           description: Event accepted or not recorded because analytics consent is unavailable
 
+  /analytics/reports:
+    post:
+      operationId: createAdvertiserReport
+      tags: [analytics]
+      summary: Create an immutable advertiser performance report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdvertiserReportInput"
+      responses:
+        "201":
+          description: Advertiser report created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdvertiserReportCreated"
+
+  /analytics/reports/{token}:
+    get:
+      operationId: getAdvertiserReport
+      tags: [analytics]
+      summary: Get a public read-only advertiser report
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public advertiser report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdvertiserReport"
+
 
   /contacts:
     get:
@@ -896,6 +934,107 @@ components:
           type: number
         estimatedRevenueCents:
           type: [integer, "null"]
+    AdvertiserReportInput:
+      type: object
+      required: [adId, days]
+      properties:
+        adId:
+          type: integer
+        days:
+          type: integer
+          minimum: 1
+          maximum: 365
+    AdvertiserReportCreated:
+      type: object
+      required: [reportPath, expiresAt]
+      properties:
+        reportPath:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+    AdvertiserReport:
+      type: object
+      required: [version, campaign, period, metrics, dailyPerformance, placementPerformance, generatedAt]
+      properties:
+        version:
+          type: integer
+        campaign:
+          type: object
+          required: [name, advertiserName, placement, startDate, endDate]
+          properties:
+            name:
+              type: string
+            advertiserName:
+              type: string
+            placement:
+              type: string
+            startDate:
+              type: [string, "null"]
+            endDate:
+              type: [string, "null"]
+        period:
+          type: object
+          required: [from, to, days]
+          properties:
+            from:
+              type: string
+              format: date
+            to:
+              type: string
+              format: date
+            days:
+              type: integer
+        metrics:
+          type: object
+          required: [impressions, clicks, measuredReach, uniqueClickers, clickThroughRate, currency, estimatedRevenueCents]
+          properties:
+            impressions:
+              type: integer
+            clicks:
+              type: integer
+            measuredReach:
+              type: integer
+            uniqueClickers:
+              type: integer
+            clickThroughRate:
+              type: number
+            currency:
+              type: string
+            estimatedRevenueCents:
+              type: [integer, "null"]
+        dailyPerformance:
+          type: array
+          items:
+            type: object
+            required: [date, impressions, clicks]
+            properties:
+              date:
+                type: string
+                format: date
+              impressions:
+                type: integer
+              clicks:
+                type: integer
+        placementPerformance:
+          type: array
+          items:
+            type: object
+            required: [placement, pagePath, impressions, clicks, clickThroughRate]
+            properties:
+              placement:
+                type: string
+              pagePath:
+                type: string
+              impressions:
+                type: integer
+              clicks:
+                type: integer
+              clickThroughRate:
+                type: number
+        generatedAt:
+          type: string
+          format: date-time
     AdPlacementAnalytics:
       type: object
       required: [placement, pagePath, impressions, clicks, clickThroughRate]

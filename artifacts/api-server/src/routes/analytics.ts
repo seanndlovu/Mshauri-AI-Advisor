@@ -1,16 +1,58 @@
 import { Router, type IRouter } from "express";
-import { eq, gte, sql } from "drizzle-orm";
+import { createHash, randomBytes } from "node:crypto";
+import { and, eq, gt, gte, isNull, sql } from "drizzle-orm";
 import {
   adAnalyticsEventsTable,
   adsTable,
+  advertiserReportsTable,
   anonymousUsageEventsTable,
   analyticsEventsTable,
   db,
   farmersTable,
 } from "@workspace/db";
 import { requireOwner } from "../lib/admin-access";
+import { hasTrustedMutationOrigin } from "../lib/trusted-origins";
 
 const router: IRouter = Router();
+const REPORT_EXPIRY_DAYS = 90;
+
+type AdvertiserReportPayload = {
+  version: 1;
+  campaign: {
+    name: string;
+    advertiserName: string;
+    placement: string;
+    startDate: string | null;
+    endDate: string | null;
+  };
+  period: {
+    from: string;
+    to: string;
+    days: number;
+  };
+  metrics: {
+    impressions: number;
+    clicks: number;
+    measuredReach: number;
+    uniqueClickers: number;
+    clickThroughRate: number;
+    currency: string;
+    estimatedRevenueCents: number | null;
+  };
+  dailyPerformance: Array<{
+    date: string;
+    impressions: number;
+    clicks: number;
+  }>;
+  placementPerformance: Array<{
+    placement: string;
+    pagePath: string;
+    impressions: number;
+    clicks: number;
+    clickThroughRate: number;
+  }>;
+  generatedAt: string;
+};
 
 function clickThroughRate(impressions: number, clicks: number): number {
   return impressions > 0 ? Number(((clicks / impressions) * 100).toFixed(2)) : 0;
@@ -27,6 +69,183 @@ function estimatedRevenueCents(
   if (billingModel === "cpc") return clicks * rateCents;
   return rateCents;
 }
+
+function reportPagePath(pagePath: string): string {
+  const firstSegment = pagePath.split(/[?#]/, 1)[0]?.split("/").filter(Boolean)[0];
+  return firstSegment ? `/${firstSegment}` : "/";
+}
+
+async function buildAdvertiserReport(adId: number, days: number): Promise<AdvertiserReportPayload | null> {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  const today = new Date().toISOString().slice(0, 10);
+
+  const [campaign] = await db
+    .select({
+      name: adsTable.name,
+      advertiserName: adsTable.advertiserName,
+      placement: adsTable.placement,
+      billingModel: adsTable.billingModel,
+      currency: adsTable.currency,
+      rateCents: adsTable.rateCents,
+      startDate: adsTable.startDate,
+      endDate: adsTable.endDate,
+    })
+    .from(adsTable)
+    .where(eq(adsTable.id, adId))
+    .limit(1);
+  if (!campaign) return null;
+
+  const eventWindow = and(
+    eq(adAnalyticsEventsTable.adId, adId),
+    gte(adAnalyticsEventsTable.createdAt, cutoff),
+  );
+  const [totals] = await db
+    .select({
+      impressions: sql<number>`COUNT(*) FILTER (WHERE ${adAnalyticsEventsTable.eventType} = 'impression')::int`.as("impressions"),
+      clicks: sql<number>`COUNT(*) FILTER (WHERE ${adAnalyticsEventsTable.eventType} = 'click')::int`.as("clicks"),
+      measuredReach: sql<number>`COUNT(DISTINCT ${adAnalyticsEventsTable.visitorToken})::int`.as("measured_reach"),
+      uniqueClickers: sql<number>`COUNT(DISTINCT ${adAnalyticsEventsTable.visitorToken}) FILTER (WHERE ${adAnalyticsEventsTable.eventType} = 'click')::int`.as("unique_clickers"),
+    })
+    .from(adAnalyticsEventsTable)
+    .where(eventWindow);
+
+  const dailyPerformance = await db
+    .select({
+      date: sql<string>`DATE(${adAnalyticsEventsTable.createdAt})`.as("date"),
+      impressions: sql<number>`COUNT(*) FILTER (WHERE ${adAnalyticsEventsTable.eventType} = 'impression')::int`.as("impressions"),
+      clicks: sql<number>`COUNT(*) FILTER (WHERE ${adAnalyticsEventsTable.eventType} = 'click')::int`.as("clicks"),
+    })
+    .from(adAnalyticsEventsTable)
+    .where(eventWindow)
+    .groupBy(sql`DATE(${adAnalyticsEventsTable.createdAt})`)
+    .orderBy(sql`DATE(${adAnalyticsEventsTable.createdAt})`);
+
+  const placementPerformance = await db
+    .select({
+      placement: adAnalyticsEventsTable.placement,
+      pagePath: adAnalyticsEventsTable.pagePath,
+      impressions: sql<number>`COUNT(*) FILTER (WHERE ${adAnalyticsEventsTable.eventType} = 'impression')::int`.as("impressions"),
+      clicks: sql<number>`COUNT(*) FILTER (WHERE ${adAnalyticsEventsTable.eventType} = 'click')::int`.as("clicks"),
+    })
+    .from(adAnalyticsEventsTable)
+    .where(eventWindow)
+    .groupBy(adAnalyticsEventsTable.placement, adAnalyticsEventsTable.pagePath)
+    .orderBy(sql`COUNT(*) DESC`);
+
+  const impressions = Number(totals?.impressions ?? 0);
+  const clicks = Number(totals?.clicks ?? 0);
+  return {
+    version: 1,
+    campaign: {
+      name: campaign.name,
+      advertiserName: campaign.advertiserName,
+      placement: campaign.placement,
+      startDate: campaign.startDate,
+      endDate: campaign.endDate,
+    },
+    period: {
+      from: cutoff.toISOString().slice(0, 10),
+      to: today,
+      days,
+    },
+    metrics: {
+      impressions,
+      clicks,
+      measuredReach: Number(totals?.measuredReach ?? 0),
+      uniqueClickers: Number(totals?.uniqueClickers ?? 0),
+      clickThroughRate: clickThroughRate(impressions, clicks),
+      currency: campaign.currency,
+      estimatedRevenueCents: estimatedRevenueCents(campaign.billingModel, campaign.rateCents, impressions, clicks),
+    },
+    dailyPerformance: dailyPerformance.map((row) => ({
+      date: String(row.date),
+      impressions: Number(row.impressions),
+      clicks: Number(row.clicks),
+    })),
+    placementPerformance: placementPerformance.map((row) => {
+      const rowImpressions = Number(row.impressions);
+      const rowClicks = Number(row.clicks);
+      return {
+        placement: row.placement,
+        pagePath: reportPagePath(row.pagePath),
+        impressions: rowImpressions,
+        clicks: rowClicks,
+        clickThroughRate: clickThroughRate(rowImpressions, rowClicks),
+      };
+    }),
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+router.post("/analytics/reports", async (req, res): Promise<void> => {
+  if (!hasTrustedMutationOrigin(req)) {
+    res.status(403).json({ error: "This request must come from the trusted Mshauri application." });
+    return;
+  }
+
+  const owner = await requireOwner(req, res);
+  if (!owner) return;
+
+  const body = req.body as { adId?: unknown; days?: unknown };
+  const adId = typeof body.adId === "number" && Number.isInteger(body.adId) && body.adId > 0 ? body.adId : null;
+  const days = typeof body.days === "number" && Number.isInteger(body.days)
+    ? Math.min(Math.max(body.days, 1), 365)
+    : null;
+  if (adId === null || days === null) {
+    res.status(400).json({ error: "Choose a campaign and reporting period." });
+    return;
+  }
+
+  const payload = await buildAdvertiserReport(adId, days);
+  if (!payload) {
+    res.status(404).json({ error: "Campaign not found." });
+    return;
+  }
+
+  const token = randomBytes(32).toString("base64url");
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + REPORT_EXPIRY_DAYS);
+  await db.insert(advertiserReportsTable).values({
+    tokenHash,
+    adId,
+    payload,
+    createdBy: owner.id,
+    expiresAt,
+  });
+
+  res.status(201).json({
+    reportPath: `/reports/${token}`,
+    expiresAt: expiresAt.toISOString(),
+  });
+});
+
+router.get("/analytics/reports/:token", async (req, res): Promise<void> => {
+  const token = Array.isArray(req.params.token) ? req.params.token[0] : req.params.token;
+  if (!token || !/^[a-zA-Z0-9_-]{40,}$/.test(token)) {
+    res.status(404).json({ error: "Report unavailable." });
+    return;
+  }
+
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  const [report] = await db
+    .select({ payload: advertiserReportsTable.payload })
+    .from(advertiserReportsTable)
+    .where(and(
+      eq(advertiserReportsTable.tokenHash, tokenHash),
+      gt(advertiserReportsTable.expiresAt, new Date()),
+      isNull(advertiserReportsTable.revokedAt),
+    ))
+    .limit(1);
+  if (!report) {
+    res.status(404).json({ error: "Report unavailable." });
+    return;
+  }
+
+  res.setHeader("Cache-Control", "no-store");
+  res.json(report.payload);
+});
 
 router.get("/analytics/summary", async (req, res): Promise<void> => {
   const owner = await requireOwner(req, res);

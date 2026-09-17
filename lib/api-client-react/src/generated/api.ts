@@ -25,6 +25,9 @@ import type {
   AddEmailContactInput,
   AddWhatsappContact409,
   AddWhatsappContactInput,
+  AdvertiserReport,
+  AdvertiserReportCreated,
+  AdvertiserReportInput,
   AnalyticsSummary,
   Article,
   ArticleInput,
@@ -1569,6 +1572,154 @@ export const useRecordAdAnalyticsEvent = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getRecordAdAnalyticsEventMutationOptions(options));
     }
+
+export const getCreateAdvertiserReportUrl = () => {
+
+
+
+
+  return `/api/analytics/reports`
+}
+
+/**
+ * @summary Create an immutable advertiser performance report
+ */
+export const createAdvertiserReport = async (advertiserReportInput: AdvertiserReportInput, options?: RequestInit): Promise<AdvertiserReportCreated> => {
+
+  return customFetch<AdvertiserReportCreated>(getCreateAdvertiserReportUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      advertiserReportInput,)
+  }
+);}
+
+
+
+
+export const getCreateAdvertiserReportMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdvertiserReport>>, TError,{data: BodyType<AdvertiserReportInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAdvertiserReport>>, TError,{data: BodyType<AdvertiserReportInput>}, TContext> => {
+
+const mutationKey = ['createAdvertiserReport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAdvertiserReport>>, {data: BodyType<AdvertiserReportInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAdvertiserReport(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAdvertiserReportMutationResult = NonNullable<Awaited<ReturnType<typeof createAdvertiserReport>>>
+    export type CreateAdvertiserReportMutationBody = BodyType<AdvertiserReportInput>
+    export type CreateAdvertiserReportMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create an immutable advertiser performance report
+ */
+export const useCreateAdvertiserReport = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdvertiserReport>>, TError,{data: BodyType<AdvertiserReportInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAdvertiserReport>>,
+        TError,
+        {data: BodyType<AdvertiserReportInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAdvertiserReportMutationOptions(options));
+    }
+
+export const getGetAdvertiserReportUrl = (token: string,) => {
+
+
+
+
+  return `/api/analytics/reports/${token}`
+}
+
+/**
+ * @summary Get a public read-only advertiser report
+ */
+export const getAdvertiserReport = async (token: string, options?: RequestInit): Promise<AdvertiserReport> => {
+
+  return customFetch<AdvertiserReport>(getGetAdvertiserReportUrl(token),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdvertiserReportQueryKey = (token: string,) => {
+    return [
+    `/api/analytics/reports/${token}`
+    ] as const;
+    }
+
+
+export const getGetAdvertiserReportQueryOptions = <TData = Awaited<ReturnType<typeof getAdvertiserReport>>, TError = ErrorType<unknown>>(token: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdvertiserReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdvertiserReportQueryKey(token);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdvertiserReport>>> = ({ signal }) => getAdvertiserReport(token, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(token), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdvertiserReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdvertiserReportQueryResult = NonNullable<Awaited<ReturnType<typeof getAdvertiserReport>>>
+export type GetAdvertiserReportQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get a public read-only advertiser report
+ */
+
+export function useGetAdvertiserReport<TData = Awaited<ReturnType<typeof getAdvertiserReport>>, TError = ErrorType<unknown>>(
+ token: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdvertiserReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdvertiserReportQueryOptions(token,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getListContactsUrl = () => {
 

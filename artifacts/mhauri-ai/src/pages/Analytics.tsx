@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  useCreateAdvertiserReport,
   useGetAnalyticsSummary,
   getGetAnalyticsSummaryQueryKey,
 } from "@workspace/api-client-react";
@@ -14,6 +15,7 @@ import {
   DollarSign,
   Download,
   Eye,
+  FileText,
   Globe,
   Image as ImageIcon,
   MessageSquare,
@@ -27,14 +29,35 @@ import {
 
 export default function Analytics() {
   const [days, setDays] = useState(30);
+  const [selectedCampaignId, setSelectedCampaignId] = useState("");
   const queryClient = useQueryClient();
+  const createReport = useCreateAdvertiserReport();
 
   const { data: summary, isLoading, isFetching, isError } = useGetAnalyticsSummary({
     days
   });
 
+  useEffect(() => {
+    const campaigns = summary?.adCampaigns ?? [];
+    if (!campaigns.length) {
+      setSelectedCampaignId("");
+      return;
+    }
+    if (!campaigns.some((campaign) => String(campaign.adId) === selectedCampaignId)) {
+      setSelectedCampaignId(String(campaigns[0].adId));
+    }
+  }, [selectedCampaignId, summary]);
+
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: getGetAnalyticsSummaryQueryKey({ days }) });
+  };
+
+  const handleGenerateReport = async () => {
+    if (!selectedCampaignId) return;
+    const result = await createReport.mutateAsync({
+      data: { adId: Number(selectedCampaignId), days },
+    });
+    window.location.assign(result.reportPath);
   };
 
   const handleExport = () => {
@@ -308,6 +331,46 @@ export default function Analytics() {
               <p className="text-sm text-muted-foreground">
                 Consent-based, measurable advert delivery from the selected period.
               </p>
+              <div className="mt-4 flex flex-col gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <label htmlFor="report-campaign" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Campaign report
+                    </label>
+                    <select
+                      id="report-campaign"
+                      value={selectedCampaignId}
+                      onChange={(event) => setSelectedCampaignId(event.target.value)}
+                      disabled={!summary?.adCampaigns?.length || createReport.isPending}
+                      className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring lg:max-w-md"
+                    >
+                      {!summary?.adCampaigns?.length && <option value="">No campaign activity in this period</option>}
+                      {summary?.adCampaigns?.map((campaign) => (
+                        <option key={campaign.adId} value={campaign.adId}>
+                          {campaign.campaign} — {campaign.advertiserName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="gap-2"
+                    onClick={handleGenerateReport}
+                    disabled={!selectedCampaignId || createReport.isPending || isFetching}
+                  >
+                    <FileText className="h-4 w-4" />
+                    {createReport.isPending ? "Preparing report..." : "Generate report"}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  The report contains consent-based, aggregated advertising metrics only. It never includes personal or conversation data.
+                </p>
+                {createReport.isError && (
+                  <p className="text-xs font-medium text-destructive">
+                    The report could not be created. Check the selected period and try again.
+                  </p>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
