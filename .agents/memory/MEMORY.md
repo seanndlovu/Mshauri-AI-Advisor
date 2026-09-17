@@ -3,3 +3,4 @@
 - [Replit development origin checks](replit-dev-trusted-origin.md) — the browser origin can differ from a proxy-forwarded request host in development; trust REPLIT_DEV_DOMAIN only outside production.
 - [VPS PostgreSQL retry safety](vps-postgresql-retry-safety.md) — repeatable deploys must reconcile existing role credentials, database ownership, and public-schema access before applying Drizzle changes.
 - [Advertiser analytics privacy](ad-analytics-privacy.md) — sponsor metrics must remain consent-based, aggregated, and free of account or conversation identifiers.
+- [Advertiser report snapshots](advertiser-report-snapshots.md) — public report links serve immutable, narrow campaign snapshots rather than live analytics queries.
