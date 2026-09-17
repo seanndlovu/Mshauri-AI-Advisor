@@ -1,5 +1,4 @@
 import { SignUp } from "@clerk/react";
-import { Link } from "wouter";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -17,12 +16,6 @@ export default function Register() {
           signInUrl={`${basePath}/sign-in`}
           fallbackRedirectUrl={`${basePath}/`}
         />
-        <p className="mx-auto mt-4 w-full max-w-[440px] text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link href="/sign-in" className="font-semibold text-[#4ade80] hover:underline">
-            Sign in
-          </Link>
-        </p>
       </div>
     </div>
   );

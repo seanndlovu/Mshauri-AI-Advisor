@@ -39,6 +39,17 @@ if [ -z "${DB_PASS:-}" ] || [ -z "${SESSION_SECRET:-}" ]; then
   exit 1
 fi
 
+if [ -z "${CLERK_PUBLISHABLE_KEY:-}" ]; then
+  echo "❌  CLERK_PUBLISHABLE_KEY must be set in $ENV_FILE" >&2
+  exit 1
+fi
+
+# The API uses CLERK_PUBLISHABLE_KEY directly. Vite only exposes variables
+# prefixed with VITE_, so pass the same public key into the static web build.
+# The proxy is served by the same VPS under this path in production.
+export VITE_CLERK_PUBLISHABLE_KEY="${VITE_CLERK_PUBLISHABLE_KEY:-$CLERK_PUBLISHABLE_KEY}"
+export VITE_CLERK_PROXY_URL="${VITE_CLERK_PROXY_URL:-/api/__clerk}"
+
 DB_NAME="${DB_NAME:-mshauri}"
 DB_USER="${DB_USER:-mshauri}"
 source "$REPO_DIR/deploy/postgres-setup.sh"

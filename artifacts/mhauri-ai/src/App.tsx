@@ -20,7 +20,6 @@ import CommunityFeed from "@/pages/CommunityFeed";
 import PostDetail from "@/pages/PostDetail";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
-import LegacyLogin from "@/pages/LegacyLogin";
 import Profile from "@/pages/Profile";
 import Weather from "@/pages/Weather";
 import WhatsApp from "@/pages/WhatsApp";
@@ -128,7 +127,7 @@ function Router() {
     <Switch>
       <Route path="/sign-in/*?" component={Login} />
       <Route path="/sign-up/*?" component={Register} />
-      <Route path="/legacy-sign-in" component={LegacyLogin} />
+      <Route path="/legacy-sign-in">{() => { window.location.replace(`${basePath}/sign-in`); return null; }}</Route>
       <Route path="/login">{() => { window.location.replace(`${basePath}/sign-in`); return null; }}</Route>
       <Route path="/register">{() => { window.location.replace(`${basePath}/sign-up`); return null; }}</Route>
       <Route>

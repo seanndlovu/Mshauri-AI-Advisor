@@ -28,12 +28,6 @@ export default function Login() {
               Create a new Mshauri account
             </Link>
           </p>
-          <p className="text-muted-foreground">
-            Have an existing Mshauri password?{" "}
-            <Link href="/legacy-sign-in" className="font-semibold text-[#4ade80] hover:underline">
-              Use it here
-            </Link>
-          </p>
         </div>
       </div>
     </div>
