@@ -17,12 +17,24 @@ export default function Login() {
           signUpUrl={`${basePath}/sign-up`}
           fallbackRedirectUrl={`${basePath}/`}
         />
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          Have an existing Mshauri password?{" "}
-          <Link href="/legacy-sign-in" className="font-semibold text-[#4ade80] hover:underline">
-            Use it here
-          </Link>
-        </p>
+        <div className="mx-auto mt-4 w-full max-w-[440px] space-y-2 text-center text-sm">
+          <p className="text-muted-foreground">
+            Forgot your password? Enter your email above, then choose{" "}
+            <strong className="text-foreground">Forgot password?</strong> on the email sign-in step.
+          </p>
+          <p className="text-muted-foreground">
+            Don’t have an account?{" "}
+            <Link href="/sign-up" className="font-semibold text-[#4ade80] hover:underline">
+              Create a new Mshauri account
+            </Link>
+          </p>
+          <p className="text-muted-foreground">
+            Have an existing Mshauri password?{" "}
+            <Link href="/legacy-sign-in" className="font-semibold text-[#4ade80] hover:underline">
+              Use it here
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

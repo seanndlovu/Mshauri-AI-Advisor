@@ -48,10 +48,16 @@ export default function LegacyLogin() {
         <button disabled={loading} className="w-full rounded-full bg-[#22c55e] py-3 font-bold text-white hover:bg-[#16a34a] disabled:opacity-60">
           {loading ? "Signing in…" : "Sign in with existing password"}
         </button>
-        <p className="mt-5 text-center text-sm text-[#7aad80]">
-          Want Google, a sign-in link, or password recovery?{" "}
-          <Link href="/sign-in" className="font-semibold text-[#4ade80] hover:underline">Use secure sign-in</Link>
-        </p>
+        <div className="mt-5 space-y-2 text-center text-sm text-[#9ccaa2]">
+          <p>
+            Forgot your password or want to use Google?{" "}
+            <Link href="/sign-in" className="font-semibold text-[#4ade80] hover:underline">Open secure sign-in</Link>
+          </p>
+          <p>
+            Need an account?{" "}
+            <Link href="/sign-up" className="font-semibold text-[#4ade80] hover:underline">Create one</Link>
+          </p>
+        </div>
       </form>
     </div>
   );
